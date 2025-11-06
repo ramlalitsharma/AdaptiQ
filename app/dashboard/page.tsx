@@ -11,6 +11,7 @@ import { SiteBrand } from '@/components/layout/SiteBrand';
 import { StatCard } from '@/components/ui/StatCard';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { headers } from 'next/headers';
+import { FadeIn, ScaleOnHover } from '@/components/ui/Motion';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,7 @@ export default async function DashboardPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <FadeIn>
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 md:p-8 text-white shadow-md mb-8">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -68,6 +70,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </div>
+        </FadeIn>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           <StatCard title="Total Quizzes" value={stats.totalQuizzes || 0} subtitle="Completed" icon={<span>📝</span>} color="blue" />
@@ -84,6 +87,7 @@ export default async function DashboardPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <Link href="/subjects">
+              <ScaleOnHover>
               <Card hover>
                 <CardContent className="pt-6">
                   <div className="text-center">
@@ -94,8 +98,10 @@ export default async function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+              </ScaleOnHover>
             </Link>
             <Link href="/exams">
+              <ScaleOnHover>
               <Card hover>
                 <CardContent className="pt-6">
                   <div className="text-center">
@@ -106,8 +112,10 @@ export default async function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+              </ScaleOnHover>
             </Link>
             <Link href="/subjects?mode=preparations">
+              <ScaleOnHover>
               <Card hover>
                 <CardContent className="pt-6">
                   <div className="text-center">
@@ -118,8 +126,10 @@ export default async function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+              </ScaleOnHover>
             </Link>
             <Link href="/exams?type=international">
+              <ScaleOnHover>
               <Card hover>
                 <CardContent className="pt-6">
                   <div className="text-center">
@@ -130,6 +140,7 @@ export default async function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+              </ScaleOnHover>
             </Link>
           </div>
         </div>
