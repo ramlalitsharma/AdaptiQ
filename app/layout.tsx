@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { CookieConsent } from '@/components/CookieConsent';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -67,6 +68,14 @@ export const metadata: Metadata = {
   verification: {
     google: process.env.GOOGLE_VERIFICATION,
   },
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/adaptiq.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: ['/favicon.svg'],
+    apple: [{ url: '/adaptiq.svg' }],
+  },
 };
 
 export default function RootLayout({
@@ -107,8 +116,10 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {children}
-          <CookieConsent />
+          <ThemeProvider>
+            {children}
+            <CookieConsent />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

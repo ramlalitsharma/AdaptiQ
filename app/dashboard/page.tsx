@@ -9,6 +9,7 @@ import { Achievements } from '@/components/achievements/Achievements';
 import { Progress } from '@/components/ui/Progress';
 import { SiteBrand } from '@/components/layout/SiteBrand';
 import { StatCard } from '@/components/ui/StatCard';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,7 @@ export default async function DashboardPage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <SiteBrand />
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Link href="/pricing">
               <Button variant="outline">Upgrade</Button>
             </Link>
