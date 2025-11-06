@@ -174,14 +174,19 @@ export default async function SubjectDetailPage({ params }: SubjectPageProps) {
 
 export async function generateMetadata({ params }: { params: Promise<{ subjectId: string }> }) {
   const { subjectId } = await params;
-  const db = await getDatabase();
-  const orConditions: any[] = [{ slug: subjectId }];
-  if (ObjectId.isValid(subjectId)) {
-    orConditions.push({ _id: new ObjectId(subjectId) });
+  let name = 'Subject';
+  try {
+    const db = await getDatabase();
+    const orConditions: any[] = [{ slug: subjectId }];
+    if (ObjectId.isValid(subjectId)) {
+      orConditions.push({ _id: new ObjectId(subjectId) });
+    }
+    const subject = await db.collection('subjects').findOne({ $or: orConditions });
+    name = subject?.name || 'Subject';
+  } catch (error) {
+    console.error('Error in generateMetadata:', error);
   }
-  const subject = await db.collection('subjects').findOne({ $or: orConditions });
-  const name = subject?.name || 'Subject';
-  const kws = await getLatestKeywords();
+  const kws = await getLatestKeywords().catch(() => []);
   return {
     title: `${name} | AdaptIQ`,
     description: `Learn ${name} with AI-adaptive quizzes. Choose level and chapters to master topics.`,

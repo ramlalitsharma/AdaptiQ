@@ -2,15 +2,23 @@ import Link from 'next/link';
 import { getDatabase } from '@/lib/mongodb';
 import { SiteBrand } from '@/components/layout/SiteBrand';
 
+export const dynamic = 'force-dynamic';
+
 export default async function BlogIndexPage() {
-  const db = await getDatabase();
-  const now = new Date();
-  const posts = await db
-    .collection('blogs')
-    .find({ expiresAt: { $gt: now } })
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .toArray();
+  let posts: any[] = [];
+  try {
+    const db = await getDatabase();
+    const now = new Date();
+    posts = await db
+      .collection('blogs')
+      .find({ expiresAt: { $gt: now } })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .toArray();
+  } catch (error) {
+    console.error('Error fetching blog posts:', error);
+    // Return empty array on error - page will show "No posts yet"
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

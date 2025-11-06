@@ -2,10 +2,17 @@ import Link from 'next/link';
 import { getDatabase } from '@/lib/mongodb';
 import { SiteBrand } from '@/components/layout/SiteBrand';
 
+export const dynamic = 'force-dynamic';
+
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const db = await getDatabase();
-  const post = await db.collection('blogs').findOne({ slug });
+  let post: any = null;
+  try {
+    const db = await getDatabase();
+    post = await db.collection('blogs').findOne({ slug });
+  } catch (error) {
+    console.error('Error fetching blog post:', error);
+  }
   if (!post) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-10">
