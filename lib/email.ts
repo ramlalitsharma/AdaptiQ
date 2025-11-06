@@ -16,7 +16,7 @@ export async function sendEmail(payload: EmailPayload) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'AdaptIQ <noreply@adaptiq.com>',
+        from: process.env.RESEND_FROM_EMAIL || 'AdaptIQ <onboarding@resend.dev>',
         to: payload.to,
         subject: payload.subject,
         html: payload.html,
