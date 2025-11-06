@@ -11,19 +11,21 @@ const isProtectedRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, req) => {
   const provider = (process.env.AUTH_PROVIDER || 'clerk').toLowerCase();
+  
   if (provider === 'clerk') {
+    // Use Clerk protection
     if (isProtectedRoute(req)) {
       await auth.protect();
     }
-    return;
-  }
-  // Lucia mode: ensure session cookie exists; otherwise redirect to sign-in
-  if (isProtectedRoute(req)) {
-    const cookie = req.headers.get('cookie') || '';
-    const hasSession = /adaptiq_session=/.test(cookie);
-    if (!hasSession) {
-      const url = new URL('/sign-in', req.url);
-      return NextResponse.redirect(url);
+  } else {
+    // Lucia mode: check for session cookie
+    if (isProtectedRoute(req)) {
+      const cookie = req.headers.get('cookie') || '';
+      const hasSession = /adaptiq_session=/.test(cookie);
+      if (!hasSession) {
+        const url = new URL('/sign-in', req.url);
+        return NextResponse.redirect(url);
+      }
     }
   }
 });
