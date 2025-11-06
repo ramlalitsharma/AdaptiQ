@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { getDatabase } from '@/lib/mongodb';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { SiteBrand } from '@/components/layout/SiteBrand';
+import { CourseLibrary } from '@/components/courses/CourseLibrary';
+import { Button } from '@/components/ui/Button';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,39 +11,32 @@ export default async function CoursesIndexPage() {
   let courses: any[] = [];
   try {
     const db = await getDatabase();
-    courses = await db.collection('courses').find({ status: { $ne: 'draft' } }).project({ title:1, slug:1, summary:1, subject:1, level:1, createdAt:1 }).sort({ createdAt: -1 }).limit(100).toArray();
+    courses = await db.collection('courses').find({ status: { $ne: 'draft' } }).sort({ createdAt: -1 }).limit(100).toArray();
   } catch (e) {
     courses = [];
   }
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <SiteBrand />
-          <Link href="/admin/studio" className="text-blue-600 hover:underline">Admin Studio →</Link>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Link href="/my-learning">
+              <Button variant="outline" size="sm">My Learning</Button>
+            </Link>
+            <Link href="/admin/studio">
+              <Button variant="outline" size="sm">Admin Studio</Button>
+            </Link>
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Courses</h1>
-        {!courses.length ? (
-          <p className="text-gray-600">No courses published yet.</p>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((c) => (
-              <Link key={c.slug} href={`/courses/${c.slug}`}>
-                <Card hover>
-                  <CardHeader>
-                    <CardTitle>{c.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-2">{c.summary || 'A comprehensive, adaptive course.'}</p>
-                    <p className="text-xs text-gray-500">{c.subject || 'General'} {c.level ? `• ${c.level}` : ''}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Course Library</h1>
+          <p className="text-gray-600 dark:text-gray-400">Discover courses tailored to your learning goals</p>
+        </div>
+        <CourseLibrary courses={courses} />
       </main>
     </div>
   );

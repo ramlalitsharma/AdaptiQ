@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { SiteBrand } from '@/components/layout/SiteBrand';
 import { AdaptiveQuiz } from '@/components/quiz/AdaptiveQuiz';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { VideoPlayer } from '@/components/courses/VideoPlayer';
+import { Button } from '@/components/ui/Button';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,41 +48,76 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       <head>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
-      <header className="bg-white border-b sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <SiteBrand />
-          <Link href={`/courses/${slug}`} className="text-blue-600 hover:underline">← {course.title}</Link>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Link href={`/courses/${slug}`}>
+              <Button variant="outline" size="sm">← {course.title}</Button>
+            </Link>
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <nav className="text-sm text-gray-600 mb-4">
-            <Link href="/courses" className="hover:underline">Courses</Link> / <Link href={`/courses/${slug}`} className="hover:underline">{course.title}</Link> / <span className="text-gray-900">{lesson.title}</span>
+        <div className="max-w-5xl mx-auto">
+          <nav className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            <Link href="/courses" className="hover:underline">Courses</Link> / <Link href={`/courses/${slug}`} className="hover:underline">{course.title}</Link> / <span className="text-gray-900 dark:text-white">{lesson.title}</span>
           </nav>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{lesson.title}</h1>
-          <p className="text-gray-600 mb-6">Module: {module.title}</p>
+          
+          <div className="mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{lesson.title}</h1>
+            <p className="text-gray-600 dark:text-gray-400">Module: {module.title}</p>
+          </div>
+
+          {/* Video Player */}
+          {lesson.videoUrl || lesson.videoId ? (
+            <Card className="mb-8">
+              <CardContent className="p-0">
+                <VideoPlayer 
+                  videoUrl={lesson.videoUrl}
+                  videoId={lesson.videoId}
+                  title={lesson.title}
+                  provider={lesson.videoProvider || 'youtube'}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* Lesson Content */}
           {lesson.content && (
             <Card className="mb-8">
-              <CardContent className="pt-6 prose max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700">{lesson.content}</div>
+              <CardHeader>
+                <CardTitle>Lesson Content</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose max-w-none dark:prose-invert">
+                  <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{lesson.content}</div>
+                </div>
               </CardContent>
             </Card>
           )}
+
+          {/* Resources */}
           {lesson.resources && lesson.resources.length > 0 && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Resources</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {lesson.resources.map((r: any, i: number) => (
-                    <li key={i}>
-                      <a href={r.url} target="_blank" rel="noopener" className="text-blue-600 hover:underline">
-                        {r.title || r.url} {r.type && `(${r.type})`}
+                    <li key={i} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <span className="text-2xl">
+                        {r.type === 'pdf' ? '📄' : r.type === 'video' ? '🎥' : '🔗'}
+                      </span>
+                      <a href={r.url} target="_blank" rel="noopener" className="flex-1 text-blue-600 dark:text-blue-400 hover:underline">
+                        <div className="font-medium">{r.title || r.url}</div>
+                        {r.type && <div className="text-xs text-gray-500">{r.type.toUpperCase()}</div>}
                       </a>
                     </li>
                   ))}
@@ -87,6 +125,8 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
               </CardContent>
             </Card>
           )}
+
+          {/* Practice Quiz */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Practice Quiz</CardTitle>
@@ -95,9 +135,13 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
               <AdaptiveQuiz topic={lesson.title} initialDifficulty="medium" />
             </CardContent>
           </Card>
-          <div className="flex justify-between items-center mt-8">
-            <Link href={`/courses/${slug}`} className="text-blue-600 hover:underline">← Back to Course</Link>
-            <div className="text-sm text-gray-600">Next lesson →</div>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center mt-8 pt-8 border-t">
+            <Link href={`/courses/${slug}`} className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2">
+              ← Back to Course
+            </Link>
+            <Button variant="outline">Next Lesson →</Button>
           </div>
         </div>
       </main>
