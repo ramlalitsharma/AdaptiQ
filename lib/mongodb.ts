@@ -45,8 +45,8 @@ function getClientPromise(): Promise<MongoClient> | null {
 }
 
 export async function getDatabase(): Promise<Db> {
-  // Skip database connection during Netlify build to avoid TLS/connection errors
-  if (process.env.SKIP_DB_BUILD === 'true' || process.env.NETLIFY === 'true') {
+  // Skip database connection during build to avoid TLS/connection errors
+  if (process.env.SKIP_DB_BUILD === 'true') {
     throw new Error('SKIP_DB_BUILD: Database connections disabled during build');
   }
 

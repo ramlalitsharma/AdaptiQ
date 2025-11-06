@@ -16,6 +16,10 @@
 
 [functions]
   node_bundler = "esbuild"
+  
+[functions.environment]
+  # Ensure DB is accessible at runtime (override build-only flag)
+  SKIP_DB_BUILD = ""
 
 [[redirects]]
   from = "/api/*"

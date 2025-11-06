@@ -9,7 +9,7 @@ import { User } from './models/User';
  */
 export async function syncUserToDatabase(): Promise<User | null> {
   // Skip during build to avoid MongoDB connection errors
-  if (process.env.SKIP_DB_BUILD === 'true' || process.env.NETLIFY === 'true') {
+  if (process.env.SKIP_DB_BUILD === 'true') {
     return null;
   }
 
