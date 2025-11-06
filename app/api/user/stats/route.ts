@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
+import { getCached, setCached } from '@/lib/redis-cache';
+
+export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,6 +11,11 @@ export async function GET(req: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Try cache first (5 min TTL)
+    const cacheKey = `stats:${userId}`;
+    const cached = await getCached<any>(cacheKey, 300);
+    if (cached) return NextResponse.json(cached);
 
     const db = await getDatabase();
     const progressCol = db.collection('userProgress');
@@ -41,12 +49,17 @@ export async function GET(req: NextRequest) {
       percent: v.count ? Math.round(v.sum / v.count) : 0,
     }));
 
-    return NextResponse.json({
+    const result = {
       totalQuizzes,
       averageScore,
       knowledgeGaps,
       mastery,
-    });
+    };
+
+    // Cache result
+    await setCached(cacheKey, result, 300);
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching user stats:', error);
     return NextResponse.json({ error: 'Failed to fetch stats', message: error.message }, { status: 500 });
