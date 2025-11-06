@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
           subscriptionTier: public_metadata?.subscriptionTier || 'free',
           subscriptionStatus: public_metadata?.subscriptionStatus,
           subscriptionCurrentPeriodEnd: public_metadata?.subscriptionCurrentPeriodEnd
-            ? new Date(public_metadata.subscriptionCurrentPeriodEnd)
+            ? new Date(String(public_metadata.subscriptionCurrentPeriodEnd))
             : undefined,
           updatedAt: new Date(),
         },

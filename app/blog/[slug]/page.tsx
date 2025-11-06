@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { getDatabase } from '@/lib/mongodb';
 import { SiteBrand } from '@/components/layout/SiteBrand';
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const db = await getDatabase();
-  const post = await db.collection('blogs').findOne({ slug: params.slug });
+  const post = await db.collection('blogs').findOne({ slug });
   if (!post) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-10">

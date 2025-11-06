@@ -131,9 +131,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          {/* @ts-expect-error Server-to-Client serializable props */}
           <Leaderboard entries={leaderboard} />
-          {/* @ts-expect-error Server-to-Client serializable props */}
           <Achievements achievements={achievements} />
         </div>
 

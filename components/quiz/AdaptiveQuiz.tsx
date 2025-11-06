@@ -31,7 +31,7 @@ export function AdaptiveQuiz({ topic, initialDifficulty = 'medium' }: AdaptiveQu
     correct: 0,
     incorrect: 0,
   });
-  const [selectedContext, setSelectedContext] = useState<{ subjectName?: string; levelName?: string; chapterName?: string } | null>(null);
+  const [selectedContext, setSelectedContext] = useState<{ subjectName?: string; levelName?: string; chapterName?: string; chapterId?: string } | null>(null);
 
   useEffect(() => {
     // Load selection from localStorage if present
@@ -39,7 +39,7 @@ export function AdaptiveQuiz({ topic, initialDifficulty = 'medium' }: AdaptiveQu
       const raw = localStorage.getItem('adaptiq-subject-selection');
       if (raw) {
         const sel = JSON.parse(raw);
-        setSelectedContext({ subjectName: sel.subjectName, levelName: sel.levelName, chapterName: sel.chapterName });
+        setSelectedContext({ subjectName: sel.subjectName, levelName: sel.levelName, chapterName: sel.chapterName, chapterId: sel.chapterId });
         // Map level to difficulty
         if (sel.levelName === 'Basic') setDifficulty('easy');
         if (sel.levelName === 'Intermediate') setDifficulty('medium');
@@ -54,7 +54,7 @@ export function AdaptiveQuiz({ topic, initialDifficulty = 'medium' }: AdaptiveQu
         const raw = localStorage.getItem('adaptiq-subject-selection');
         if (raw) {
           const sel = JSON.parse(raw);
-          setSelectedContext({ subjectName: sel.subjectName, levelName: sel.levelName, chapterName: sel.chapterName });
+          setSelectedContext({ subjectName: sel.subjectName, levelName: sel.levelName, chapterName: sel.chapterName, chapterId: sel.chapterId });
           if (sel.levelName === 'Basic') setDifficulty('easy');
           if (sel.levelName === 'Intermediate') setDifficulty('medium');
           if (sel.levelName === 'Advanced') setDifficulty('hard');
@@ -195,7 +195,8 @@ export function AdaptiveQuiz({ topic, initialDifficulty = 'medium' }: AdaptiveQu
   const progress = ((questionNumber - 1) / totalQuestions) * 100;
 
   return (
-    <Card id="adaptive-quiz">
+    <div id="adaptive-quiz">
+    <Card>
       <CardHeader>
         <div className="flex justify-between items-center mb-4">
           <CardTitle>Question {questionNumber} of {totalQuestions}</CardTitle>
@@ -281,5 +282,6 @@ export function AdaptiveQuiz({ topic, initialDifficulty = 'medium' }: AdaptiveQu
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

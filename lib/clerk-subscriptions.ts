@@ -16,11 +16,12 @@ export async function checkSubscriptionStatus(): Promise<{
     }
 
     // If secret is not set in local dev, default to free and skip network call
-    if (!process.env.CLERK_SECRET_KEY || !(clerkClient as any)?.users?.getUser) {
+    if (!process.env.CLERK_SECRET_KEY) {
       return { hasAccess: false, tier: 'free' };
     }
 
-    const user = await clerkClient.users.getUser(userId);
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
     
     // Clerk stores subscription data in user metadata or organization membership
     // For Clerk subscriptions, check organization membership or metadata
@@ -53,11 +54,12 @@ export async function getSubscriptionDetails() {
       return null;
     }
 
-    if (!process.env.CLERK_SECRET_KEY || !(clerkClient as any)?.users?.getUser) {
+    if (!process.env.CLERK_SECRET_KEY) {
       return { tier: 'free' as const, status: undefined, currentPeriodEnd: undefined };
     }
 
-    const user = await clerkClient.users.getUser(userId);
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
     
     return {
       tier: user.publicMetadata?.subscriptionTier || 'free',
@@ -84,12 +86,13 @@ export async function updateSubscriptionStatus(
   currentPeriodEnd?: Date
 ) {
   try {
-    if (!process.env.CLERK_SECRET_KEY || !(clerkClient as any)?.users?.updateUserMetadata) {
+    if (!process.env.CLERK_SECRET_KEY) {
       console.warn('CLERK_SECRET_KEY not set - cannot update subscription');
       return;
     }
 
-    await clerkClient.users.updateUserMetadata(userId, {
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
       publicMetadata: {
         subscriptionTier: tier,
         subscriptionStatus: status,

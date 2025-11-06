@@ -7,6 +7,7 @@ import { BreadcrumbsJsonLd } from '@/components/seo/BreadcrumbsJsonLd';
 import { getDatabase } from '@/lib/mongodb';
 import { getLatestKeywords } from '@/lib/seo';
 import { SubjectPractice } from '@/components/subjects/SubjectPractice';
+import { ObjectId } from 'mongodb';
 import { SubjectHeader } from '@/components/subjects/SubjectHeader';
 import { Tabs } from '@/components/ui/Tabs';
 import { Resources } from '@/components/subjects/Resources';
@@ -92,7 +93,8 @@ export default async function SubjectDetailPage({ params }: SubjectPageProps) {
     }
     const toInsert: any[] = [];
     const levelMap: Record<string,string> = { Basic: 'basic', Intermediate: 'intermediate', Advanced: 'advanced' };
-    Object.entries(generated).forEach(([lvlName, arr]) => {
+    const generatedTopics = generated as Record<string, string[]>;
+    Object.entries(generatedTopics).forEach(([lvlName, arr]) => {
       const levelId = levelMap[lvlName] || lvlName.toLowerCase();
       (arr as string[]).forEach((title, idx) => {
         toInsert.push({ subjectId: subject._id ? String(subject._id) : subject.slug, levelId, name: title, slug: title.toLowerCase().replace(/[^a-z0-9]+/g,'-'), order: idx+1, createdAt: new Date(), updatedAt: new Date() });
@@ -173,7 +175,11 @@ export default async function SubjectDetailPage({ params }: SubjectPageProps) {
 export async function generateMetadata({ params }: { params: Promise<{ subjectId: string }> }) {
   const { subjectId } = await params;
   const db = await getDatabase();
-  const subject = await db.collection('subjects').findOne({ $or: [{ slug: subjectId }, { _id: subjectId }] });
+  const orConditions: any[] = [{ slug: subjectId }];
+  if (ObjectId.isValid(subjectId)) {
+    orConditions.push({ _id: new ObjectId(subjectId) });
+  }
+  const subject = await db.collection('subjects').findOne({ $or: orConditions });
   const name = subject?.name || 'Subject';
   const kws = await getLatestKeywords();
   return {

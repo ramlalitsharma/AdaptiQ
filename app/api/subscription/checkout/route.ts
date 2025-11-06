@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Update user subscription status
-    const client = clerkClient();
+    const client = await clerkClient();
     await client.users.updateUserMetadata(userId, {
       publicMetadata: {
         subscriptionTier: tier || 'premium',

@@ -48,7 +48,7 @@ export async function syncUserToDatabase(): Promise<User | null> {
       email: clerkUser.emailAddresses[0]?.emailAddress || '',
       name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
       subscriptionTier: (clerkUser.publicMetadata?.subscriptionTier as 'free' | 'premium') || 'free',
-      subscriptionStatus: clerkUser.publicMetadata?.subscriptionStatus as string,
+      subscriptionStatus: clerkUser.publicMetadata?.subscriptionStatus as 'active' | 'trialing' | 'canceled' | 'past_due' | undefined,
       subscriptionCurrentPeriodEnd: clerkUser.publicMetadata?.subscriptionCurrentPeriodEnd
         ? new Date(clerkUser.publicMetadata.subscriptionCurrentPeriodEnd as string)
         : undefined,
