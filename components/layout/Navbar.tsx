@@ -19,56 +19,66 @@ export function Navbar() {
         <div className="flex items-center justify-between">
           <SiteBrand />
           
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-4">
             <Link 
               href="/courses" 
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors px-3 py-2 rounded-lg ${
                 pathname === '/courses' 
-                  ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              Courses
+              📚 Courses
             </Link>
             <Link 
               href="/subjects" 
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors px-3 py-2 rounded-lg ${
                 pathname?.startsWith('/subjects') 
-                  ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              Subjects
+              📖 Subjects
             </Link>
             <Link 
               href="/exams" 
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors px-3 py-2 rounded-lg ${
                 pathname?.startsWith('/exams') 
-                  ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              Exams
+              📝 Exams
+            </Link>
+            <Link 
+              href="/preparations" 
+              className={`text-sm font-medium transition-colors px-3 py-2 rounded-lg ${
+                pathname?.startsWith('/preparations') 
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              🎯 Preparations
+            </Link>
+            <Link 
+              href="/exams" 
+              className={`text-sm font-medium transition-colors px-3 py-2 rounded-lg ${
+                pathname?.includes('international') 
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              🌍 International
             </Link>
             <Link 
               href="/blog" 
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors px-3 py-2 rounded-lg ${
                 pathname?.startsWith('/blog') 
-                  ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              Blog
-            </Link>
-            <Link 
-              href="/pricing" 
-              className={`text-sm font-medium transition-colors ${
-                pathname === '/pricing' 
-                  ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              Pricing
+              📰 Blog
             </Link>
           </nav>
 
