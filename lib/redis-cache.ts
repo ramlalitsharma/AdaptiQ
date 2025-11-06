@@ -1,46 +1,65 @@
-import { Redis } from '@upstash/redis';
+import { getDatabase } from './mongodb';
 
-let redis: Redis | null = null;
-
-function getRedis() {
-  if (redis) return redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  redis = new Redis({ url, token });
-  return redis;
-}
-
+// MongoDB-based caching (free, unlimited within your MongoDB tier)
 export async function getCached<T>(key: string, ttlSeconds = 300): Promise<T | null> {
   try {
-    const r = getRedis();
-    if (!r) return null;
-    const val = await r.get<T>(key);
-    return val;
+    const db = await getDatabase();
+    const cache = db.collection('cache');
+    
+    const doc: any = await cache.findOne({ 
+      key,
+      expiresAt: { $gt: new Date() }
+    });
+    
+    if (!doc) return null;
+    return doc.value as T;
   } catch (e) {
-    console.warn('Redis get error:', e);
+    console.warn('Cache get error:', e);
     return null;
   }
 }
 
 export async function setCached(key: string, value: any, ttlSeconds = 300) {
   try {
-    const r = getRedis();
-    if (!r) return;
-    await r.setex(key, ttlSeconds, JSON.stringify(value));
+    const db = await getDatabase();
+    const cache = db.collection('cache');
+    
+    const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
+    
+    await cache.updateOne(
+      { key },
+      { 
+        $set: { 
+          key, 
+          value, 
+          expiresAt,
+          updatedAt: new Date()
+        } 
+      },
+      { upsert: true }
+    );
+    
+    // Create TTL index if it doesn't exist (auto-delete expired entries)
+    try {
+      await cache.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    } catch {
+      // Index might already exist, ignore
+    }
   } catch (e) {
-    console.warn('Redis set error:', e);
+    console.warn('Cache set error:', e);
   }
 }
 
 export async function invalidateCache(pattern: string) {
   try {
-    const r = getRedis();
-    if (!r) return;
-    const keys = await r.keys(pattern);
-    if (keys.length) await r.del(...keys);
+    const db = await getDatabase();
+    const cache = db.collection('cache');
+    
+    // MongoDB regex pattern matching
+    const regex = new RegExp(pattern.replace('*', '.*'));
+    await cache.deleteMany({ key: { $regex: regex } });
   } catch (e) {
-    console.warn('Redis invalidate error:', e);
+    console.warn('Cache invalidate error:', e);
   }
 }
 
