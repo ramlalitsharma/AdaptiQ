@@ -1,4 +1,5 @@
 import { auth as clerkAuth, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
+import { luciaCurrentUser } from './lucia';
 
 type AuthProvider = 'clerk' | 'lucia';
 
@@ -19,8 +20,8 @@ export async function auth() {
   if (provider === 'clerk') {
     return await clerkAuth();
   }
-  // Lucia placeholder (to be implemented)
-  return { userId: undefined } as any;
+  const u = await luciaCurrentUser();
+  return { userId: u?.id } as any;
 }
 
 export async function currentUser(): Promise<SessionUser | null> {
@@ -35,8 +36,8 @@ export async function currentUser(): Promise<SessionUser | null> {
       lastName: u.lastName || undefined,
     };
   }
-  // Lucia placeholder (to be implemented)
-  return null;
+  const u = await luciaCurrentUser();
+  return u;
 }
 
 
