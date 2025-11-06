@@ -8,6 +8,11 @@ import { User } from './models/User';
  * Call this after user signs in to ensure they exist in MongoDB
  */
 export async function syncUserToDatabase(): Promise<User | null> {
+  // Skip during build to avoid MongoDB connection errors
+  if (process.env.SKIP_DB_BUILD === 'true' || process.env.NETLIFY === 'true') {
+    return null;
+  }
+
   try {
     const { userId } = await auth();
     
