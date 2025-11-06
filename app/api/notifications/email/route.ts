@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { auth, currentUser } from '@/lib/auth';
+import { renderCompletionEmail, sendEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -36,18 +37,15 @@ export async function POST(req: NextRequest) {
 
     await notifications.insertOne(notification);
 
-    // TODO: Integrate with email service
-    // Example with Resend:
-    // await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     from: 'AdaptIQ <noreply@adaptiq.com>',
-    //     to: user.email,
-    //     subject: type === 'course_completion' ? `Congratulations! You completed ${courseTitle}` : 'AdaptIQ Notification',
-    //     html: generateEmailHTML(type, courseTitle),
-    //   }),
-    // });
+    try {
+      if ((process.env.EMAIL_PROVIDER || 'none').toLowerCase() === 'resend') {
+        const subject = type === 'course_completion' ? `You completed ${courseTitle}` : 'AdaptIQ Notification';
+        const html = type === 'course_completion' ? renderCompletionEmail(courseTitle) : renderCompletionEmail();
+        await sendEmail({ to: user.email, subject, html });
+      }
+    } catch (e) {
+      console.warn('Email provider send failed:', e);
+    }
 
     return NextResponse.json({ success: true, message: 'Notification queued' });
   } catch (e: any) {
