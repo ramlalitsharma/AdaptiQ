@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -47,7 +47,7 @@ export default async function DashboardPage() {
             <Link href="/pricing">
               <Button variant="outline">Upgrade</Button>
             </Link>
-            <span className="text-sm text-gray-600">{user?.emailAddresses[0]?.emailAddress}</span>
+            <span className="text-sm text-gray-600">{user?.email}</span>
           </div>
         </div>
       </header>
