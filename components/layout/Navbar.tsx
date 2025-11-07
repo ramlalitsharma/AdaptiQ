@@ -89,7 +89,7 @@ export function Navbar() {
                 </Button>
               </SignInButton>
               <SignInButton mode="modal">
-                <Button size="sm" className="bg-white text-[#0f766e]">
+                <Button variant="inverse" size="sm">
                   Get Started
                 </Button>
               </SignInButton>
