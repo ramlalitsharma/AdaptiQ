@@ -11,6 +11,15 @@ import { requireAdmin } from '@/lib/admin-check';
 
 export const dynamic = 'force-dynamic';
 
+type StudioTile = {
+  name: string;
+  description: string;
+  href: string;
+  icon: string;
+  metric?: string;
+  action?: string;
+};
+
 export default async function AdminPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
@@ -30,31 +39,48 @@ export default async function AdminPage() {
     publishedCourses: 0,
     totalRevenue: 0,
     monthlyRevenue: 0,
+    totalQuestionBanks: 0,
+    totalExams: 0,
   };
 
   try {
     const db = await getDatabase();
-    
-    const [users, courses, blogs, quizzes, progress] = await Promise.all([
+
+    const [
+      users,
+      courses,
+      blogs,
+      quizzes,
+      progress,
+      publishedCourses,
+      questionBanks,
+      exams,
+    ] = await Promise.all([
       db.collection('users').countDocuments(),
       db.collection('courses').countDocuments(),
       db.collection('blogs').countDocuments(),
       db.collection('userProgress').countDocuments(),
-      db.collection('userProgress').find({}).toArray(),
+      db
+        .collection('userProgress')
+        .find({})
+        .project({ userId: 1 })
+        .toArray(),
+      db.collection('courses').countDocuments({ status: 'published' }),
+      db.collection('questionBanks').countDocuments(),
+      db.collection('examTemplates').countDocuments(),
     ]);
 
-    const publishedCourses = await db.collection('courses').countDocuments({ status: 'published' });
     const activeUsers = new Set(progress.map((p: any) => p.userId)).size;
-    
-    const premiumUsers = await db.collection('users').countDocuments({ 
+
+    const premiumUsers = await db.collection('users').countDocuments({
       $or: [
-        { 'subscriptionStatus': 'premium' },
-        { 'subscriptionStatus': 'pro' },
-        { 'publicMetadata.subscriptionTier': { $in: ['premium', 'pro'] } }
-      ]
+        { subscriptionStatus: 'premium' },
+        { subscriptionStatus: 'pro' },
+        { 'publicMetadata.subscriptionTier': { $in: ['premium', 'pro'] } },
+      ],
     });
+
     const totalRevenue = premiumUsers * 19;
-    const monthlyRevenue = totalRevenue;
 
     stats = {
       totalUsers: users,
@@ -64,270 +90,245 @@ export default async function AdminPage() {
       activeUsers,
       publishedCourses,
       totalRevenue,
-      monthlyRevenue,
+      monthlyRevenue: totalRevenue,
+      totalQuestionBanks: questionBanks,
+      totalExams: exams,
     };
   } catch (e) {
     console.error('Admin stats error:', e);
   }
 
+  const contentStudios: StudioTile[] = [
+    {
+      name: 'Course Studio',
+      description: 'Design curricula with AI, manual builders, and workflow approvals.',
+      href: '/admin/studio/courses',
+      icon: '📚',
+      metric: `${stats.totalCourses} total • ${stats.publishedCourses} published`,
+      action: 'Launch course studio',
+    },
+    {
+      name: 'Blog Studio',
+      description: 'Publish SEO-optimized editorials with CTA management and preview.',
+      href: '/admin/studio/blogs',
+      icon: '📝',
+      metric: `${stats.totalBlogs} total posts`,
+      action: 'Create blog post',
+    },
+    {
+      name: 'Tutorial Studio',
+      description: 'Author interactive tutorials, lectures, and lesson scripts.',
+      href: '/admin/studio/tutorials',
+      icon: '🎥',
+      metric: 'Coming soon',
+      action: 'Open tutorial studio',
+    },
+    {
+      name: 'Ebook / Notes Studio',
+      description: 'Compose chapter-wise study notes, ebooks, and downloadable summaries.',
+      href: '/admin/studio/ebooks',
+      icon: '📘',
+      metric: 'Coming soon',
+      action: 'Draft ebook',
+    },
+  ];
+
+  const assessmentStudios: StudioTile[] = [
+    {
+      name: 'Question & Quiz Studio',
+      description: 'Create MCQs, subjective items, and tag them by curriculum & difficulty.',
+      href: '/admin/studio/questions',
+      icon: '❓',
+      metric: `${stats.totalQuestionBanks} question banks`,
+      action: 'Build question bank',
+    },
+    {
+      name: 'Exam & Prep Studio',
+      description: 'Blueprint mock tests, exam preparations, and release schedules.',
+      href: '/admin/studio/exams',
+      icon: '🧠',
+      metric: `${stats.totalExams} templates`,
+      action: 'Design exam',
+    },
+    {
+      name: 'MCQ Model Papers',
+      description: 'Generate model papers for Loksewa, international, and competitive exams.',
+      href: '/admin/studio/model-papers',
+      icon: '📄',
+      metric: 'Coming soon',
+      action: 'Create model paper',
+    },
+    {
+      name: 'Practice Sets & Tests',
+      description: 'Assemble adaptive practice sets with category-driven analytics.',
+      href: '/admin/studio/practice',
+      icon: '📝',
+      metric: 'Coming soon',
+      action: 'Build practice set',
+    },
+  ];
+
+  const operationsTiles: StudioTile[] = [
+    {
+      name: 'Learner Management',
+      description: 'Segment learners, manage cohorts, and monitor enrollments.',
+      href: '/admin/users',
+      icon: '👥',
+      action: 'Manage learners',
+      metric: `${stats.totalUsers} users`,
+    },
+    {
+      name: 'Enrollment Ops',
+      description: 'Process enrollment approvals, cohorts, and waitlists.',
+      href: '/admin/enrollments',
+      icon: '✅',
+      action: 'Open enrollments',
+    },
+    {
+      name: 'Subscriptions & Plans',
+      description: 'Control pricing, free tiers, and commercial offerings.',
+      href: '/admin/subscriptions',
+      icon: '💳',
+      action: 'Manage plans',
+    },
+    {
+      name: 'Analytics',
+      description: 'View platform analytics, performance, and funnel metrics.',
+      href: '/admin/analytics',
+      icon: '📊',
+      action: 'View analytics',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-gray-900 dark:to-gray-800">
+      <header className="border-b bg-white/80 backdrop-blur dark:bg-gray-800/80 sticky top-0 z-50">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 py-4">
           <SiteBrand />
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Link href="/dashboard">
-              <Button variant="outline" size="sm">User Dashboard</Button>
+              <Button variant="outline" size="sm">
+                Learner Dashboard
+              </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Admin Panel</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage your platform, content, and users</p>
-        </div>
+      <main className="container mx-auto px-4 py-10 space-y-10">
+        <section className="space-y-2">
+          <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Admin Control Center</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Curate every learning asset, manage learners, and orchestrate monetization from a unified studio suite.
+          </p>
+        </section>
 
-        {/* Stats Overview */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            title="Total Users"
+            title="Learners"
             value={stats.totalUsers.toLocaleString()}
-            subtitle={`${stats.activeUsers} active`}
+            subtitle={`${stats.activeUsers} active this week`}
             icon="👥"
-            trend="+12%"
+            trend="↑"
           />
           <StatCard
-            title="Total Courses"
+            title="Courses"
             value={stats.totalCourses.toLocaleString()}
             subtitle={`${stats.publishedCourses} published`}
             icon="📚"
-            trend="+5"
+            trend="↑"
           />
           <StatCard
-            title="Total Quizzes"
-            value={stats.totalQuizzes.toLocaleString()}
-            subtitle="Completed"
-            icon="✅"
-            trend="+23%"
+            title="Question Banks"
+            value={stats.totalQuestionBanks.toLocaleString()}
+            subtitle="Across subjects"
+            icon="❓"
+            trend="↑"
           />
           <StatCard
-            title="Monthly Revenue"
+            title="Revenue (est)"
             value={`$${stats.monthlyRevenue.toLocaleString()}`}
-            subtitle="From subscriptions"
+            subtitle="From premium plans"
             icon="💰"
-            trend="+8%"
+            trend="↑"
           />
-        </div>
+        </section>
 
-        {/* Admin Sections */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* Content Management */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📚</span>
-                Courses
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-slate-500">Manage curricula, author new programs, and track publishing workflow.</p>
-              <div className="grid gap-2">
-                <Button variant="outline" className="justify-start" asChild>
-                  <Link href="/admin/courses">Manage Courses →</Link>
-                </Button>
-                <Button className="justify-start" asChild>
-                  <Link href="/admin/studio/courses">Course Studio →</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📝</span>
-                Blogs
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-slate-500">Publish editorial content, collaborate with AI drafts, and control SEO metadata.</p>
-              <div className="grid gap-2">
-                <Button variant="outline" className="justify-start" asChild>
-                  <Link href="/admin/blogs">Manage Blogs →</Link>
-                </Button>
-                <Button className="justify-start" asChild>
-                  <Link href="/admin/studio/blogs">Blog Studio →</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-slate-900">Content Studios</h2>
+            <Link href="/admin/studio">
+              <Button variant="outline" size="sm">Browse all studios</Button>
+            </Link>
+          </div>
+          <StudioGrid tiles={contentStudios} />
+        </section>
 
-          {/* User Management */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">👥</span>
-                User Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/admin/users">
-                <Button variant="outline" className="w-full justify-start">
-                  View All Users →
-                </Button>
-              </Link>
-              <Link href="/admin/enrollments">
-                <Button variant="outline" className="w-full justify-start">
-                  Enrollment Operations →
-                </Button>
-              </Link>
-              <Link href="/admin/analytics">
-                <Button variant="outline" className="w-full justify-start">
-                  User Analytics →
-                </Button>
-              </Link>
-              <Link href="/admin/exams">
-                <Button variant="outline" className="w-full justify-start">
-                  Exam Authoring →
-                </Button>
-              </Link>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                User Roles & Permissions →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Email Management →
-              </Button>
-            </CardContent>
-          </Card>
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold text-slate-900">Assessment & Exam Authoring</h2>
+          <StudioGrid tiles={assessmentStudios} />
+        </section>
 
-          {/* System Settings */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">⚙️</span>
-                System Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/admin/settings">
-                <Button variant="outline" className="w-full justify-start">
-                  General Settings →
-                </Button>
-              </Link>
-              <Link href="/admin/subscriptions">
-                <Button variant="outline" className="w-full justify-start">
-                  Subscription Plans →
-                </Button>
-              </Link>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                API Keys & Integrations →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Email Templates →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Backup & Restore →
-              </Button>
-            </CardContent>
-          </Card>
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold text-slate-900">Operations & Monetization</h2>
+          <StudioGrid tiles={operationsTiles} columns="md:grid-cols-2 xl:grid-cols-3" />
+        </section>
 
-          {/* Analytics & Reports */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📊</span>
-                Analytics & Reports
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/admin/analytics">
-                <Button variant="outline" className="w-full justify-start">
-                  View Analytics →
-                </Button>
-              </Link>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Revenue Reports →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Export Data →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Custom Reports →
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* AI & Automation */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">🤖</span>
-                AI & Automation
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start" disabled>
-                AI Content Generator →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Automated Quizzes →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                SEO Automation →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Scheduled Tasks →
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Security & Compliance */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">🔒</span>
-                Security & Compliance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Security Settings →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Audit Logs →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                GDPR Compliance →
-              </Button>
-              <Button variant="outline" className="w-full justify-start" disabled>
-                Data Privacy →
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card>
+        <Card className="border border-slate-200 bg-white shadow-sm">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <Link href="/admin/studio">
-                <Button className="w-full">+ Create Course</Button>
-              </Link>
-              <Link href="/admin/studio">
-                <Button className="w-full">+ Create Blog</Button>
-              </Link>
-              <Link href="/admin/analytics">
-                <Button variant="outline" className="w-full">View Analytics</Button>
-              </Link>
+            <div className="grid gap-3 md:grid-cols-3">
+              <Button asChild>
+                <Link href="/admin/studio/courses">+ New Course</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/admin/studio/questions">+ New Question Set</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/studio/exams">+ New Exam</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/studio/blogs">+ New Blog</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/users">Manage Learners</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/analytics">View Analytics</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
       </main>
+    </div>
+  );
+}
+
+function StudioGrid({ tiles, columns = 'md:grid-cols-2 xl:grid-cols-3' }: { tiles: StudioTile[]; columns?: string }) {
+  return (
+    <div className={`grid gap-5 ${columns}`}>
+      {tiles.map((tile) => (
+        <Card key={tile.name} className="border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-start gap-3">
+              <span className="text-3xl">{tile.icon}</span>
+              <div>
+                <div className="text-lg font-semibold text-slate-900">{tile.name}</div>
+                <p className="text-sm text-slate-500">{tile.description}</p>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {tile.metric && <p className="text-xs text-slate-400">{tile.metric}</p>}
+            <Button asChild>
+              <Link href={tile.href}>{tile.action || `Open ${tile.name}`}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
