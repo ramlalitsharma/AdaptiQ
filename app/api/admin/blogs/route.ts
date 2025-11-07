@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
-import { openai } from '@/lib/openai';
+import { generateBlogMarkdownAI } from '@/lib/blog-generation';
 
 export const runtime = 'nodejs';
 
@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
       tone,
       callToAction,
       keywords,
+      tags,
+      heroImage,
+      seo,
+      status,
+      resources,
     } = body as {
       mode: 'ai' | 'manual';
       title?: string;
@@ -29,6 +34,11 @@ export async function POST(req: NextRequest) {
       tone?: string;
       callToAction?: string;
       keywords?: string[];
+      tags?: string[];
+      heroImage?: string;
+      seo?: { title?: string; description?: string };
+      status?: string;
+      resources?: Array<{ type: 'link' | 'image' | 'pdf' | 'video'; label: string; url: string }>;
     };
 
     const db = await getDatabase();
@@ -41,16 +51,18 @@ export async function POST(req: NextRequest) {
       tone,
       callToAction,
       keywords,
+      tags,
+      heroImage,
     };
 
     if (mode === 'manual') {
       if (!title || !markdown) return NextResponse.json({ error: 'title and markdown required' }, { status: 400 });
-      doc = buildBlog(userId, title, markdown, metadata);
+      doc = buildBlog(userId, title, markdown, metadata, seo, status, resources);
     } else {
       const t = topic || title;
       if (!t) return NextResponse.json({ error: 'title or topic required for AI mode' }, { status: 400 });
-      const generated = await generateBlogAI({ topic: t, audience, tone, callToAction, keywords });
-      doc = buildBlog(userId, generated.title, generated.markdown, metadata);
+      const generatedMarkdown = await generateBlogMarkdownAI({ topic: t, audience, tone, callToAction, keywords });
+      doc = buildBlog(userId, title || t, generatedMarkdown, metadata, seo, status, resources);
     }
 
     await col.insertOne(doc);
@@ -61,7 +73,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function buildBlog(authorId: string, title: string, markdown: string, metadata?: any) {
+function buildBlog(
+  authorId: string,
+  title: string,
+  markdown: string,
+  metadata?: any,
+  seo?: { title?: string; description?: string },
+  status?: string,
+  resources?: Array<{ type: 'link' | 'image' | 'pdf' | 'video'; label: string; url: string }>,
+) {
   const now = new Date();
   return {
     authorId,
@@ -70,40 +90,11 @@ function buildBlog(authorId: string, title: string, markdown: string, metadata?:
     markdown,
     createdAt: now,
     updatedAt: now,
-    status: 'draft',
+    status: (status as any) || 'draft',
     metadata,
+    seo,
+    resources,
   };
-}
-
-async function generateBlogAI({
-  topic,
-  audience,
-  tone,
-  callToAction,
-  keywords,
-}: {
-  topic: string;
-  audience?: string;
-  tone?: string;
-  callToAction?: string;
-  keywords?: string[];
-}) {
-  if (!openai) throw new Error('OPENAI_API_KEY not configured');
-  const prompt = `Write a comprehensive, well-structured blog post in Markdown.
-Topic: ${topic}
-${audience ? `Audience: ${audience}
-` : ''}${tone ? `Tone: ${tone}
-` : ''}${callToAction ? `Call to action: ${callToAction}
-` : ''}${keywords && keywords.length ? `Keywords: ${keywords.join(', ')}
-` : ''}
-Include clear headings, short paragraphs, bullet lists when helpful, and a concluding CTA. Provide frontmatter-style summary at the top if relevant.`;
-  const resp = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.5,
-  });
-  const content = resp.choices[0]?.message?.content || '# Draft\nComing soon.';
-  return { title: topic, markdown: content };
 }
 
 

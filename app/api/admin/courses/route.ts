@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { Course } from '@/lib/models/Course';
-import { openai } from '@/lib/openai';
+import { generateCourseOutlineAI, GenerateCourseParams } from '@/lib/course-generation';
 
 export const runtime = 'nodejs';
 
@@ -24,6 +24,11 @@ export async function POST(req: NextRequest) {
       tone,
       modulesCount,
       lessonsPerModule,
+      language,
+      tags,
+      resources,
+      price,
+      seo,
     } = body as {
       mode: 'ai' | 'manual';
       title?: string;
@@ -36,6 +41,11 @@ export async function POST(req: NextRequest) {
       tone?: string;
       modulesCount?: number;
       lessonsPerModule?: number;
+      language?: string;
+      tags?: string[];
+      resources?: Course['resources'];
+      price?: Course['price'];
+      seo?: Course['seo'];
     };
 
     const db = await getDatabase();
@@ -43,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     let course: Course | null = null;
 
-    const metadata = {
+    const metadata: Course['metadata'] = {
       audience,
       goals,
       tone,
@@ -53,7 +63,20 @@ export async function POST(req: NextRequest) {
 
     if (mode === 'manual') {
       if (!title || !outline) return NextResponse.json({ error: 'title and outline required' }, { status: 400 });
-      course = buildCourseFromOutline(userId, title, subject, level, outline, summary, metadata);
+      course = buildCourseFromOutline({
+        authorId: userId,
+        title,
+        subject,
+        level,
+        outline,
+        summary,
+        metadata,
+        language,
+        tags,
+        resources,
+        price,
+        seo,
+      });
     } else {
       if (!title) return NextResponse.json({ error: 'title required for AI mode' }, { status: 400 });
       const generated = await generateCourseOutlineAI({
@@ -66,7 +89,20 @@ export async function POST(req: NextRequest) {
         modulesCount,
         lessonsPerModule,
       });
-      course = buildCourseFromOutline(userId, title, subject, level, generated, summary, metadata);
+      course = buildCourseFromOutline({
+        authorId: userId,
+        title,
+        subject,
+        level,
+        outline: generated,
+        summary,
+        metadata,
+        language,
+        tags,
+        resources,
+        price,
+        seo,
+      });
     }
 
     await col.insertOne(course);
@@ -77,15 +113,33 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function buildCourseFromOutline(
-  authorId: string,
-  title: string,
-  subject: string | undefined,
-  level: 'basic' | 'intermediate' | 'advanced' | undefined,
-  outline: any,
-  summary?: string,
-  metadata?: Course['metadata'],
-): Course {
+function buildCourseFromOutline({
+  authorId,
+  title,
+  subject,
+  level,
+  outline,
+  summary,
+  metadata,
+  language,
+  tags,
+  resources,
+  price,
+  seo,
+}: {
+  authorId: string;
+  title: string;
+  subject?: string;
+  level?: 'basic' | 'intermediate' | 'advanced';
+  outline: any;
+  summary?: string;
+  metadata?: Course['metadata'];
+  language?: string;
+  tags?: string[];
+  resources?: Course['resources'];
+  price?: Course['price'];
+  seo?: Course['seo'];
+}): Course {
   const now = new Date().toISOString();
   const modules = (outline.modules || outline || []).map((m: any, mi: number) => ({
     id: `m${mi + 1}`,
@@ -105,53 +159,17 @@ function buildCourseFromOutline(
     summary,
     subject,
     level,
+    language,
+    tags,
     modules,
     status: 'draft',
     createdAt: now,
     updatedAt: now,
     metadata,
+    resources,
+    price,
+    seo,
   };
-}
-
-async function generateCourseOutlineAI({
-  title,
-  subject,
-  level,
-  audience,
-  goals,
-  tone,
-  modulesCount,
-  lessonsPerModule,
-}: {
-  title: string;
-  subject?: string;
-  level?: 'basic' | 'intermediate' | 'advanced';
-  audience?: string;
-  goals?: string;
-  tone?: string;
-  modulesCount?: number;
-  lessonsPerModule?: number;
-}) {
-  if (!openai) throw new Error('OPENAI_API_KEY not configured');
-  const prompt = `You are an instructional designer building a detailed course outline.
-Course title: ${title}
-${subject ? `Subject focus: ${subject}
-` : ''}${level ? `Difficulty: ${level}
-` : ''}${audience ? `Target audience: ${audience}
-` : ''}${goals ? `Learning outcomes: ${goals}
-` : ''}${tone ? `Tone: ${tone}
-` : ''}${modulesCount ? `Number of modules: ${modulesCount}
-` : ''}${lessonsPerModule ? `Lessons per module: ${lessonsPerModule}
-` : ''}
-Return JSON in the shape {"modules":[{"title":"","lessons":[{"title":"","content":"bullet outline"}]}]}. Keep lesson content succinct bullet-style summaries.`;
-  const resp = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-    temperature: 0.4,
-  });
-  const content = resp.choices[0]?.message?.content || '{}';
-  return JSON.parse(content);
 }
 
 

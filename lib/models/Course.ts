@@ -39,6 +39,16 @@ export interface Course {
     modulesCount?: number;
     lessonsPerModule?: number;
   };
+  resources?: Array<{
+    type: 'video' | 'pdf' | 'link' | 'image';
+    label: string;
+    url: string;
+  }>;
+  price?: {
+    currency: string;
+    amount: number;
+    plan?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
