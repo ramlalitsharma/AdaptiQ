@@ -64,7 +64,7 @@ export default async function DashboardPage() {
                 Keep building momentum with adaptive quizzes, guided tracks, and real-time insights tailored to your goals.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Link href="/subjects"><Button className="bg-white text-teal-600">Browse Subjects</Button></Link>
+                <Link href="/subjects"><Button variant="inverse" className="px-6">Browse Subjects</Button></Link>
                 <Link href="/courses"><Button variant="outline" className="border-white text-white">Explore Courses</Button></Link>
               </div>
             </CardContent>
