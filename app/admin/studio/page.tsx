@@ -3,12 +3,19 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import React from 'react';
+import { requireAdmin } from '@/lib/admin-check';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminStudioPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
+
+  try {
+    await requireAdmin();
+  } catch {
+    redirect('/dashboard');
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

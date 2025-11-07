@@ -6,12 +6,19 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AdminSettingsForm } from '@/components/admin/AdminSettingsForm';
+import { requireAdmin } from '@/lib/admin-check';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminSettingsPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
+
+  try {
+    await requireAdmin();
+  } catch {
+    redirect('/dashboard');
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">

@@ -7,12 +7,19 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { StatCard } from '@/components/ui/StatCard';
+import { requireAdmin } from '@/lib/admin-check';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
+
+  try {
+    await requireAdmin();
+  } catch {
+    redirect('/dashboard');
+  }
 
   let stats = {
     totalUsers: 0,

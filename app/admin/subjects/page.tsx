@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { AdminSubjectForm } from '@/components/admin/AdminSubjectForm';
 import { AdminTopicForm } from '@/components/admin/AdminTopicForm';
+import { requireAdmin } from '@/lib/admin-check';
 
 async function fetchSubjects() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -13,6 +14,12 @@ async function fetchSubjects() {
 export default async function AdminSubjectsPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
+
+  try {
+    await requireAdmin();
+  } catch {
+    redirect('/dashboard');
+  }
 
   const subjects = await fetchSubjects();
 

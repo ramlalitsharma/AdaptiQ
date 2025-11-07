@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
 import { SiteBrand } from './SiteBrand';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -11,7 +12,20 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 export function Navbar() {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
+  const [allowAdmin, setAllowAdmin] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/admin/status')
+      .then((res) => res.json())
+      .then((data) => {
+        if (mounted) setAllowAdmin(data?.isAdmin === true);
+      })
+      .catch(() => setAllowAdmin(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50">
@@ -98,7 +112,7 @@ export function Navbar() {
                       Dashboard
                     </Button>
                   </Link>
-                  {isAdmin && (
+                  {allowAdmin && (
                     <Link href="/admin">
                       <Button variant="outline" size="sm" className="hidden sm:inline-flex">
                         Admin

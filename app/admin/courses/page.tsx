@@ -7,12 +7,19 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Badge } from '@/components/ui/Badge';
+import { requireAdmin } from '@/lib/admin-check';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCoursesPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
+
+  try {
+    await requireAdmin();
+  } catch {
+    redirect('/dashboard');
+  }
 
   let courses: any[] = [];
   try {
