@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { CookieConsent } from '@/components/CookieConsent';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -117,7 +119,13 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <ThemeProvider>
-            {children}
+            <div className="flex min-h-screen flex-col bg-[#f4f6f9] text-slate-900">
+              <Navbar />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
             <CookieConsent />
           </ThemeProvider>
         </body>
