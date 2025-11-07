@@ -73,7 +73,7 @@ export function GlobalSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setShowResults(true)}
-          className="w-full border rounded-lg px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-transparent border-0 px-4 py-3 pl-10 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-0"
         />
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         {loading && (
