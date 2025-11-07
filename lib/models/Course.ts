@@ -25,12 +25,19 @@ export interface Course {
   language?: string;
   tags?: string[];
   modules: CourseModule[];
-  status: 'draft' | 'published' | 'scheduled';
+  status: 'draft' | 'in_review' | 'approved' | 'published' | 'archived' | 'scheduled';
   scheduledAt?: string;
   seo?: {
     title?: string;
     description?: string;
     keywords?: string[];
+  };
+  metadata?: {
+    audience?: string;
+    goals?: string;
+    tone?: string;
+    modulesCount?: number;
+    lessonsPerModule?: number;
   };
   createdAt: string;
   updatedAt: string;
