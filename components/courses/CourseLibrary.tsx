@@ -20,14 +20,22 @@ interface Course {
 
 interface CourseLibraryProps {
   courses: Course[];
+  initialEnrollmentStatuses?: Record<string, string>;
+  isAuthenticated?: boolean;
 }
 
-export function CourseLibrary({ courses: initialCourses }: CourseLibraryProps) {
+export function CourseLibrary({
+  courses: initialCourses,
+  initialEnrollmentStatuses = {},
+  isAuthenticated = false,
+}: CourseLibraryProps) {
   const [courses, setCourses] = useState(initialCourses);
   const [search, setSearch] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
   const [filterLevel, setFilterLevel] = useState('');
   const [bookmarked, setBookmarked] = useState<Set<string>>(new Set());
+  const [enrollmentStatuses, setEnrollmentStatuses] = useState(initialEnrollmentStatuses);
+  const [requestingCourse, setRequestingCourse] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/bookmarks')
@@ -39,6 +47,10 @@ export function CourseLibrary({ courses: initialCourses }: CourseLibraryProps) {
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    setEnrollmentStatuses(initialEnrollmentStatuses);
+  }, [initialEnrollmentStatuses]);
 
   useEffect(() => {
     let filtered = [...initialCourses];
@@ -94,6 +106,35 @@ export function CourseLibrary({ courses: initialCourses }: CourseLibraryProps) {
       }
     } catch (e) {
       console.error('Bookmark error:', e);
+    }
+  };
+
+  const requestEnrollment = async (course: Course) => {
+    if (!isAuthenticated) {
+      window.location.href = `/sign-in?redirect_url=${encodeURIComponent('/courses')}`;
+      return;
+    }
+
+    const courseId = course._id || course.slug;
+    setRequestingCourse(courseId);
+    try {
+      const res = await fetch('/api/enrollments/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Unable to request enrollment');
+      }
+      if (data.status) {
+        setEnrollmentStatuses((prev) => ({ ...prev, [courseId]: data.status }));
+      }
+    } catch (error: any) {
+      console.error('Enrollment request error:', error);
+      alert(error.message || 'Could not submit enrollment request');
+    } finally {
+      setRequestingCourse(null);
     }
   };
 
@@ -166,6 +207,7 @@ export function CourseLibrary({ courses: initialCourses }: CourseLibraryProps) {
             const courseId = course._id || course.slug;
             const isBookmarked = bookmarked.has(courseId);
             const lessonCount = course.modules?.reduce((n: number, m: any) => n + (m.lessons?.length || 0), 0) || 0;
+            const enrollmentStatus = enrollmentStatuses[courseId];
 
             return (
               <FadeIn key={course.slug} delay={idx * 0.05}>
@@ -208,9 +250,53 @@ export function CourseLibrary({ courses: initialCourses }: CourseLibraryProps) {
                         </span>
                       </div>
 
-                      <Button variant="inverse" className="w-full" asChild>
-                        <Link href={`/courses/${course.slug}`}>View Course</Link>
-                      </Button>
+                      <div className="space-y-2">
+                        <Button variant="inverse" className="w-full" asChild>
+                          <Link href={`/courses/${course.slug}`}>Preview Course</Link>
+                        </Button>
+
+                        {isAuthenticated ? (
+                          enrollmentStatus === 'approved' ? (
+                            <Button variant="outline" className="w-full" asChild>
+                              <Link href={`/courses/${course.slug}`}>Go to Course</Link>
+                            </Button>
+                          ) : enrollmentStatus === 'pending' ? (
+                            <Button variant="outline" className="w-full" disabled>
+                              Pending approval
+                            </Button>
+                          ) : enrollmentStatus === 'waitlisted' ? (
+                            <Button variant="outline" className="w-full" disabled>
+                              Waitlisted
+                            </Button>
+                          ) : enrollmentStatus === 'rejected' ? (
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              disabled={requestingCourse === courseId}
+                              onClick={() => requestEnrollment(course)}
+                            >
+                              Request Again
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              disabled={requestingCourse === courseId}
+                              onClick={() => requestEnrollment(course)}
+                            >
+                              Request Enrollment
+                            </Button>
+                          )
+                        ) : (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => (window.location.href = `/sign-in?redirect_url=${encodeURIComponent('/courses')}`)}
+                          >
+                            Sign in to request
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </ScaleOnHover>

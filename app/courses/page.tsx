@@ -3,14 +3,17 @@ import { getDatabase } from '@/lib/mongodb';
 import { CourseLibrary } from '@/components/courses/CourseLibrary';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { auth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function CoursesIndexPage() {
+  const { userId } = await auth();
   let courses: any[] = [];
+  let db: any = null;
 
   try {
-    const db = await getDatabase();
+    db = await getDatabase();
     courses = await db
       .collection('courses')
       .find({ status: { $ne: 'draft' } })
@@ -18,6 +21,7 @@ export default async function CoursesIndexPage() {
       .limit(100)
       .toArray();
   } catch (e) {
+    console.error('Courses fetch error:', e);
     courses = [];
   }
 
@@ -28,6 +32,22 @@ export default async function CoursesIndexPage() {
       (course.modules?.reduce((count: number, module: any) => count + (module.lessons?.length || 0), 0) || 0)
     );
   }, 0);
+
+  let enrollmentStatuses: Record<string, string> = {};
+  if (userId && db) {
+    try {
+      const enrollmentDocs = await db
+        .collection('enrollments')
+        .find({ userId })
+        .toArray();
+      enrollmentStatuses = enrollmentDocs.reduce((acc: Record<string, string>, doc: any) => {
+        acc[doc.courseId] = doc.status;
+        return acc;
+      }, {});
+    } catch (error) {
+      console.error('Enrollment status fetch error:', error);
+    }
+  }
 
   return (
     <div className="bg-[#f4f6f9] text-slate-900">
@@ -74,7 +94,11 @@ export default async function CoursesIndexPage() {
           </CardContent>
         </Card>
 
-        <CourseLibrary courses={courses} />
+        <CourseLibrary
+          courses={courses}
+          initialEnrollmentStatuses={enrollmentStatuses}
+          isAuthenticated={Boolean(userId)}
+        />
       </div>
     </div>
   );

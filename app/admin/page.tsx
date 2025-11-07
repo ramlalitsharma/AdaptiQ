@@ -170,6 +170,11 @@ export default async function AdminPage() {
                   View All Users →
                 </Button>
               </Link>
+              <Link href="/admin/enrollments">
+                <Button variant="outline" className="w-full justify-start">
+                  Enrollment Operations →
+                </Button>
+              </Link>
               <Link href="/admin/analytics">
                 <Button variant="outline" className="w-full justify-start">
                   User Analytics →
