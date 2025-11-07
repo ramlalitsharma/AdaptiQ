@@ -143,6 +143,11 @@ export default async function AdminPage() {
                   Manage Blogs →
                 </Button>
               </Link>
+              <Link href="/admin/questions">
+                <Button variant="outline" className="w-full justify-start">
+                  Question Banks →
+                </Button>
+              </Link>
               <Link href="/admin/subjects">
                 <Button variant="outline" className="w-full justify-start">
                   Subjects & Chapters →
@@ -178,6 +183,11 @@ export default async function AdminPage() {
               <Link href="/admin/analytics">
                 <Button variant="outline" className="w-full justify-start">
                   User Analytics →
+                </Button>
+              </Link>
+              <Link href="/admin/exams">
+                <Button variant="outline" className="w-full justify-start">
+                  Exam Authoring →
                 </Button>
               </Link>
               <Button variant="outline" className="w-full justify-start" disabled>
