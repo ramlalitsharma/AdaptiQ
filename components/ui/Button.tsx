@@ -29,10 +29,30 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
 
-export function Button({ className, variant, size, ...props }: ButtonProps) {
+export function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  children,
+  ...props
+}: ButtonProps) {
+  const composedClass = cn(buttonVariants({ variant, size }), className);
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, {
+      className: cn((children.props as { className?: string }).className, composedClass),
+      ...props,
+    });
+  }
+
   return (
-    <button className={cn(buttonVariants({ variant, size }), className)} {...props} />
+    <button className={composedClass} {...props}>
+      {children}
+    </button>
   );
 }
