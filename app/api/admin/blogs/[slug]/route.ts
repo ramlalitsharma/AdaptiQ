@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
+import { requireAdmin } from '@/lib/admin-check';
+import { recordContentVersion, isValidStatus } from '@/lib/workflow';
 
 export const runtime = 'nodejs';
 
@@ -29,12 +31,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await requireAdmin();
 
     const { slug } = await params;
     const body = await req.json();
-    const { title, content, excerpt, coverImage, status, tags } = body;
+    const { title, content, excerpt, coverImage, status, tags, changeNote } = body;
 
     const db = await getDatabase();
+    const existing = await db.collection('blogs').findOne({ slug });
+    if (!existing) {
+      return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+    }
+
     const updateData: any = {
       updatedAt: new Date(),
     };
@@ -43,16 +51,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     if (content !== undefined) updateData.content = content;
     if (excerpt !== undefined) updateData.excerpt = excerpt;
     if (coverImage) updateData.coverImage = coverImage;
-    if (status) updateData.status = status;
+    if (status) {
+      if (!isValidStatus(status)) {
+        return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+      }
+      updateData.status = status;
+      updateData.workflowUpdatedAt = new Date();
+      updateData.workflowUpdatedBy = userId;
+    }
     if (tags) updateData.tags = tags;
 
-    const result = await db.collection('blogs').updateOne(
-      { slug },
-      { $set: updateData }
-    );
+    await db.collection('blogs').updateOne({ slug }, { $set: updateData });
 
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+    const updated = await db.collection('blogs').findOne({ slug });
+
+    if (updated) {
+      await recordContentVersion({
+        contentType: 'blog',
+        contentId: slug,
+        status: updated.status || 'draft',
+        snapshot: updated,
+        changeNote: changeNote || (status ? `Status changed to ${status}` : undefined),
+        changedBy: userId,
+      });
     }
 
     return NextResponse.json({ success: true, message: 'Blog updated successfully' });
@@ -66,6 +87,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await requireAdmin();
 
     const { slug } = await params;
     const db = await getDatabase();

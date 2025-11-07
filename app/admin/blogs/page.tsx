@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Badge } from '@/components/ui/Badge';
 import { requireAdmin } from '@/lib/admin-check';
+import { WorkflowControls } from '@/components/admin/WorkflowControls';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,6 +101,14 @@ export default async function AdminBlogsPage() {
                         <Button variant="outline" size="sm" className="w-full">View</Button>
                       </Link>
                       <Button variant="outline" size="sm">Edit</Button>
+                    </div>
+                    <div className="mt-4">
+                      <WorkflowControls
+                        contentType="blog"
+                        contentId={blog.slug}
+                        status={blog.status || 'draft'}
+                        updatedAt={blog.workflowUpdatedAt ? new Date(blog.workflowUpdatedAt).toISOString() : undefined}
+                      />
                     </div>
                   </CardContent>
                 </Card>

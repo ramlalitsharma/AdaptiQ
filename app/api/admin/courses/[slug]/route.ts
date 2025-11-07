@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { requireAdmin } from '@/lib/admin-check';
+import { recordContentVersion, isValidStatus } from '@/lib/workflow';
 
 export const runtime = 'nodejs';
 
@@ -30,16 +31,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    // TODO: Check admin role
-    // const user = await getUser(userId);
-    // if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    await requireAdmin();
 
     const { slug } = await params;
     const body = await req.json();
-    const { title, summary, subject, level, modules, status } = body;
+    const { title, summary, subject, level, modules, status, changeNote } = body;
 
     const db = await getDatabase();
+    const existing = await db.collection('courses').findOne({ slug });
+    if (!existing) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+    }
+
     const updateData: any = {
       updatedAt: new Date(),
     };
@@ -49,15 +52,28 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     if (subject) updateData.subject = subject;
     if (level) updateData.level = level;
     if (modules) updateData.modules = modules;
-    if (status) updateData.status = status;
+    if (status) {
+      if (!isValidStatus(status)) {
+        return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+      }
+      updateData.status = status;
+      updateData.workflowUpdatedAt = new Date();
+      updateData.workflowUpdatedBy = userId;
+    }
 
-    const result = await db.collection('courses').updateOne(
-      { slug },
-      { $set: updateData }
-    );
+    await db.collection('courses').updateOne({ slug }, { $set: updateData });
 
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+    const updated = await db.collection('courses').findOne({ slug });
+
+    if (updated) {
+      await recordContentVersion({
+        contentType: 'course',
+        contentId: slug,
+        status: updated.status || 'draft',
+        snapshot: updated,
+        changeNote: changeNote || (status ? `Status changed to ${status}` : undefined),
+        changedBy: userId,
+      });
     }
 
     return NextResponse.json({ success: true, message: 'Course updated successfully' });
@@ -71,8 +87,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    // TODO: Check admin role
+    await requireAdmin();
 
     const { slug } = await params;
     const db = await getDatabase();

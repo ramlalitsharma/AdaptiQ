@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Badge } from '@/components/ui/Badge';
 import { requireAdmin } from '@/lib/admin-check';
+import { WorkflowControls } from '@/components/admin/WorkflowControls';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +99,14 @@ export default async function AdminCoursesPage() {
                         <Button variant="outline" size="sm" className="w-full">View</Button>
                       </Link>
                       <Button variant="outline" size="sm">Edit</Button>
+                    </div>
+                    <div className="mt-4">
+                      <WorkflowControls
+                        contentType="course"
+                        contentId={course.slug}
+                        status={course.status || 'draft'}
+                        updatedAt={course.workflowUpdatedAt ? new Date(course.workflowUpdatedAt).toISOString() : undefined}
+                      />
                     </div>
                   </CardContent>
                 </Card>
