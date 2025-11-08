@@ -185,6 +185,13 @@ export default async function AdminPage() {
       action: 'Open enrollments',
     },
     {
+      name: 'Role Management',
+      description: 'Assign permissions with reusable roles and policies.',
+      href: '/admin/roles',
+      icon: '🧩',
+      action: 'Manage roles',
+    },
+    {
       name: 'Moderation Queue',
       description: 'Approve reviews and resolve support tickets.',
       href: '/admin/moderation',

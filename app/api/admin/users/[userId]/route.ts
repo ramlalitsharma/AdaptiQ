@@ -2,31 +2,43 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { requireAdmin } from '@/lib/admin-check';
 
 export const runtime = 'nodejs';
+
+function normalizeUserQuery(userId: string) {
+  if (ObjectId.isValid(userId)) {
+    return { $or: [{ _id: new ObjectId(userId) }, { clerkId: userId }] };
+  }
+  return { clerkId: userId };
+}
+
+function mapRoleIds(roleIds: any[]): ObjectId[] {
+  return roleIds
+    .map((id) => {
+      if (id instanceof ObjectId) return id;
+      if (typeof id === 'string' && ObjectId.isValid(id)) return new ObjectId(id);
+      return null;
+    })
+    .filter((id): id is ObjectId => Boolean(id));
+}
 
 // GET - Get user by ID
 export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const { userId: currentUserId } = await auth();
     if (!currentUserId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await requireAdmin();
 
     const { userId } = await params;
     const db = await getDatabase();
-    
-    // Try to find by ObjectId or clerkId
-    let user;
-    try {
-      user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
-    } catch {
-      user = await db.collection('users').findOne({ clerkId: userId });
-    }
+
+    const user = await db.collection('users').findOne(normalizeUserQuery(userId));
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Remove sensitive data
     delete (user as any).password;
     return NextResponse.json(user);
   } catch (e: any) {
@@ -39,10 +51,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ user
   try {
     const { userId: currentUserId } = await auth();
     if (!currentUserId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await requireAdmin();
 
     const { userId } = await params;
     const body = await req.json();
-    const { name, email, subscriptionStatus, isAdmin, isBanned } = body;
+    const { name, email, subscriptionStatus, isAdmin, isBanned, roleIds } = body;
 
     const db = await getDatabase();
     const updateData: any = {
@@ -54,15 +67,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ user
     if (subscriptionStatus !== undefined) updateData.subscriptionStatus = subscriptionStatus;
     if (isAdmin !== undefined) updateData.isAdmin = isAdmin;
     if (isBanned !== undefined) updateData.isBanned = isBanned;
-
-    // Try to find by ObjectId or clerkId
-    let query: any;
-    try {
-      query = { _id: new ObjectId(userId) };
-    } catch {
-      query = { clerkId: userId };
+    if (Array.isArray(roleIds)) {
+      updateData.roleIds = mapRoleIds(roleIds);
     }
 
+    const query = normalizeUserQuery(userId);
     const result = await db.collection('users').updateOne(query, { $set: updateData });
 
     if (result.matchedCount === 0) {
@@ -80,21 +89,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ u
   try {
     const { userId: currentUserId } = await auth();
     if (!currentUserId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await requireAdmin();
 
     const { userId } = await params;
     const db = await getDatabase();
 
-    // Try to find by ObjectId or clerkId
-    let query: any;
-    try {
-      query = { _id: new ObjectId(userId) };
-    } catch {
-      query = { clerkId: userId };
-    }
+    const query = normalizeUserQuery(userId);
 
-    // Soft delete by banning
     const result = await db.collection('users').updateOne(query, {
-      $set: { isBanned: true, deletedAt: new Date() }
+      $set: { isBanned: true, deletedAt: new Date() },
     });
 
     if (result.matchedCount === 0) {
