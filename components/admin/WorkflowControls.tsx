@@ -10,6 +10,7 @@ interface WorkflowControlsProps {
   contentId: string;
   status: string;
   updatedAt?: string;
+  onStatusChange?: (status: string) => void;
 }
 
 interface HistoryEntry {
@@ -29,7 +30,7 @@ const STATUS_LABELS: Record<string, string> = {
   archived: 'Archived',
 };
 
-export function WorkflowControls({ contentType, contentId, status, updatedAt }: WorkflowControlsProps) {
+export function WorkflowControls({ contentType, contentId, status, updatedAt, onStatusChange }: WorkflowControlsProps) {
   const [currentStatus, setCurrentStatus] = useState(status || 'draft');
   const [loading, setLoading] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -53,6 +54,9 @@ export function WorkflowControls({ contentType, contentId, status, updatedAt }: 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update status');
       setCurrentStatus(data.status);
+      if (onStatusChange) {
+        onStatusChange(data.status);
+      }
       // refresh history next time it's opened
       setHistory([]);
     } catch (error: any) {

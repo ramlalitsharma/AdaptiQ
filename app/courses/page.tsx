@@ -10,16 +10,15 @@ export const dynamic = 'force-dynamic';
 export default async function CoursesIndexPage() {
   const { userId } = await auth();
   let courses: any[] = [];
+  let totalCourses: number = 0;
+  let publishedCourses: number = 0;
   let db: any = null;
 
   try {
     db = await getDatabase();
-    courses = await db
-      .collection('courses')
-      .find({ status: { $ne: 'draft' } })
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .toArray();
+    courses = await db.collection('courses').find({ status: 'published' }).sort({ createdAt: -1 }).limit(100).toArray();
+    totalCourses = await db.collection('courses').countDocuments({});
+    publishedCourses = await db.collection('courses').countDocuments({ status: 'published' });
   } catch (e) {
     console.error('Courses fetch error:', e);
     courses = [];
@@ -75,7 +74,8 @@ export default async function CoursesIndexPage() {
             </div>
 
             <div className="grid w-full gap-4 sm:grid-cols-2">
-              <Stat label="Available Courses" value={courses.length} description="Published & ready to enroll" />
+              <Stat label="Available Courses" value={totalCourses} description="Total courses" />
+              <Stat label="Published Courses" value={publishedCourses} description="Published courses" />
               <Stat label="Subjects Covered" value={subjects.length} description="Cross-discipline catalog" />
               <Stat label="Lessons Included" value={totalLessons} description="Interactive modules" />
               <Stat label="New This Month" value={courses.filter((c) => c.createdAt).length} description="Fresh releases" />
