@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
@@ -31,29 +31,41 @@ export function CourseReviews({ courseSlug, initialReviews }: CourseReviewsProps
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshReviews = async () => {
+    const refreshRes = await fetch(`/api/courses/${courseSlug}/reviews`);
+    if (refreshRes.ok) {
+      const refreshed = await refreshRes.json();
+      setReviews(refreshed.reviews);
+      setStats(refreshed.stats);
+    }
+  };
 
   const submitReview = async () => {
     if (!rating) return;
     setSubmitting(true);
+    setFeedback(null);
+    setError(null);
     try {
       const res = await fetch(`/api/courses/${courseSlug}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating, comment }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        // Refresh reviews
-        const refreshRes = await fetch(`/api/courses/${courseSlug}/reviews`);
-        const refreshed = await refreshRes.json();
-        setReviews(refreshed.reviews);
-        setStats(refreshed.stats);
-        setShowForm(false);
-        setComment('');
-        setRating(5);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit review');
       }
-    } catch (e) {
+      await refreshReviews();
+      setShowForm(false);
+      setComment('');
+      setRating(5);
+      setFeedback(data.message || 'Review submitted for moderation.');
+    } catch (e: any) {
       console.error('Review submit error:', e);
+      setError(e.message || 'Unable to submit review');
     } finally {
       setSubmitting(false);
     }
@@ -85,6 +97,16 @@ export function CourseReviews({ courseSlug, initialReviews }: CourseReviewsProps
         </div>
       </CardHeader>
       <CardContent>
+        {feedback && (
+          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            {feedback}
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
         {showForm && (
           <div className="mb-6 p-4 border rounded-lg space-y-4">
             <div>

@@ -185,6 +185,14 @@ export default async function AdminPage() {
       action: 'Open enrollments',
     },
     {
+      name: 'Moderation Queue',
+      description: 'Approve reviews and resolve support tickets.',
+      href: '/admin/moderation',
+      icon: '🛡️',
+      action: 'Review submissions',
+      metric: 'Reviews & tickets',
+    },
+    {
       name: 'Notifications Studio',
       description: 'Design templates and automate event-based messaging.',
       href: '/admin/studio/notifications',
