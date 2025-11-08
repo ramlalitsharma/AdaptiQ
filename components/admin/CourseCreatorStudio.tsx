@@ -1,19 +1,46 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { WorkflowControls } from '@/components/admin/WorkflowControls';
 
 interface CourseSummary {
   id: string;
+  slug: string;
   title: string;
   status: string;
   level?: string;
   createdAt?: string;
 }
 
+interface SelectedCourse extends Partial<CourseSummary> {
+  summary?: string;
+  subject?: string;
+  level?: string;
+  language?: string;
+  tags?: string[];
+  metadata?: {
+    audience?: string;
+    goals?: string;
+    tone?: string;
+    modulesCount?: number;
+    lessonsPerModule?: number;
+  };
+  price?: { currency: string; amount: number } | null;
+  seo?: { title?: string; description?: string; keywords?: string[] };
+  modules?: Array<{
+    title: string;
+    lessons?: Array<{ title: string; content?: string }>;
+  }>;
+  resources?: Array<{ type: 'video' | 'pdf' | 'link' | 'image'; label?: string; url: string }>;
+}
+
 interface CourseCreatorStudioProps {
   recentCourses: CourseSummary[];
+  selectedCourse?: SelectedCourse;
 }
 
 interface ManualLesson {
@@ -32,44 +59,97 @@ interface CourseResource {
   url: string;
 }
 
-export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps) {
+const DEFAULT_FORM = {
+  title: '',
+  subject: '',
+  level: '',
+  summary: '',
+  audience: '',
+  goals: '',
+  tone: 'Professional and encouraging',
+  modulesCount: 4,
+  lessonsPerModule: 3,
+  language: 'English',
+  tags: 'adaptive learning, ai quizzes',
+  priceAmount: '',
+  priceCurrency: 'USD',
+  seoTitle: '',
+  seoDescription: '',
+};
+
+export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCreatorStudioProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [mode, setMode] = useState<'ai' | 'manual'>('ai');
   const [loading, setLoading] = useState(false);
   const [generatingPreview, setGeneratingPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
 
-  const [form, setForm] = useState({
-    title: '',
-    subject: '',
-    level: '',
-    summary: '',
-    audience: '',
-    goals: '',
-    tone: 'Professional and encouraging',
-    modulesCount: 4,
-    lessonsPerModule: 3,
-    language: 'English',
-    tags: 'adaptive learning, ai quizzes',
-    priceAmount: '',
-    priceCurrency: 'USD',
-    seoTitle: '',
-    seoDescription: '',
-  });
-
+  const [form, setForm] = useState({ ...DEFAULT_FORM });
   const [modules, setModules] = useState<ManualModule[]>([
     { title: 'Introduction', lessons: [{ title: 'Welcome', content: 'Overview and objectives.' }] },
   ]);
-
   const [resources, setResources] = useState<CourseResource[]>([]);
+  const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<string>('draft');
+
+  // Hydrate form when editing an existing course
+  useEffect(() => {
+    if (!selectedCourse) {
+      setEditingSlug(null);
+      setCurrentStatus('draft');
+      setForm({ ...DEFAULT_FORM });
+      setModules([{ title: 'Introduction', lessons: [{ title: 'Welcome', content: 'Overview and objectives.' }] }]);
+      setResources([]);
+      setMode('ai');
+      return;
+    }
+
+    setEditingSlug(selectedCourse.slug || null);
+    setMode('manual');
+    setCurrentStatus(selectedCourse.status || 'draft');
+    setForm({
+      title: selectedCourse.title || '',
+      subject: selectedCourse.subject || '',
+      level: selectedCourse.level || '',
+      summary: selectedCourse.summary || '',
+      audience: selectedCourse.metadata?.audience || '',
+      goals: selectedCourse.metadata?.goals || '',
+      tone: selectedCourse.metadata?.tone || DEFAULT_FORM.tone,
+      modulesCount: selectedCourse.metadata?.modulesCount || DEFAULT_FORM.modulesCount,
+      lessonsPerModule: selectedCourse.metadata?.lessonsPerModule || DEFAULT_FORM.lessonsPerModule,
+      language: selectedCourse.language || DEFAULT_FORM.language,
+      tags: (selectedCourse.tags || []).join(', ') || DEFAULT_FORM.tags,
+      priceAmount: selectedCourse.price?.amount ? String(selectedCourse.price.amount) : '',
+      priceCurrency: selectedCourse.price?.currency || DEFAULT_FORM.priceCurrency,
+      seoTitle: selectedCourse.seo?.title || '',
+      seoDescription: selectedCourse.seo?.description || '',
+    });
+    setModules(
+      (selectedCourse.modules || []).map((module) => ({
+        title: module.title,
+        lessons: (module.lessons || []).map((lesson) => ({ title: lesson.title, content: lesson.content || '' })),
+      })) || [],
+    );
+    setResources(
+      (selectedCourse.resources || []).map((resource) => ({
+        type: resource.type || 'link',
+        label: resource.label || '',
+        url: resource.url,
+      })) || [],
+    );
+  }, [selectedCourse?.slug]);
 
   const canSubmit = useMemo(() => {
     if (!form.title.trim()) return false;
-    if (mode === 'manual') {
+    if (mode === 'manual' || editingSlug) {
       return modules.every((module) => module.title.trim()) && modules.every((module) => module.lessons.every((lesson) => lesson.title.trim()));
     }
     return true;
-  }, [form.title, mode, modules]);
+  }, [form.title, mode, modules, editingSlug]);
 
   const updateModuleTitle = (index: number, title: string) => {
     setModules((prev) => prev.map((m, i) => (i === index ? { ...m, title } : m)));
@@ -161,6 +241,7 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
       if (generatedModules.length) {
         setModules(generatedModules);
       }
+      setFeedback('Outline generated. Review modules before saving.');
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Unable to generate outline');
@@ -169,63 +250,90 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
     }
   };
 
-  const handleSubmit = async () => {
+  const buildModulePayload = () =>
+    modules.map((module) => ({
+      ...module,
+      lessons: module.lessons.map((lesson) => ({ title: lesson.title, content: lesson.content })),
+    }));
+
+  const buildSharedPayload = () => ({
+    title: form.title.trim(),
+    summary: form.summary.trim() || undefined,
+    subject: form.subject.trim() || undefined,
+    level: form.level || undefined,
+    language: form.language.trim() || undefined,
+    tags: form.tags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+    resources: resources.filter((resource) => resource.label.trim() && resource.url.trim()),
+    price: form.priceAmount
+      ? {
+          currency: form.priceCurrency || 'USD',
+          amount: Number(form.priceAmount),
+        }
+      : undefined,
+    seo: {
+      title: form.seoTitle.trim() || undefined,
+      description: form.seoDescription.trim() || undefined,
+      keywords: form.tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    },
+    metadata: {
+      audience: form.audience.trim() || undefined,
+      goals: form.goals.trim() || undefined,
+      tone: form.tone.trim() || undefined,
+      modulesCount: Number(form.modulesCount) || undefined,
+      lessonsPerModule: Number(form.lessonsPerModule) || undefined,
+    },
+  });
+
+  const handleSubmit = async (nextStatus?: string) => {
     if (!canSubmit || loading) return;
     setLoading(true);
     setError(null);
+    setFeedback(null);
     try {
-      const payload: any = {
-        mode,
-        title: form.title.trim(),
-        subject: form.subject.trim() || undefined,
-        level: form.level || undefined,
-        summary: form.summary.trim() || undefined,
-        audience: form.audience.trim() || undefined,
-        goals: form.goals.trim() || undefined,
-        tone: form.tone.trim() || undefined,
-        modulesCount: Number(form.modulesCount) || undefined,
-        lessonsPerModule: Number(form.lessonsPerModule) || undefined,
-        language: form.language.trim() || undefined,
-        tags: form.tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-        price: form.priceAmount
-          ? {
-              currency: form.priceCurrency || 'USD',
-              amount: Number(form.priceAmount),
-            }
-          : undefined,
-        seo: {
-          title: form.seoTitle.trim() || undefined,
-          description: form.seoDescription.trim() || undefined,
-          keywords: form.tags
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean),
-        },
-        resources: resources.filter((resource) => resource.label.trim() && resource.url.trim()),
-      };
-
-      if (mode === 'manual' || modules.length) {
-        payload.outline = {
-          modules: modules.map((module) => ({
-            title: module.title,
-            lessons: module.lessons.map((lesson) => ({ title: lesson.title, content: lesson.content })),
-          })),
+      if (editingSlug) {
+        const payload: any = {
+          ...buildSharedPayload(),
+          modules: buildModulePayload(),
         };
+        if (nextStatus) payload.status = nextStatus;
+        const res = await fetch(`/api/admin/courses/${editingSlug}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to update course');
+        }
+        setFeedback(nextStatus ? `Course status updated to ${nextStatus}.` : 'Course updated successfully.');
+        router.refresh();
+      } else {
+        const payload: any = {
+          mode,
+          ...buildSharedPayload(),
+        };
+        if (mode === 'manual' || modules.length) {
+          payload.outline = { modules: buildModulePayload() };
+        }
+        const res = await fetch('/api/admin/courses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to create course');
+        }
+        setResult(data.course);
+        setFeedback('Course draft created successfully.');
+        router.refresh();
       }
-
-      const res = await fetch('/api/admin/courses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create course');
-      }
-      setResult(data.course);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Unexpected error');
@@ -234,23 +342,45 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
     }
   };
 
+  const clearEditing = () => {
+    router.push('/admin/studio/courses');
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Course Authoring</h2>
-            <p className="text-sm text-slate-500">Design curricula with AI suggestions, manual control, and rich metadata.</p>
+            <h2 className="text-xl font-semibold text-slate-900">
+              {editingSlug ? 'Edit Course' : 'Course Authoring'}
+            </h2>
+            <p className="text-sm text-slate-500">
+              {editingSlug
+                ? 'Update modules, metadata, and publishing status for this course.'
+                : 'Design curricula with AI suggestions, manual control, and rich metadata.'}
+            </p>
           </div>
           <div className="flex gap-2 text-sm">
-            <Button variant={mode === 'ai' ? 'inverse' : 'outline'} size="sm" onClick={() => setMode('ai')}>
+            <Button variant={mode === 'ai' ? 'inverse' : 'outline'} size="sm" onClick={() => setMode('ai')} disabled={Boolean(editingSlug)}>
               AI Mode
             </Button>
             <Button variant={mode === 'manual' ? 'inverse' : 'outline'} size="sm" onClick={() => setMode('manual')}>
               Manual Mode
             </Button>
+            {editingSlug && (
+              <Button variant="outline" size="sm" onClick={clearEditing}>
+                + New Course
+              </Button>
+            )}
           </div>
         </div>
+
+        {feedback && (
+          <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{feedback}</div>
+        )}
+        {error && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        )}
 
         <div className="mt-6 grid gap-6 2xl:grid-cols-[minmax(0,0.85fr),minmax(0,1.15fr),minmax(0,0.9fr)]">
           <section className="space-y-4">
@@ -338,7 +468,7 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
                   />
                 </label>
               </div>
-              {mode === 'ai' && (
+              {(mode === 'ai' && !editingSlug) && (
                 <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <h4 className="text-sm font-semibold text-slate-700">AI guidance</h4>
                   <label className="space-y-1 text-xs text-slate-600">
@@ -390,12 +520,7 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
                       />
                     </label>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={generatingPreview}
-                    onClick={handleGenerateOutline}
-                  >
+                  <Button size="sm" variant="outline" disabled={generatingPreview} onClick={handleGenerateOutline}>
                     {generatingPreview ? 'Generating outline…' : 'Generate outline draft'}
                   </Button>
                 </div>
@@ -499,12 +624,7 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
                               className="w-full rounded-lg border border-slate-200 px-3 py-2"
                             />
                           </label>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeLesson(moduleIndex, lessonIndex)}
-                            disabled={module.lessons.length <= 1}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => removeLesson(moduleIndex, lessonIndex)} disabled={module.lessons.length <= 1}>
                             Remove
                           </Button>
                         </div>
@@ -526,42 +646,66 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
                 </div>
               ))}
             </div>
-            {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
-            <div className="flex gap-3">
-              <Button onClick={handleSubmit} disabled={!canSubmit || loading}>
-                {loading ? 'Saving…' : 'Save Draft'}
+
+            {editingSlug && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h4 className="text-sm font-semibold text-slate-700">Workflow status</h4>
+                <WorkflowControls
+                  contentType="course"
+                  contentId={editingSlug}
+                  status={currentStatus}
+                  onStatusChange={(status) => {
+                    setCurrentStatus(status);
+                    setFeedback(`Status updated to ${status}.`);
+                    router.refresh();
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => handleSubmit()} disabled={!canSubmit || loading}>
+                {loading ? 'Saving…' : editingSlug ? 'Update course' : 'Save draft'}
               </Button>
-              <Button variant="outline" disabled={loading || !canSubmit} onClick={() => handleSubmit()}>
-                Publish Draft
-              </Button>
+              {editingSlug && (
+                <Button variant="outline" disabled={loading || !canSubmit} onClick={() => handleSubmit('published')}>
+                  Publish course
+                </Button>
+              )}
             </div>
           </section>
 
           <aside className="space-y-4">
-            <CoursePreviewPanel
-              form={form}
-              modules={modules}
-              resources={resources}
-            />
+            <CoursePreviewPanel form={form} modules={modules} resources={resources} />
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent courses</h3>
               {recentCourses.length === 0 ? (
                 <p className="mt-3 text-xs text-slate-500">No courses created yet.</p>
               ) : (
                 <div className="mt-3 space-y-3">
-                  {recentCourses.map((course) => (
-                    <div key={course.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2">
-                      <div>
-                        <div className="text-sm font-medium text-slate-800">{course.title}</div>
-                        <div className="text-xs text-slate-400">
-                          {course.level ? `${course.level} • ` : ''}{course.createdAt ? new Date(course.createdAt).toLocaleString() : ''}
+                  {recentCourses.map((course) => {
+                    const isActive = searchParams?.get('slug') === course.slug;
+                    return (
+                      <Link
+                        key={course.id}
+                        href={`/admin/studio/courses?slug=${course.slug}`}
+                        className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition ${
+                          isActive ? 'border-teal-400 bg-teal-50 text-teal-800' : 'border-slate-100 text-slate-700 hover:border-slate-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-medium line-clamp-1">{course.title}</div>
+                          <div className="text-xs text-slate-400">
+                            {course.level ? `${course.level} • ` : ''}
+                            {course.createdAt ? new Date(course.createdAt).toLocaleString() : ''}
+                          </div>
                         </div>
-                      </div>
-                      <Badge variant={course.status === 'published' ? 'success' : course.status === 'in_review' ? 'info' : 'default'}>
-                        {course.status}
-                      </Badge>
-                    </div>
-                  ))}
+                        <Badge variant={course.status === 'published' ? 'success' : course.status === 'in_review' ? 'info' : 'default'}>
+                          {course.status}
+                        </Badge>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -569,7 +713,7 @@ export function CourseCreatorStudio({ recentCourses }: CourseCreatorStudioProps)
         </div>
       </div>
 
-      {result && (
+      {result && !editingSlug && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-emerald-900">Course drafted</h3>
           <p className="text-sm text-emerald-700">{result.title} — status {result.status}</p>
@@ -609,7 +753,10 @@ function CoursePreviewPanel({
       <div className="mt-3 space-y-2">
         <div>
           <h4 className="text-lg font-semibold text-slate-900">{form.title || 'Course title'}</h4>
-          <p className="text-xs text-slate-500">{form.subject && `${form.subject} • `}{form.level || 'Level TBD'} • {form.language || 'Language TBD'}</p>
+          <p className="text-xs text-slate-500">
+            {form.subject && `${form.subject} • `}
+            {form.level || 'Level TBD'} • {form.language || 'Language TBD'}
+          </p>
         </div>
         <p className="text-sm text-slate-600">{form.summary || 'A compelling summary will appear here once provided.'}</p>
         <div className="space-y-1">

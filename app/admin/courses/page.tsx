@@ -37,8 +37,8 @@ export default async function AdminCoursesPage() {
     subject: course.subject,
     level: course.level,
     modules: course.modules,
-    updatedAt: course.updatedAt,
-    createdAt: course.createdAt,
+    updatedAt: course.updatedAt instanceof Date ? course.updatedAt.toISOString() : course.updatedAt,
+    createdAt: course.createdAt instanceof Date ? course.createdAt.toISOString() : course.createdAt,
   }));
 
   return (

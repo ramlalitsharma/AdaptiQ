@@ -34,16 +34,16 @@ const STATUS_FILTERS = [
 
 export function CourseManager({ courses }: CourseManagerProps) {
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filtered = useMemo(() => {
     return courses.filter((course) => {
-      const matchesStatus = status === 'all' ? true : (course.status || 'draft') === status;
+      const matchesStatus = statusFilter === 'all' ? true : (course.status || 'draft') === statusFilter;
       const haystack = `${course.title} ${course.summary || ''} ${course.subject || ''}`.toLowerCase();
       const matchesSearch = haystack.includes(search.toLowerCase());
       return matchesStatus && matchesSearch;
     });
-  }, [courses, status, search]);
+  }, [courses, statusFilter, search]);
 
   const totals = useMemo(() => {
     const map = new Map<string, number>();
@@ -76,9 +76,9 @@ export function CourseManager({ courses }: CourseManagerProps) {
           return (
             <Button
               key={filter.key}
-              variant={status === filter.key ? 'inverse' : 'outline'}
+              variant={statusFilter === filter.key ? 'inverse' : 'outline'}
               size="sm"
-              onClick={() => setStatus(filter.key)}
+              onClick={() => setStatusFilter(filter.key)}
             >
               {filter.label}
               <span className="ml-2 rounded-full bg-slate-200 px-2 text-xs text-slate-600">{count}</span>
@@ -103,7 +103,7 @@ export function CourseManager({ courses }: CourseManagerProps) {
 }
 
 function CourseCard({ course }: { course: CourseSummary }) {
-  const [status, setStatus] = useState(course.status || 'draft');
+  const [courseStatus, setCourseStatus] = useState(course.status || 'draft');
   const lessons = useMemo(() => {
     return (course.modules || []).reduce((total, module) => total + (module.lessons?.length || 0), 0);
   }, [course.modules]);
@@ -114,7 +114,7 @@ function CourseCard({ course }: { course: CourseSummary }) {
       <CardHeader>
         <CardTitle className="line-clamp-2 text-lg font-semibold text-slate-900">{course.title}</CardTitle>
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <Badge variant={status === 'published' ? 'success' : status === 'in_review' ? 'info' : 'default'}>{status}</Badge>
+          <Badge variant={courseStatus === 'published' ? 'success' : courseStatus === 'in_review' ? 'info' : 'default'}>{courseStatus}</Badge>
           {course.subject && <Badge variant="outline">{course.subject}</Badge>}
           {course.level && <Badge variant="outline">{course.level}</Badge>}
           <span>{lessons} lessons</span>
@@ -127,15 +127,15 @@ function CourseCard({ course }: { course: CourseSummary }) {
             <Link href={`/courses/${course.slug}`}>View</Link>
           </Button>
           <Button variant="outline" size="sm" asChild className="flex-1">
-            <Link href={`/admin/studio/courses?id=${course.id}`}>Manage</Link>
+            <Link href={`/admin/studio/courses?slug=${course.slug}`}>Manage</Link>
           </Button>
         </div>
         <WorkflowControls
           contentType="course"
           contentId={course.slug}
-          status={status}
+          status={courseStatus}
           updatedAt={course.updatedAt}
-          onStatusChange={setStatus}
+          onStatusChange={setCourseStatus}
         />
       </CardContent>
     </Card>

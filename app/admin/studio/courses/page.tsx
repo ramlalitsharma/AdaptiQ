@@ -6,7 +6,11 @@ import { CourseCreatorStudio } from '@/components/admin/CourseCreatorStudio';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CourseStudioPage() {
+interface PageProps {
+  searchParams?: { slug?: string };
+}
+
+export default async function CourseStudioPage({ searchParams }: PageProps) {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
@@ -17,20 +21,47 @@ export default async function CourseStudioPage() {
   }
 
   const db = await getDatabase();
+
   const courses = await db
     .collection('courses')
-    .find({}, { projection: { title: 1, status: 1, level: 1, createdAt: 1 } })
+    .find({}, { projection: { title: 1, status: 1, level: 1, createdAt: 1, slug: 1 } })
     .sort({ createdAt: -1 })
-    .limit(12)
+    .limit(20)
     .toArray();
 
   const formatted = courses.map((course: any) => ({
     id: course._id ? String(course._id) : course.slug,
+    slug: course.slug,
     title: course.title,
     status: course.status || 'draft',
     level: course.level,
     createdAt: course.createdAt,
   }));
+
+  const selectedSlug = searchParams?.slug;
+  let selectedCourseData: any = null;
+
+  if (selectedSlug) {
+    const selectedCourse = await db.collection('courses').findOne({ slug: selectedSlug });
+    if (selectedCourse) {
+      selectedCourseData = {
+        id: selectedCourse._id ? String(selectedCourse._id) : selectedCourse.slug,
+        slug: selectedCourse.slug,
+        title: selectedCourse.title,
+        summary: selectedCourse.summary,
+        subject: selectedCourse.subject,
+        level: selectedCourse.level,
+        status: selectedCourse.status,
+        language: selectedCourse.language,
+        tags: selectedCourse.tags || [],
+        metadata: selectedCourse.metadata || {},
+        price: selectedCourse.price || null,
+        seo: selectedCourse.seo || {},
+        modules: selectedCourse.modules || [],
+        resources: selectedCourse.resources || [],
+      };
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
@@ -43,7 +74,7 @@ export default async function CourseStudioPage() {
         </div>
       </header>
       <main className="container mx-auto px-4 py-10">
-        <CourseCreatorStudio recentCourses={formatted} />
+        <CourseCreatorStudio recentCourses={formatted} selectedCourse={selectedCourseData || undefined} />
       </main>
     </div>
   );

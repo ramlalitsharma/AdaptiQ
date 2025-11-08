@@ -36,7 +36,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
 
     const { slug } = await params;
     const body = await req.json();
-    const { title, summary, subject, level, modules, status, changeNote } = body;
+    const {
+      title,
+      summary,
+      subject,
+      level,
+      modules,
+      language,
+      tags,
+      resources,
+      seo,
+      metadata,
+      price,
+      status,
+      changeNote,
+    } = body;
 
     const db = await getDatabase();
     const existing = await db.collection('courses').findOne({ slug });
@@ -53,6 +67,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     if (subject) updateData.subject = subject;
     if (level) updateData.level = level;
     if (modules) updateData.modules = modules;
+    if (language !== undefined) updateData.language = language;
+    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+    if (resources !== undefined) updateData.resources = resources;
+    if (seo !== undefined) updateData.seo = seo;
+    if (metadata !== undefined) updateData.metadata = metadata;
+    if (price !== undefined) updateData.price = price;
     if (status) {
       if (!isValidStatus(status)) {
         return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
