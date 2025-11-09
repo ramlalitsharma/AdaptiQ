@@ -96,6 +96,11 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
   const [resources, setResources] = useState<CourseResource[]>([]);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState<string>('draft');
+  const [courseList, setCourseList] = useState<CourseSummary[]>(recentCourses);
+
+  useEffect(() => {
+    setCourseList(recentCourses);
+  }, [recentCourses]);
 
   // Hydrate form when editing an existing course
   useEffect(() => {
@@ -308,6 +313,9 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
       if (editingSlug === slug) {
         setCurrentStatus(status);
       }
+      setCourseList((prev) =>
+        prev.map((course) => (course.slug === slug ? { ...course, status } : course)),
+      );
       setFeedback(`Course marked as ${status}.`);
       router.refresh();
     } catch (err: any) {
@@ -705,11 +713,11 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
             <CoursePreviewPanel form={form} modules={modules} resources={resources} />
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent courses</h3>
-              {recentCourses.length === 0 ? (
+              {courseList.length === 0 ? (
                 <p className="mt-3 text-xs text-slate-500">No courses created yet.</p>
               ) : (
                 <div className="mt-3 space-y-3">
-                  {recentCourses.map((course) => {
+                  {courseList.map((course) => {
                     const isActive = searchParams?.get('slug') === course.slug;
                     return (
                       <div
