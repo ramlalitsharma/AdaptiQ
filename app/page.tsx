@@ -2,6 +2,7 @@ import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { getDatabase } from '@/lib/mongodb';
 
 interface Course {
@@ -11,15 +12,25 @@ interface Course {
   summary?: string;
   subject?: string;
   level?: string;
-  price?: number;
+  price?: { amount?: number; currency?: string } | number;
   thumbnail?: string;
   tags?: string[];
+  createdAt?: string;
 }
 
-const formatPrice = (price?: number) => {
+const NEW_THRESHOLD_DAYS = 7;
+const NEW_THRESHOLD_MS = NEW_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+
+const formatPrice = (price?: { amount?: number; currency?: string } | number) => {
   if (price === undefined || price === null) return 'Free';
-  if (price === 0) return 'Free';
-  return `$${price.toLocaleString()}`;
+  if (typeof price === 'number') {
+    if (price === 0) return 'Free';
+    return `$${price.toLocaleString()}`;
+  }
+  const amount = price.amount ?? 0;
+  if (amount === 0) return 'Free';
+  const currency = price.currency || 'USD';
+  return `${currency.toUpperCase()} ${amount.toLocaleString()}`;
 };
 
 const contactInfo = [
@@ -27,6 +38,18 @@ const contactInfo = [
   { icon: '☎️', label: 'Phone', value: '+1 (555) 123-4567' },
   { icon: '📍', label: 'Location', value: '88 Innovation Drive, San Francisco, CA' },
 ];
+
+const getBadges = (tags: string[] = [], createdAt?: string) => {
+  const badges: string[] = [];
+  if (tags.some((tag) => tag.toLowerCase() === 'trending')) badges.push('Trending');
+  if (createdAt) {
+    const created = new Date(createdAt).getTime();
+    if (!Number.isNaN(created) && Date.now() - created < NEW_THRESHOLD_MS) {
+      badges.push('New');
+    }
+  }
+  return badges;
+};
 
 export async function generateMetadata() {
   const { getLatestKeywords } = await import('@/lib/seo');
@@ -42,39 +65,112 @@ export async function generateMetadata() {
 export default async function Home() {
   const db = await getDatabase();
 
-  const rawCourses = await db
-    .collection('courses')
-    .find({ status: { $ne: 'draft' } })
-    .sort({ createdAt: -1 })
-    .limit(12)
-    .toArray();
+  const [rawCourses, rawBlogs, rawSubjects, rawExams, rawPractice] = await Promise.all([
+    db
+      .collection('courses')
+      .find({ status: 'published' })
+      .sort({ createdAt: -1 })
+      .limit(9)
+      .toArray()
+      .catch(() => []),
+    db
+      .collection('blogs')
+      .find({ status: 'published' })
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .toArray()
+      .catch(() => []),
+    db
+      .collection('subjects')
+      .find({})
+      .sort({ updatedAt: -1 })
+      .limit(6)
+      .toArray()
+      .catch(() => []),
+    db
+      .collection('examTemplates')
+      .find({})
+      .sort({ updatedAt: -1 })
+      .limit(6)
+      .toArray()
+      .catch(() => []),
+    db
+      .collection('practiceSets')
+      .find({})
+      .sort({ updatedAt: -1 })
+      .limit(6)
+      .toArray()
+      .catch(() => []),
+  ]);
+
+  const safeDate = (value: any) => (value instanceof Date ? value.toISOString() : value);
 
   const courses = (rawCourses as any[]).map((course) => ({
-    ...course,
-    _id: String(course._id),
+    id: String(course._id),
     slug: course.slug || String(course._id),
+    title: course.title,
+    summary: course.summary,
+    subject: course.subject,
+    level: course.level,
+    price: typeof course.price === 'object' ? course.price : { amount: course.price, currency: 'USD' },
+    thumbnail: course.thumbnail,
     tags: Array.isArray(course.tags) ? course.tags : [],
-  })) as Course[];
+    createdAt: safeDate(course.createdAt),
+  }));
 
-  const pickByTags = (tags: string[], fallbackCount: number) => {
-    const filtered = courses.filter((course) =>
-      course.tags?.some((tag) => tags.includes(tag.toLowerCase())),
-    );
-    if (filtered.length >= fallbackCount) return filtered.slice(0, fallbackCount);
-    if (courses.length === 0) return [];
-    return courses.slice(0, fallbackCount);
-  };
+  const blogs = (rawBlogs as any[]).map((blog) => ({
+    id: String(blog._id),
+    slug: blog.slug,
+    title: blog.title,
+    excerpt: blog.excerpt || blog.markdown?.slice(0, 140),
+    image: blog.metadata?.heroImage || blog.imageUrl,
+    tags: blog.metadata?.tags || blog.tags || [],
+    createdAt: safeDate(blog.createdAt),
+  }));
 
-  const trending = pickByTags(['trending', 'featured', 'popular'], 6);
-  const liveClasses = pickByTags(['live', 'webinar', 'bootcamp'], 4);
-  const batches = pickByTags(['batch', 'cohort', 'program'], 4);
+  const subjects = (rawSubjects as any[]).map((subject) => ({
+    id: String(subject._id),
+    name: subject.name,
+    slug: subject.slug || String(subject._id),
+    description: subject.description,
+    icon: subject.icon,
+    category: subject.category,
+  }));
+
+  const exams = (rawExams as any[]).map((exam) => ({
+    id: String(exam._id),
+    name: exam.name,
+    description: exam.description,
+    category: exam.category,
+    examType: exam.examType,
+    releaseAt: safeDate(exam.releaseAt),
+    tags: exam.tags || [],
+    updatedAt: safeDate(exam.updatedAt),
+  }));
+
+  const practiceSets = (rawPractice as any[]).map((set) => ({
+    id: String(set._id),
+    title: set.title,
+    description: set.description,
+    questionCount: set.questionCount,
+    tags: set.tags || [],
+    releaseAt: safeDate(set.releaseAt),
+    updatedAt: safeDate(set.updatedAt),
+  }));
+
+  const internationalExams = exams.filter((exam) => {
+    const type = `${exam.examType || ''}`.toLowerCase();
+    const category = `${exam.category || ''}`.toLowerCase();
+    return type.includes('international') || category.includes('international');
+  });
+
   const categories = Array.from(new Set(courses.map((c) => c.subject).filter(Boolean)));
 
   return (
     <div className="bg-[#f4f6f9] text-slate-900">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 space-y-16">
         {/* Hero */}
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,0.75fr),minmax(0,1fr)] items-center mb-12">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,0.75fr),minmax(0,1fr)] items-center">
           <Card className="shadow-xl border-none">
             <CardContent className="space-y-6 pt-8 pb-10">
               <div className="max-w-xl space-y-4">
@@ -83,8 +179,7 @@ export default async function Home() {
                   <span className="text-emerald-600"> Build Your Future.</span>
                 </h1>
                 <p className="text-slate-600 text-base md:text-lg">
-                  Discover online courses and live batches designed to help you reach your goals.
-                  Start learning with AdaptIQ&apos;s AI-powered personalization.
+                  Discover courses, study resources, exam blueprints, and AI-powered learning journeys crafted for ambitious students.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -100,7 +195,7 @@ export default async function Home() {
                 </SignedIn>
                 <Link href="/courses">
                   <Button variant="outline" className="px-6">
-                    Demo Tour
+                    Browse Library
                   </Button>
                 </Link>
               </div>
@@ -115,7 +210,7 @@ export default async function Home() {
                 </select>
                 <input
                   type="text"
-                  placeholder="What are you looking for?"
+                  placeholder="Search courses, blogs, or exams"
                   className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 />
                 <Button className="px-6">Search</Button>
@@ -134,163 +229,332 @@ export default async function Home() {
           </Card>
         </section>
 
-        {/* Trending Courses */}
-        <section className="mb-16">
-          <div className="rounded-3xl bg-teal-600 px-6 py-4 text-white font-semibold text-lg uppercase tracking-wide inline-block">
-            Trending Courses
-          </div>
-          {trending.length === 0 ? (
-            <Card className="mt-6 border-dashed border-2 border-teal-200 bg-white/70">
-              <CardContent className="py-12 text-center text-sm text-slate-500">
-                Publish a course with the tag <strong>"trending"</strong> to showcase it here.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {trending.map((course) => (
-                <Card key={course._id} className="overflow-hidden shadow-md">
-                  <CardContent className="p-0">
-                    <div className="h-40 w-full overflow-hidden">
-                      <img
-                        src={
-                          course.thumbnail ||
-                          'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=800&q=80'
-                        }
-                        alt={course.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="space-y-3 p-5">
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>{course.subject || 'General'}</span>
-                        <span>{course.level ? course.level.toUpperCase() : 'All levels'}</span>
-                      </div>
-                      <h3 className="text-lg font-semibold text-slate-900 line-clamp-2">
-                        {course.title}
-                      </h3>
-                      <p className="text-sm text-slate-500 line-clamp-2">
-                        {course.summary || 'Learn with interactive lessons, quizzes, and real projects.'}
-                      </p>
-                      <div className="flex items-center justify-between pt-2">
-                        <span className="text-lg font-semibold text-emerald-600">
-                          {formatPrice(course.price)}
-                        </span>
-                        <Link href={`/courses/${course.slug}`}>
-                          <Button size="sm" className="px-4">
-                            View Details
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        {/* Courses Section */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Courses</h2>
+              <p className="text-sm text-slate-500">Fresh releases and top picks from the course library.</p>
             </div>
-          )}
-          <div className="mt-6 text-center">
             <Link href="/courses">
-              <Button variant="outline" className="px-10">
-                View All
-              </Button>
+              <Button variant="outline">View all courses</Button>
             </Link>
           </div>
-        </section>
-
-        {/* Live Classes */}
-        <section className="mb-16">
-          <div className="rounded-3xl bg-teal-600 px-6 py-4 text-white font-semibold text-lg uppercase tracking-wide inline-block">
-            Live Classes
-          </div>
-          {liveClasses.length === 0 ? (
-            <Card className="mt-6 border-dashed border-2 border-teal-200 bg-white/70">
+          {courses.length === 0 ? (
+            <Card className="border-dashed border-2 border-teal-200 bg-white/70">
               <CardContent className="py-12 text-center text-sm text-slate-500">
-                Tag a course with <strong>"live"</strong> or <strong>"webinar"</strong> to feature it in Live Classes.
+                Publish a course to showcase it on the home page.
               </CardContent>
             </Card>
           ) : (
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {liveClasses.map((cls, idx) => (
-                <Card key={`${cls._id}-live-${idx}`} className="shadow">
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-md bg-red-600 px-2 py-1 text-xs text-white">LIVE</span>
-                      <span className="text-xs text-slate-500">Starts in 02 : 30 : 45</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900">{cls.title}</h3>
-                    <p className="text-sm text-slate-500 line-clamp-2">
-                      {cls.summary || 'Join the live session to learn with instructors in real time.'}
-                    </p>
-                    <Button className="w-full">Join Now</Button>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {courses.map((course) => {
+                const badges = getBadges(course.tags, course.createdAt);
+                return (
+                  <Card key={course.id} className="overflow-hidden shadow-md">
+                    <CardContent className="p-0">
+                      <div className="h-40 w-full overflow-hidden">
+                        <img
+                          src={
+                            course.thumbnail ||
+                            'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=800&q=80'
+                          }
+                          alt={course.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="space-y-3 p-5">
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span>{course.subject || 'General'}</span>
+                          <span>•</span>
+                          <span>{course.level ? course.level.toUpperCase() : 'All levels'}</span>
+                          <div className="flex flex-wrap gap-1">
+                            {badges.map((badge) => (
+                              <Badge key={badge} variant={badge === 'New' ? 'success' : 'info'}>
+                                {badge}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 line-clamp-2">{course.title}</h3>
+                        <p className="text-sm text-slate-500 line-clamp-2">
+                          {course.summary || 'Learn with interactive lessons, quizzes, and real projects.'}
+                        </p>
+                        <div className="flex items-center justify-between pt-2">
+                          <span className="text-lg font-semibold text-emerald-600">
+                            {formatPrice(course.price)}
+                          </span>
+                          <Link href={`/courses/${course.slug}`}>
+                            <Button size="sm" className="px-4">
+                              View
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
-          <div className="mt-6 text-center">
-            <Button variant="outline" className="px-10">
-              View All
-            </Button>
-          </div>
         </section>
 
-        {/* Online Batches */}
-        <section className="mb-16">
-          <div className="rounded-3xl bg-teal-600 px-6 py-4 text-white font-semibold text-lg uppercase tracking-wide inline-block">
-            Online Batches
+        {/* Subjects Section */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Subjects</h2>
+              <p className="text-sm text-slate-500">Explore chapters and adaptive quizzes by subject.</p>
+            </div>
+            <Link href="/subjects">
+              <Button variant="outline">Browse subjects</Button>
+            </Link>
           </div>
-          {batches.length === 0 ? (
-            <Card className="mt-6 border-dashed border-2 border-teal-200 bg-white/70">
+          {subjects.length === 0 ? (
+            <Card className="border-dashed border-2 border-blue-200 bg-white/70">
               <CardContent className="py-12 text-center text-sm text-slate-500">
-                Add the tag <strong>"batch"</strong> or <strong>"cohort"</strong> to a course to promote it here.
+                Add subjects in the admin panel to feature them here.
               </CardContent>
             </Card>
           ) : (
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {batches.map((batch, idx) => (
-                <Card key={`${batch._id}-batch-${idx}`} className="shadow">
-                  <CardContent className="space-y-3 p-5">
-                    <h3 className="text-lg font-semibold text-slate-900 line-clamp-1">
-                      {batch.title}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                      <div>
-                        <p className="font-semibold text-slate-600">Start Date</p>
-                        <p>01 Jan 2025</p>
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {subjects.map((subject) => (
+                <Link key={subject.id} href={`/subjects/${subject.slug}`}>
+                  <Card className="h-full hover:shadow-lg transition">
+                    <CardContent className="space-y-3 p-5">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{subject.icon || '📚'}</span>
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-900">{subject.name}</h3>
+                          {subject.category && (
+                            <Badge variant="info" size="sm">
+                              {subject.category.replace('-', ' ')}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-slate-600">Duration</p>
-                        <p>12 Weeks</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-600">Seats Left</p>
-                        <p>{80 - idx * 10} seats</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-600">Level</p>
-                        <p>{batch.level || 'All levels'}</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" className="w-full">
-                      View Details
-                    </Button>
-                  </CardContent>
-                </Card>
+                      <p className="text-sm text-slate-500 line-clamp-2">
+                        {subject.description || 'Structured modules with adaptive practice.'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}
-          <div className="mt-6 text-center">
-            <Button variant="outline" className="px-10">
-              View All
-            </Button>
+        </section>
+
+        {/* Exams Section */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Exams</h2>
+              <p className="text-sm text-slate-500">Blueprints, cohorts, and mock tests to prepare with confidence.</p>
+            </div>
+            <Link href="/exams">
+              <Button variant="outline">Explore exams</Button>
+            </Link>
           </div>
+          {exams.length === 0 ? (
+            <Card className="border-dashed border-2 border-purple-200 bg-white/70">
+              <CardContent className="py-12 text-center text-sm text-slate-500">
+                Publish an exam template from the admin studio to surface it here.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {exams.map((exam) => {
+                const badges = getBadges(exam.tags, exam.updatedAt);
+                return (
+                  <Card key={exam.id} className="h-full border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="space-y-3 p-5">
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span>{exam.category || 'Exam'}</span>
+                        <div className="flex gap-1">
+                          {badges.map((badge) => (
+                            <Badge key={badge} variant={badge === 'New' ? 'success' : 'info'}>
+                              {badge}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-900 line-clamp-2">{exam.name}</h3>
+                      <p className="text-sm text-slate-500 line-clamp-3">
+                        {exam.description || 'Curated sections, difficulty mixes, and scheduling.'}
+                      </p>
+                      <Link href="/exams">
+                        <Button variant="outline" size="sm" className="w-full">
+                          View blueprint
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Preparations Section */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Preparations</h2>
+              <p className="text-sm text-slate-500">Practice sets and cohort-ready drills to keep learners on track.</p>
+            </div>
+            <Link href="/preparations">
+              <Button variant="outline">Guided tracks</Button>
+            </Link>
+          </div>
+          {practiceSets.length === 0 ? (
+            <Card className="border-dashed border-2 border-amber-200 bg-white/70">
+              <CardContent className="py-12 text-center text-sm text-slate-500">
+                Create a practice set in the admin studio to highlight it here.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {practiceSets.map((set) => {
+                const badges = getBadges(set.tags, set.updatedAt);
+                return (
+                  <Card key={set.id} className="h-full border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="space-y-3 p-5">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>{set.questionCount || 0} questions</span>
+                        <div className="flex gap-1">
+                          {badges.map((badge) => (
+                            <Badge key={badge} variant={badge === 'New' ? 'success' : 'info'}>
+                              {badge}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-900 line-clamp-2">{set.title}</h3>
+                      <p className="text-sm text-slate-500 line-clamp-3">
+                        {set.description || 'Timed practice sets with analytics-ready data.'}
+                      </p>
+                      <Link href="/preparations">
+                        <Button variant="outline" size="sm" className="w-full">
+                          Start practice
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* International Exams */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">International Exams</h2>
+              <p className="text-sm text-slate-500">Global entrance and proficiency exams supported by AdaptIQ.</p>
+            </div>
+            <Link href="/exams?type=international">
+              <Button variant="outline">All international exams</Button>
+            </Link>
+          </div>
+          {internationalExams.length === 0 ? (
+            <Card className="border-dashed border-2 border-indigo-200 bg-white/70">
+              <CardContent className="py-12 text-center text-sm text-slate-500">
+                Tag exam templates with "international" to feature them here.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {internationalExams.map((exam) => {
+                const badges = getBadges(exam.tags, exam.updatedAt);
+                return (
+                  <Card key={exam.id} className="h-full border border-slate-200 bg-white shadow-sm">
+                    <CardContent className="space-y-3 p-5">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>International</span>
+                        <div className="flex gap-1">
+                          {badges.map((badge) => (
+                            <Badge key={badge} variant={badge === 'New' ? 'success' : 'info'}>
+                              {badge}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-900 line-clamp-2">{exam.name}</h3>
+                      <p className="text-sm text-slate-500 line-clamp-3">
+                        {exam.description || 'Comprehensive prep paths, mock exams, and analytics.'}
+                      </p>
+                      <Link href={`/exams?type=international`}>
+                        <Button variant="outline" size="sm" className="w-full">
+                          View details
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Blog Section */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Blog</h2>
+              <p className="text-sm text-slate-500">Insights, study tips, and product updates from the AdaptIQ team.</p>
+            </div>
+            <Link href="/blog">
+              <Button variant="outline">Visit blog</Button>
+            </Link>
+          </div>
+          {blogs.length === 0 ? (
+            <Card className="border-dashed border-2 border-rose-200 bg-white/70">
+              <CardContent className="py-12 text-center text-sm text-slate-500">
+                Publish a blog post to surface it on the home page.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {blogs.map((post) => {
+                const badges = getBadges(post.tags, post.createdAt);
+                return (
+                  <Link key={post.id} href={`/blog/${post.slug}`}>
+                    <Card className="h-full hover:shadow-lg transition">
+                      <CardContent className="space-y-3 p-5">
+                        {post.image && (
+                          <img src={post.image} alt={post.title} className="h-32 w-full rounded-lg object-cover" />
+                        )}
+                        <div className="flex gap-2">
+                          {badges.map((badge) => (
+                            <Badge key={badge} variant={badge === 'New' ? 'success' : 'info'}>
+                              {badge}
+                            </Badge>
+                          ))}
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 line-clamp-2">{post.title}</h3>
+                        <p className="text-sm text-slate-500 line-clamp-3">
+                          {post.excerpt || 'Read the latest insights and best practices for adaptive learning.'}
+                        </p>
+                        <span className="text-xs text-slate-400">
+                          {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''}
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Contact */}
-        <section className="mb-20">
-          <div className="rounded-3xl bg-teal-600 px-6 py-4 text-white font-semibold text-lg uppercase tracking-wide inline-block">
-            Contact Us
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-semibold">Contact Us</h2>
+            <p className="text-sm text-slate-500">Need a custom onboarding plan or school rollout? We&apos;re here to help.</p>
           </div>
-          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,0.8fr),minmax(0,1.2fr)]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr),minmax(0,1.2fr)]">
             <Card className="shadow-md border-none bg-slate-900 text-white">
               <CardContent className="space-y-6 p-6">
                 {contactInfo.map((info) => (
