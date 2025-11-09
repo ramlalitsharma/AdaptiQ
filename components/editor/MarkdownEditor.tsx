@@ -28,15 +28,13 @@ export function MarkdownEditor({
     <div data-color-mode="light">
       <MDEditor
         value={editorValue}
-        preview="edit"
+        preview={disabled ? 'preview' : 'edit'}
         visibleDragbar={false}
         height={height}
-        textareaProps={{ placeholder }}
+        textareaProps={{ placeholder, readOnly: disabled }}
         onChange={(next) => onChange(next || '')}
-        hideToolbar={false}
-        disablePreview={false}
+        hideToolbar={disabled}
         data-testid="markdown-editor"
-        readOnly={disabled}
       />
     </div>
   );
