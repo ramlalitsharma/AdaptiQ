@@ -373,30 +373,6 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
     router.push('/admin/studio/courses');
   };
 
-  const handleQuickStatus = async (slug: string, status: string) => {
-    setLoading(true);
-    setError(null);
-    setFeedback(null);
-    try {
-      const res = await fetch(`/api/admin/courses/${slug}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update course status');
-      }
-      setFeedback(`Course status updated to ${status}.`);
-      router.refresh();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Unable to update course status');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
