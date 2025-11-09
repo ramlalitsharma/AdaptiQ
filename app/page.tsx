@@ -286,7 +286,7 @@ export default async function Home() {
                           </span>
                           <Link href={`/courses/${course.slug}`}>
                             <Button size="sm" className="px-4">
-                              View
+                              Enroll
                             </Button>
                           </Link>
                         </div>
