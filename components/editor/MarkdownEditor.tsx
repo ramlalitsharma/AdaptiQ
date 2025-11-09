@@ -3,9 +3,6 @@
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
-import '@uiw/react-md-editor/dist/mdEditor.css';
-import '@uiw/react-markdown-preview/dist/markdown.css';
-
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), {
   ssr: false,
 });

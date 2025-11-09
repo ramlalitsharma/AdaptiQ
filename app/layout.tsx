@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import "./globals.css";
+import "@/styles/md-editor.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
