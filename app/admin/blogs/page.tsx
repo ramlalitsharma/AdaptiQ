@@ -32,20 +32,7 @@ export default async function AdminBlogsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/admin">
-              <Button variant="outline" size="sm">← Admin Panel</Button>
-            </Link>
-            <Link href="/admin/studio">
-              <Button size="sm">+ Create Blog</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
@@ -73,7 +60,7 @@ export default async function AdminBlogsPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {blogs.map((blog: any) => {
               const publishedDate = blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : 'N/A';
-              
+
               return (
                 <Card key={blog._id} className="h-full hover:shadow-lg transition-shadow">
                   {blog.coverImage && (

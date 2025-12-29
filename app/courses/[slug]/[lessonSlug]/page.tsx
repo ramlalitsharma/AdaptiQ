@@ -55,17 +55,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href={`/courses/${slug}`}>
-              <Button variant="outline" size="sm">← {course.title}</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
           <nav className="text-sm text-gray-600 dark:text-gray-400 mb-6">

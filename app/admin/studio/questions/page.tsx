@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { requireAdmin } from '@/lib/admin-check';
+import { requireAdmin, getUserRole } from '@/lib/admin-check';
 import { getDatabase } from '@/lib/mongodb';
 import { QuestionStudio } from '@/components/admin/QuestionStudio';
 
@@ -11,7 +11,10 @@ export default async function QuestionStudioPage() {
   if (!userId) redirect('/sign-in');
 
   try {
-    await requireAdmin();
+    const role = await getUserRole();
+    if (!role || !['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role)) {
+      redirect('/dashboard');
+    }
   } catch {
     redirect('/dashboard');
   }

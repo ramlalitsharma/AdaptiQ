@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
-import { requireAdmin } from '@/lib/admin-check';
+import { requireAdmin, getUserRole } from '@/lib/admin-check';
 import { recordContentVersion } from '@/lib/workflow';
 import { isValidStatus } from '@/lib/workflow-status';
 
@@ -32,7 +32,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    await requireAdmin();
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const { slug } = await params;
     const body = await req.json();
@@ -42,6 +46,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     const existing = await db.collection('blogs').findOne({ slug });
     if (!existing) {
       return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+    }
+
+    // Ownership check: only author or admin can update
+    const isOwner = existing.authorId === userId;
+    const isAdmin = role === 'admin' || role === 'superadmin';
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: You do not own this blog' }, { status: 403 });
     }
 
     const updateData: any = {
@@ -88,10 +99,26 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    await requireAdmin();
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const { slug } = await params;
     const db = await getDatabase();
+
+    const existing = await db.collection('blogs').findOne({ slug });
+    if (!existing) {
+      return NextResponse.json({ error: 'Blog not found' }, { status: 404 });
+    }
+
+    // Ownership check: only author or admin can delete
+    const isOwner = existing.authorId === userId;
+    const isAdmin = role === 'admin' || role === 'superadmin';
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: You do not own this blog' }, { status: 403 });
+    }
 
     const result = await db.collection('blogs').deleteOne({ slug });
 

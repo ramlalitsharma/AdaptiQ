@@ -19,7 +19,7 @@ function addSecurityHeaders(response: NextResponse) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: https: blob: https://*.clerk.com https://img.clerk.com",
-    "connect-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://api.openai.com https://*.openai.com wss://*.clerk.com https://meet.jit.si wss://meet.jit.si https://*.jitsi.net",
+    "connect-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk-telemetry.com https://api.openai.com https://*.openai.com wss://*.clerk.com https://meet.jit.si wss://meet.jit.si https://*.jitsi.net",
     "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://meet.jit.si",
     "media-src 'self' https://meet.jit.si https://*.jitsi.net",
     "worker-src 'self' blob:",

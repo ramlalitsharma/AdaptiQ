@@ -51,35 +51,83 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ user
   try {
     const { userId: currentUserId } = await auth();
     if (!currentUserId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    await requireAdmin();
+
+    // Check if manager is admin/superadmin
+    const managerRole = await getUserRole();
+    if (managerRole !== 'admin' && managerRole !== 'superadmin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { userId } = await params;
     const body = await req.json();
-    const { name, email, subscriptionStatus, isAdmin, isBanned, roleIds } = body;
+    const { firstName, lastName, email, role, password, subscriptionStatus, isBanned } = body;
 
     const db = await getDatabase();
+    const query = normalizeUserQuery(userId);
+    const targetUser = await db.collection('users').findOne(query);
+
+    if (!targetUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const client = await clerkClient();
+    const clerkId = targetUser.clerkId;
+
+    // 1. Update Clerk if necessary
+    const clerkUpdate: any = {};
+    if (firstName !== undefined) clerkUpdate.firstName = firstName;
+    if (lastName !== undefined) clerkUpdate.lastName = lastName;
+    if (email !== undefined) clerkUpdate.emailAddress = [email];
+    if (password !== undefined && password.trim() !== '') {
+      clerkUpdate.password = password;
+      clerkUpdate.password_compromised = true; // Force change on next login
+    }
+
+    // Sync roles to Clerk publicMetadata
+    if (role !== undefined) {
+      clerkUpdate.publicMetadata = {
+        ...(targetUser.publicMetadata || {}),
+        role,
+        isSuperAdmin: role === 'superadmin',
+        isAdmin: role === 'admin' || role === 'superadmin',
+        isTeacher: role === 'teacher' || role === 'admin' || role === 'superadmin',
+      };
+    }
+
+    if (Object.keys(clerkUpdate).length > 0) {
+      try {
+        await client.users.updateUser(clerkId, clerkUpdate);
+      } catch (clerkError: any) {
+        console.error('Clerk update error:', clerkError);
+        return NextResponse.json({ error: 'Failed to update user in Clerk', message: clerkError.message }, { status: 400 });
+      }
+    }
+
+    // 2. Update MongoDB
     const updateData: any = {
       updatedAt: new Date(),
     };
 
-    if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (firstName !== undefined || lastName !== undefined) {
+      updateData.name = `${firstName || targetUser.firstName || ''} ${lastName || targetUser.lastName || ''}`.trim() || email || targetUser.email;
+    }
+    if (email !== undefined) updateData.email = email.toLowerCase();
+    if (role !== undefined) {
+      updateData.role = role;
+      updateData.isSuperAdmin = role === 'superadmin';
+      updateData.isAdmin = role === 'admin' || role === 'superadmin';
+      updateData.isTeacher = role === 'teacher' || role === 'admin' || role === 'superadmin';
+    }
     if (subscriptionStatus !== undefined) updateData.subscriptionStatus = subscriptionStatus;
-    if (isAdmin !== undefined) updateData.isAdmin = isAdmin;
     if (isBanned !== undefined) updateData.isBanned = isBanned;
-    if (Array.isArray(roleIds)) {
-      updateData.roleIds = mapRoleIds(roleIds);
-    }
 
-    const query = normalizeUserQuery(userId);
     const result = await db.collection('users').updateOne(query, { $set: updateData });
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
 
     return NextResponse.json({ success: true, message: 'User updated successfully' });
   } catch (e: any) {
+    console.error('Update user error:', e);
     return NextResponse.json({ error: 'Failed to update user', message: e.message }, { status: 500 });
   }
 }
@@ -89,7 +137,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ u
   try {
     const { userId: currentUserId } = await auth();
     if (!currentUserId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    
+
     const managerRole = await getUserRole();
     if (!managerRole) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

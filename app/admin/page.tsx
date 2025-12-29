@@ -241,19 +241,7 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-gray-900 dark:to-gray-800">
-      <header className="border-b bg-white/80 backdrop-blur dark:bg-gray-800/80 sticky top-0 z-50">
-        <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 py-4">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">
-                Learner Dashboard
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-10 space-y-10">
         <section className="space-y-2">

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { CategoryNavigation } from '@/components/layout/CategoryNavigation';
 import { auth } from '@/lib/auth';
+import { getUserRole } from '@/lib/admin-check';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,8 @@ const sanitizeCourse = (course: any) => ({
 
 export default async function CoursesIndexPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { userId } = await auth();
+  const role = await getUserRole();
+  const canCreate = ['superadmin', 'admin', 'teacher'].includes(role || '');
   const params = await searchParams;
   let rawCourses: any[] = [];
   let rawSubjects: any[] = [];
@@ -176,9 +179,11 @@ export default async function CoursesIndexPage({ searchParams }: { searchParams:
                 <Button variant="inverse" className="px-6" asChild>
                   <Link href="/my-learning">Continue Learning</Link>
                 </Button>
-                <Button variant="outline" className="border-white text-white px-6" asChild>
-                  <Link href="/admin/studio">Create With AI Studio</Link>
-                </Button>
+                {canCreate && (
+                  <Button variant="outline" className="border-white text-white px-6" asChild>
+                    <Link href="/admin/studio">Create With AI Studio</Link>
+                  </Button>
+                )}
               </div>
             </div>
 

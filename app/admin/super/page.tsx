@@ -193,34 +193,11 @@ export default async function SuperAdminConsolePage() {
         'Full JSON export of revenue, user, and course analytics.',
       href: '/api/admin/analytics/export?format=json&type=all',
       icon: '🧾',
-      action: 'Download JSON export',
     },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b bg-white sticky top-0 z-40">
-        <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 py-4">
-          <SiteBrand />
-          <div className="flex items-center gap-3">
-            {isSuperAdminUser && (
-              <ViewAsSwitcher currentRole={role || 'student'} isSuperAdmin={isSuperAdminUser} />
-            )}
-            <ThemeToggle />
-            <Link href="/admin">
-              <Button variant="outline" size="sm">
-                Admin Center
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">
-                Learner View
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
       <main className="container mx-auto px-4 py-8 space-y-8">
         <section className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">

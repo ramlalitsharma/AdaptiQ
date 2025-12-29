@@ -17,6 +17,12 @@ const nextConfig = {
         ignoreBuildErrors: true,
     },
     outputFileTracingRoot: process.cwd(),
+    experimental: {
+        serverActions: {
+            bodySizeLimit: '1gb',
+        },
+        middlewareClientMaxBodySize: '1gb',
+    },
 };
 
 export default nextConfig;

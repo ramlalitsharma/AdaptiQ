@@ -204,129 +204,157 @@ export function CourseLibrary({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((course, idx) => {
             const courseId = course._id || course.slug;
             const isBookmarked = bookmarked.has(courseId);
-            const lessonCount = course.modules?.reduce((n: number, m: { lessons?: unknown[] }) => n + (Array.isArray(m.lessons) ? m.lessons.length : 0), 0) || 0;
             const enrollmentStatus = enrollmentStatuses[courseId];
+
+            // Content Type Detection
+            const hasVideo = course.modules?.some(m => m.lessons?.some((l: any) =>
+              l.resources?.some((r: any) => r.type === 'video') || l.videoUrl
+            ));
+            const hasText = course.modules?.some(m => m.lessons?.some((l: any) =>
+              (l.content && typeof l.content === 'string' && l.content.trim().length > 0) || l.description
+            ));
+
+            let formatLabel = '';
+            let formatIcon = '';
+            if (hasVideo && hasText) {
+              formatLabel = 'Text & Video';
+              formatIcon = '📽️+📝';
+            } else if (hasVideo) {
+              formatLabel = 'Video';
+              formatIcon = '📽️';
+            } else if (hasText) {
+              formatLabel = 'Text';
+              formatIcon = '📝';
+            }
+
             const statusLabel =
               enrollmentStatus === 'approved'
                 ? 'Enrolled'
                 : enrollmentStatus === 'completed'
-                ? 'Completed'
-                : enrollmentStatus === 'pending'
-                ? 'Awaiting Approval'
-                : enrollmentStatus === 'waitlisted'
-                ? 'Waitlisted'
-                : enrollmentStatus === 'rejected'
-                ? 'Rejected'
-                : null;
+                  ? 'Completed'
+                  : enrollmentStatus === 'pending'
+                    ? 'Awaiting Approval'
+                    : null;
+
+            const isNew = course.createdAt && (new Date().getTime() - new Date(course.createdAt).getTime() < 30 * 24 * 60 * 60 * 1000);
 
             return (
               <FadeIn key={course.slug} delay={idx * 0.05}>
                 <ScaleOnHover>
-                  <Card className="group flex h-full flex-col overflow-hidden border-none bg-white shadow-lg ring-1 ring-slate-200 transition-all hover:-translate-y-1 hover:shadow-2xl">
-                    <div className="relative h-40 w-full bg-gradient-to-br from-indigo-500 via-teal-500 to-emerald-500">
-                      <div className="absolute inset-0 flex items-center justify-center text-5xl text-white/90">
+                  <Card className="group relative flex h-full flex-col overflow-hidden border border-slate-200 bg-white transition-all hover:shadow-2xl dark:border-slate-800 dark:bg-slate-900 rounded-3xl">
+                    {/* Thumbnail Section */}
+                    <div className="relative aspect-video overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-teal-500/20" />
+                      <div className="absolute inset-0 flex items-center justify-center text-6xl group-hover:scale-110 transition-transform duration-500 opacity-20">
                         {course.icon || '📘'}
                       </div>
+
+                      {/* Enrolled Badge (Top Left) */}
+                      {statusLabel && (
+                        <div className="absolute left-3 top-3 z-10">
+                          <span className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold backdrop-blur-md shadow-lg border ${enrollmentStatus === 'approved' || enrollmentStatus === 'completed'
+                            ? 'bg-emerald-100/90 text-emerald-700 border-emerald-200'
+                            : 'bg-amber-100/90 text-amber-700 border-amber-200'
+                            }`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                            {statusLabel}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* New Badge (Top Right) */}
+                      {isNew && (
+                        <div className="absolute right-3 top-3 z-10">
+                          <span className="rounded-full bg-teal-500 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-teal-500/30">
+                            NEW
+                          </span>
+                        </div>
+                      )}
+
                       <button
-                        onClick={() => toggleBookmark(course)}
-                        className="absolute right-4 top-3 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-teal-600 shadow-md transition hover:bg-white"
-                        aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark course'}
+                        onClick={(e) => { e.preventDefault(); toggleBookmark(course); }}
+                        className="absolute bottom-3 right-3 z-10 h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-md backdrop-blur-sm transition-all hover:bg-white hover:text-teal-600 dark:bg-slate-800/90 dark:text-slate-400 hidden group-hover:flex"
                       >
-                        {isBookmarked ? 'Saved ★' : 'Save ☆'}
+                        {isBookmarked ? '★' : '☆'}
                       </button>
                     </div>
 
-                    <CardHeader className="flex-1 space-y-3">
-                      <CardTitle className="text-lg font-semibold leading-snug text-slate-900 group-hover:text-teal-600">
-                        {course.title}
-                      </CardTitle>
-                      <p className="text-sm text-slate-500 line-clamp-3">
-                        {course.summary || 'Adaptive course with dynamic modules and assessments.'}
-                      </p>
-                    </CardHeader>
+                    <CardContent className="flex flex-1 flex-col p-6">
+                      <CardHeader className="p-0 mb-2">
+                        <Link href={`/courses/${course.slug}`}>
+                          <CardTitle className="text-xl font-bold leading-tight text-slate-900 group-hover:text-indigo-600 dark:text-white transition-colors">
+                            {course.title}
+                          </CardTitle>
+                        </Link>
+                      </CardHeader>
 
-                    <CardContent className="space-y-4">
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                      {/* Avoid Double Title: Only show summary if it's distinct from title */}
+                      {course.summary &&
+                        course.summary.toLowerCase().trim() !== course.title.toLowerCase().trim() &&
+                        !course.title.toLowerCase().includes(course.summary.toLowerCase()) && (
+                          <p className="mb-4 line-clamp-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                            {course.summary}
+                          </p>
+                        )}
+
+                      <div className="mt-auto mb-6 flex flex-wrap items-center gap-y-2 text-[11px] font-semibold text-slate-500">
+                        {formatLabel && (
+                          <>
+                            <span className="flex items-center gap-1 text-indigo-500 dark:text-indigo-400">
+                              {formatLabel === 'Video' ? '🎬' : formatLabel === 'Text' ? '📄' : '📽️+📄'} {formatLabel}
+                            </span>
+                            <span className="mx-2 text-slate-300">•</span>
+                          </>
+                        )}
+                        <span className="text-slate-600 dark:text-slate-300 truncate">
                           {course.subject || 'General'}
                         </span>
                         {course.level && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700">
-                            {course.level}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-700">
-                          {lessonCount} lessons
-                        </span>
-                        {statusLabel && (
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-medium ${
-                              enrollmentStatus === 'approved' || enrollmentStatus === 'completed'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : enrollmentStatus === 'pending'
-                                ? 'bg-amber-100 text-amber-700'
-                                : enrollmentStatus === 'waitlisted'
-                                ? 'bg-orange-100 text-orange-700'
-                                : 'bg-rose-100 text-rose-700'
-                            }`}
-                          >
-                            {statusLabel}
-                          </span>
+                          <>
+                            <span className="mx-2 text-slate-300">•</span>
+                            <span className="text-indigo-500/80 dark:text-indigo-400/80">
+                              {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
+                            </span>
+                          </>
                         )}
                       </div>
 
-                      <div className="space-y-2">
-                        <Button variant="inverse" className="w-full" asChild>
-                          <Link href={`/courses/${course.slug}`}>Preview Course</Link>
-                        </Button>
+                      <div className="pt-5 border-t border-slate-50 dark:border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Investment</span>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-lg font-black text-slate-900 dark:text-white">Free</span>
+                            </div>
+                          </div>
 
-                        {isAuthenticated ? (
-                          enrollmentStatus === 'approved' || enrollmentStatus === 'completed' ? (
-                            <Button variant="outline" className="w-full" asChild>
-                              <Link href={`/courses/${course.slug}`}>
-                                {enrollmentStatus === 'completed' ? 'Review Course' : 'Continue Learning'}
+                          <div className="flex gap-2">
+                            {isAuthenticated && (enrollmentStatus === 'approved' || enrollmentStatus === 'completed') ? (
+                              <Link href={`/courses/${course.slug}`} className="group/btn flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 leading-none">
+                                {enrollmentStatus === 'completed' ? 'Review' : 'Continue'}
+                                <span className="text-base transition-transform group-hover/btn:translate-x-1 font-normal opacity-70">→</span>
                               </Link>
-                            </Button>
-                          ) : enrollmentStatus === 'pending' ? (
-                            <Button variant="outline" className="w-full" disabled>
-                              Pending approval
-                            </Button>
-                          ) : enrollmentStatus === 'waitlisted' ? (
-                            <Button variant="outline" className="w-full" disabled>
-                              Waitlisted
-                            </Button>
-                          ) : enrollmentStatus === 'rejected' ? (
-                            <Button
-                              variant="outline"
-                              className="w-full"
-                              disabled={requestingCourse === courseId}
-                              onClick={() => requestEnrollment(course)}
-                            >
-                              Request Again
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              className="w-full"
-                              disabled={requestingCourse === courseId}
-                              onClick={() => requestEnrollment(course)}
-                            >
-                              Request Enrollment
-                            </Button>
-                          )
-                        ) : (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => (window.location.href = `/sign-in?redirect_url=${encodeURIComponent('/courses')}`)}
-                          >
-                            Sign in to request
-                          </Button>
-                        )}
+                            ) : (
+                              <Button
+                                variant="inverse"
+                                className="rounded-2xl px-6 py-5 font-bold shadow-xl shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700 border-none"
+                                onClick={() => requestEnrollment(course)}
+                                disabled={requestingCourse === courseId}
+                              >
+                                {requestingCourse === courseId ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                                    Joining...
+                                  </span>
+                                ) : 'Enroll Now'}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

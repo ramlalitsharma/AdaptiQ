@@ -6,12 +6,16 @@ export interface LiveRoom {
   _id?: ObjectId;
   roomId: string;                    // Unique room identifier
   roomName: string;                  // Display name
-  roomUrl: string;                    // Jitsi room URL
-  provider: 'jitsi' | 'daily';       // Video provider
+  roomUrl: string;                    // Room URL or join link
+  provider: 'jitsi' | 'daily' | 'zoom' | 'google-meet' | 'custom'; // Video provider
+  meetingId?: string;                 // External meeting ID (Zoom, etc)
   courseId?: string;                  // Linked course ID
   createdBy: string;                 // Creator user ID
-  status: 'scheduled' | 'active' | 'ended' | 'cancelled';
-  
+  status: 'scheduled' | 'active' | 'ended' | 'cancelled' | 'ready';
+  contentType: 'live' | 'video';      // Distinguished between live and pre-recorded
+  videoRef?: string;                  // Optional reference to a Video object ID
+  playbackUrl?: string;               // URL for video playback if contentType is 'video'
+
   // Scheduling
   scheduledStartTime?: Date;          // When class is scheduled to start
   scheduledEndTime?: Date;            // When class is scheduled to end
@@ -20,7 +24,7 @@ export interface LiveRoom {
   timezone?: string;                  // Timezone (e.g., 'America/New_York')
   isRecurring?: boolean;              // Is this a recurring class?
   recurrencePattern?: string;         // 'daily', 'weekly', 'monthly'
-  
+
   // Settings (from form)
   maxParticipants?: number;           // Maximum participants
   enableRecording?: boolean;          // Allow recording
@@ -29,7 +33,7 @@ export interface LiveRoom {
   enableWhiteboard?: boolean;          // Enable whiteboard
   enableWaitingRoom?: boolean;        // Enable waiting room
   enableBreakoutRooms?: boolean;       // Enable breakout rooms
-  
+
   // Configuration
   config: {
     startWithAudioMuted?: boolean;
@@ -38,17 +42,17 @@ export interface LiveRoom {
     enableClosePage?: boolean;
     [key: string]: any;
   };
-  
+
   // Metadata
   description?: string;                // Class description
   tags?: string[];                     // Tags for search
   thumbnail?: string;                  // Thumbnail image URL
-  
+
   // Statistics
   totalParticipants?: number;         // Total unique participants
   peakParticipants?: number;          // Peak concurrent participants
   averageDuration?: number;            // Average participant duration (minutes)
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +90,7 @@ export function createLiveRoom(data: {
   roomName: string;
   roomUrl: string;
   createdBy: string;
+  contentType?: 'live' | 'video';
   provider?: 'jitsi' | 'daily';
   courseId?: string;
   scheduledStartTime?: Date;
@@ -106,6 +111,7 @@ export function createLiveRoom(data: {
     createdBy: data.createdBy,
     courseId: data.courseId,
     status: 'scheduled',
+    contentType: data.contentType || 'live',
     scheduledStartTime: data.scheduledStartTime,
     scheduledEndTime: data.scheduledEndTime,
     maxParticipants: data.maxParticipants || 50,

@@ -18,10 +18,10 @@ export default async function TeacherDashboardPage() {
 
   const role = await getUserRole();
   const isSuperAdminUser = await isSuperAdmin();
-  
+
   // Allow access if user is teacher, admin, superadmin, or viewing as teacher
   const canAccess = role === 'teacher' || role === 'admin' || role === 'superadmin';
-  
+
   if (!canAccess) {
     redirect('/dashboard');
   }
@@ -90,30 +90,7 @@ export default async function TeacherDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
-      <header className="border-b bg-white/80 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <div className="flex items-center gap-3">
-            {isSuperAdminUser && (
-              <ViewAsSwitcher currentRole={role || 'student'} isSuperAdmin={isSuperAdminUser} />
-            )}
-            <ThemeToggle />
-            {role === 'superadmin' && (
-              <Link href="/admin/super">
-                <Button variant="outline" size="sm">Super Admin Console</Button>
-              </Link>
-            )}
-            {(role === 'admin' || role === 'superadmin') && (
-              <Link href="/admin">
-                <Button variant="outline" size="sm">Admin Panel</Button>
-              </Link>
-            )}
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">Student View</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-10 space-y-8">
         <div className="mb-8">

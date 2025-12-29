@@ -29,16 +29,20 @@ export function NotificationBell(_props: NotificationBellProps = {}) {
 
   const fetchNotifications = async () => {
     try {
-      const token = await getToken();
-      if (!token) return;
+      console.log('Fetching notifications...');
+      const res = await fetch('/api/notifications?limit=10');
 
-      const res = await fetch('/api/notifications?limit=10', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.status === 401) { setLoading(false); return; }
-      if (!res.ok) throw new Error('Failed to fetch notifications');
+      if (res.status === 401) {
+        console.warn('Unauthorized notification request');
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => 'No error text');
+        console.error(`Notification fetch error (${res.status}):`, errorText);
+        throw new Error(`Failed to fetch notifications: ${res.status}`);
+      }
 
       const result = await res.json();
       if (result.success && result.data) {
@@ -46,7 +50,7 @@ export function NotificationBell(_props: NotificationBellProps = {}) {
         setUnreadCount(result.data.unreadCount);
       }
     } catch (err) {
-      console.error('Error fetching notifications:', err);
+      console.error('Browser error in fetchNotifications:', err);
     } finally {
       setLoading(false);
     }

@@ -9,7 +9,7 @@ import { getLatestKeywords } from '@/lib/seo';
 
 export default async function SubjectsPage() {
   const { userId } = await auth();
-  
+
   if (!userId) {
     redirect('/sign-in');
   }
@@ -23,14 +23,7 @@ export default async function SubjectsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <Link href="/dashboard">
-            <span className="text-blue-600 hover:underline cursor-pointer">← Back</span>
-          </Link>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumbs JSON-LD */}
@@ -166,7 +159,7 @@ export default async function SubjectsPage() {
           <div>
             <h4 className="text-lg font-semibold text-gray-800 mb-2">International</h4>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {['SAT','ACT','GRE','GMAT','IELTS','TOEFL','MCAT','LSAT'].map((name) => {
+              {['SAT', 'ACT', 'GRE', 'GMAT', 'IELTS', 'TOEFL', 'MCAT', 'LSAT'].map((name) => {
                 const id = name.toLowerCase();
                 return (
                   <Link key={id} href={`/exams/${id}`}>
@@ -215,7 +208,7 @@ export default async function SubjectsPage() {
   );
 }
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<import('next').Metadata> {
   const kws = await getLatestKeywords();
   return {
     title: 'Browse Subjects | AdaptIQ',

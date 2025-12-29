@@ -11,32 +11,48 @@ export interface GenerateBlogParams {
 export async function generateBlogMarkdownAI(params: GenerateBlogParams) {
   const { topic, audience, tone, callToAction, keywords } = params;
   if (!openai) throw new Error('OPENAI_API_KEY not configured');
-  
-  const systemPrompt = `You are an expert blog writer and content creator specializing in educational and informative articles. Your task is to write engaging, well-structured blog posts in Markdown format. DO NOT generate quiz questions, course outlines, or tutorials - write a complete blog article with introduction, body paragraphs, and conclusion.`;
-  
-  const prompt = `Write a comprehensive, well-structured BLOG POST in Markdown format (NOT quiz questions, NOT a course, NOT a tutorial - a complete blog article).
+
+  const systemPrompt = `You are an expert professional blog writer. Your task is to write high-quality, comprehensive, and engaging blog articles that are AdSense compliant (long-form, original, valuable content).
+    - Write in pure Markdown format.
+    - DO NOT include YAML frontmatter (--- title: ... ---).
+    - DO NOT wrap the output in markdown code blocks like \`\`\`markdown.
+    - The output should be the raw markdown content only.`;
+
+  const prompt = `Write a comprehensive, professional, and high-authority blog article optimized for search engines (SEO) and AdSense compliance.
 
 Topic: ${topic}
-${audience ? `Target audience: ${audience}
-` : ''}${tone ? `Writing tone: ${tone}
-` : ''}${callToAction ? `Call to action: ${callToAction}
-` : ''}${keywords && keywords.length ? `Keywords to include: ${keywords.join(', ')}
+${audience ? `Target Audience: ${audience}
+` : ''}${tone ? `Tone: ${tone} (Authoritative, Insightful, and Engaging)
+` : ''}${callToAction ? `Call to Action: ${callToAction}
+` : ''}${keywords && keywords.length ? `Keywords: ${keywords.join(', ')}
 ` : ''}
 
-IMPORTANT: Generate a COMPLETE BLOG ARTICLE with:
-- Engaging introduction
-- Well-structured body paragraphs with clear headings (use ## for main headings, ### for subheadings)
-- Short, readable paragraphs
-- Bullet lists where appropriate
-- Examples and explanations
-- Strong conclusion with call-to-action
-- DO NOT include quiz questions
-- DO NOT create course modules
-- Write as a blog article, not educational course content
+STRUCTURE & REQUIREMENTS:
+1. Length: Minimum 2,000 words. Provide deeply researched, original content.
+2. EEAT Principles: Demonstrate Expertise, Experience, Authoritativeness, and Trustworthiness.
+3. Content Outline:
+   - # [Main Title]
+   - **Table of Contents** (Quick navigation)
+   - **Executive Summary/Key Takeaways** (Highlights for the reader)
+   - ## Introduction (Include a hook and context)
+   - ## [Major Section 1: Foundations/Definitions]
+   - ## [Major Section 2: In-Depth Analysis & Strategies]
+   - ## Case Studies / Real-World Applications
+   - ## Future Trends and expert Insights
+   - ## Conclusion & Next Steps
+   - ## Frequently Asked Questions (H2, with 5 specific, high-value questions)
+4. Formatting:
+   - Use H1 (#) for title only.
+   - Use H2 (##) for main chapters.
+   - Use H3 (###) for detailed sub-topics.
+   - Use bold text for emphasis and bullet points for lists.
+   - Use short paragraphs (max 3 sentences) to ensure mobile-friendliness.
+5. AdSense Compliance:
+   - Focus on original value (no generic filler).
+   - Maintain professional journalistic standards.
+   - Ensure the content is helpful, reliable, and people-first.
 
-Format: Markdown with proper headings, paragraphs, and formatting.
-Length: 800-1200 words
-Include YAML frontmatter at the top with summary if needed.`;
+IMPORTANT: Return ONLY the raw markdown content. Do NOT include frontmatter or code fences.`;
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',

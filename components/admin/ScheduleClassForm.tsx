@@ -23,6 +23,9 @@ export function ScheduleClassForm({ courses }: ScheduleClassFormProps) {
     enableScreenshare: true,
     enableChat: true,
     enableWhiteboard: false,
+    provider: 'jitsi' as 'jitsi' | 'zoom' | 'google-meet' | 'custom',
+    meetingLink: '',
+    meetingId: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,6 +134,54 @@ export function ScheduleClassForm({ courses }: ScheduleClassFormProps) {
           />
         </div>
       </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Video Provider
+          </label>
+          <select
+            value={formData.provider}
+            onChange={(e) => setFormData({ ...formData, provider: e.target.value as any })}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2"
+          >
+            <option value="jitsi">Jitsi Meet (Free/Embedded)</option>
+            <option value="zoom">Zoom</option>
+            <option value="google-meet">Google Meet</option>
+            <option value="custom">Custom Link</option>
+          </select>
+        </div>
+        {formData.provider !== 'jitsi' && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Meeting Link (Join URL) *
+            </label>
+            <input
+              type="url"
+              required
+              value={formData.meetingLink}
+              onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
+              placeholder="https://zoom.us/j/..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
+          </div>
+        )}
+      </div>
+
+      {formData.provider === 'zoom' && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Zoom Meeting ID (optional)
+          </label>
+          <input
+            type="text"
+            value={formData.meetingId}
+            onChange={(e) => setFormData({ ...formData, meetingId: e.target.value })}
+            placeholder="e.g., 123 456 7890"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">

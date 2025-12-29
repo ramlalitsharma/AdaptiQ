@@ -11,9 +11,9 @@ export async function isAdmin(userId: string): Promise<boolean> {
     if (!userId) return false;
 
     const db = await getDatabase();
-    const user = await db.collection('users').findOne({ userId });
+    const user = await db.collection('users').findOne({ clerkId: userId });
 
-    return user?.role === 'admin' || user?.role === 'super_admin';
+    return user?.role === 'admin' || user?.role === 'superadmin' || user?.role === 'super_admin';
 }
 
 /**
@@ -31,7 +31,7 @@ export async function logAdminAction(input: {
     const db = await getDatabase();
 
     // Get admin name for easier reading
-    const admin = await db.collection('users').findOne({ userId: input.adminId });
+    const admin = await db.collection('users').findOne({ clerkId: input.adminId });
 
     const log: AdminLog = {
         adminId: input.adminId,
@@ -98,12 +98,20 @@ export async function getSystemStats() {
 /**
  * Update a user's role
  */
-export async function updateUserRole(adminId: string, targetUserId: string, newRole: 'user' | 'admin') {
+export async function updateUserRole(adminId: string, targetUserId: string, newRole: string) {
     const db = await getDatabase();
 
     await db.collection('users').updateOne(
-        { userId: targetUserId },
-        { $set: { role: newRole, updatedAt: new Date() } }
+        { clerkId: targetUserId },
+        {
+            $set: {
+                role: newRole,
+                isSuperAdmin: newRole === 'superadmin',
+                isAdmin: newRole === 'admin' || newRole === 'superadmin',
+                isTeacher: newRole === 'teacher' || newRole === 'admin' || newRole === 'superadmin',
+                updatedAt: new Date()
+            }
+        }
     );
 
     await logAdminAction({
@@ -123,7 +131,7 @@ export async function toggleUserBan(adminId: string, targetUserId: string, ban: 
     const db = await getDatabase();
 
     await db.collection('users').updateOne(
-        { userId: targetUserId },
+        { clerkId: targetUserId },
         {
             $set: {
                 isBanned: ban,

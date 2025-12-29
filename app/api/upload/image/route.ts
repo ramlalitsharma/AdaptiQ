@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { auth } from '@/lib/auth';
-import { requireAdmin } from '@/lib/admin-check';
+import { requireAdmin, getUserRole } from '@/lib/admin-check';
 import { sanitizeInput } from '@/lib/validation';
 import { sanitizeFilename } from '@/lib/security';
 
@@ -16,15 +16,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin/teacher (can upload images)
-    try {
-      await requireAdmin();
-    } catch {
-      // Allow teachers to upload as well
-      const { isTeacher } = await import('@/lib/admin-check');
-      if (!(await isTeacher())) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
+    // Check if user is allowed to upload images (admin, teacher, student, user)
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const formData = await req.formData();
@@ -36,24 +32,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate file type - strict MIME type checking
-    const allowedImageTypes = [
+    const allowedTypes = [
       'image/jpeg',
       'image/jpg',
       'image/png',
       'image/gif',
       'image/webp',
       'image/svg+xml',
+      'application/pdf',
     ];
-    
-    if (!allowedImageTypes.includes(file.type)) {
+
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Only JPEG, PNG, GIF, WebP, and SVG are allowed.' },
+        { error: 'Invalid file type. Only JPEG, PNG, GIF, WebP, SVG, and PDF are allowed.' },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size (max 10MB) - Increased for PDFs
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: `File size must be less than ${maxSize / 1024 / 1024}MB` },
@@ -70,11 +67,11 @@ export async function POST(req: NextRequest) {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 15);
     const originalExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    
+
     // Validate extension
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf'];
     const extension = allowedExtensions.includes(originalExtension) ? originalExtension : 'jpg';
-    
+
     // Sanitize type parameter
     const sanitizedType = sanitizeInput(type).replace(/[^a-z0-9-]/g, '').slice(0, 20) || 'thumbnail';
     const filename = `${sanitizedType}-${timestamp}-${randomStr}.${extension}`;
@@ -88,12 +85,12 @@ export async function POST(req: NextRequest) {
     // Save file with additional security
     const safeFilename = sanitizeFilename(filename);
     const filePath = join(uploadsDir, safeFilename);
-    
+
     // Prevent path traversal
     if (!filePath.startsWith(uploadsDir)) {
       return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
     }
-    
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);

@@ -26,21 +26,21 @@ async function fetchUserWithRoles(userId: string) {
 
   const roleIds = Array.isArray(user.roleIds)
     ? user.roleIds
-        .map((id: any) => {
-          if (id instanceof ObjectId) return id;
-          if (typeof id === "string" && ObjectId.isValid(id))
-            return new ObjectId(id);
-          return null;
-        })
-        // Narrow the type here so TypeScript treats the result as ObjectId[]
-        .filter((id): id is ObjectId => id !== null)
+      .map((id: any) => {
+        if (id instanceof ObjectId) return id;
+        if (typeof id === "string" && ObjectId.isValid(id))
+          return new ObjectId(id);
+        return null;
+      })
+      // Narrow the type here so TypeScript treats the result as ObjectId[]
+      .filter((id): id is ObjectId => id !== null)
     : [];
 
   const roles = roleIds.length
     ? await db
-        .collection("roles")
-        .find({ _id: { $in: roleIds } })
-        .toArray()
+      .collection("roles")
+      .find({ _id: { $in: roleIds } })
+      .toArray()
     : [];
 
   return { user, roles };
@@ -114,14 +114,81 @@ async function persistRoleClaims(userId: string, claims: RoleClaims) {
   }
 }
 
+async function syncUserWithClerk(userId: string) {
+  try {
+    const { clerkClient } = await import("@clerk/nextjs/server");
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(userId);
+    if (!clerkUser) return null;
+
+    const email = clerkUser.emailAddresses[0]?.emailAddress;
+    const firstName = clerkUser.firstName || "";
+    const lastName = clerkUser.lastName || "";
+    const name = `${firstName} ${lastName}`.trim() || email;
+
+    const role = (clerkUser.publicMetadata.role as any) || "user";
+    const isSuperAdmin = clerkUser.publicMetadata.isSuperAdmin === true || role === "superadmin";
+    const isAdmin = clerkUser.publicMetadata.isAdmin === true || role === "admin" || isSuperAdmin;
+    const isTeacher = clerkUser.publicMetadata.isTeacher === true || role === "teacher" || isAdmin;
+
+    const db = await getDatabase();
+    await db.collection("users").updateOne(
+      { clerkId: userId },
+      {
+        $set: {
+          clerkId: userId,
+          email: email?.toLowerCase(),
+          name,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          role,
+          isSuperAdmin,
+          isAdmin,
+          isTeacher,
+          permissions: (ROLE_PERMISSIONS as any)[role] || [],
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          createdAt: new Date(),
+          subscriptionTier: "free",
+        }
+      },
+      { upsert: true }
+    );
+
+    return {
+      role,
+      isSuperAdmin,
+      isAdmin,
+      isTeacher
+    };
+  } catch (error) {
+    console.warn("Failed to sync user with Clerk:", error);
+    return null;
+  }
+}
+
 export async function getUserRole(): Promise<
-  "superadmin" | "admin" | "teacher" | "student" | null
+  "superadmin" | "admin" | "teacher" | "student" | "user" | null
 > {
   try {
     const { userId } = await auth();
     if (!userId) return null;
 
-    const { user, roles } = await fetchUserWithRoles(userId);
+    let { user, roles } = await fetchUserWithRoles(userId);
+
+    // If user not in MongoDB, sync now
+    if (!user) {
+      console.log(`User ${userId} not found in DB, performing on-demand sync...`);
+      const synced = await syncUserWithClerk(userId);
+      if (synced) {
+        // Re-fetch now that it exists
+        const refetched = await fetchUserWithRoles(userId);
+        user = refetched.user;
+        roles = refetched.roles;
+      }
+    }
+
     let derivedRole: "superadmin" | "admin" | "teacher" | null = null;
 
     if (user) {
@@ -151,16 +218,42 @@ export async function getUserRole(): Promise<
       return derivedRole;
     }
 
+    // Fallback if not already derived and user exists
+    if (user && user.role) {
+      return user.role as any;
+    }
+
+    // Last resort Clerk check (already incorporated into syncUserWithClerk above, 
+    // but kept as safety if sync failed but fetch was possible)
     const providerClaims = await fetchRoleClaimsFromAuthProvider(userId);
     if (providerClaims) {
       if (user) {
-        await persistRoleClaims(userId, providerClaims);
+        // Update persistent record
+        const db = await getDatabase();
+        await db.collection("users").updateOne(
+          { clerkId: userId },
+          {
+            $set: {
+              role: providerClaims.role,
+              isSuperAdmin: providerClaims.isSuperAdmin,
+              isAdmin: providerClaims.isAdmin,
+              isTeacher: providerClaims.isTeacher,
+              updatedAt: new Date(),
+            },
+          }
+        );
       }
       return providerClaims.role;
     }
 
     if (user) {
-      return "student";
+      // Check if they have any enrollments to be a "student"
+      const db = await getDatabase();
+      const enrollmentCount = await db.collection('enrollments').countDocuments({ userId: user.clerkId });
+      if (enrollmentCount > 0) {
+        return "student";
+      }
+      return "user";
     }
 
     return null;

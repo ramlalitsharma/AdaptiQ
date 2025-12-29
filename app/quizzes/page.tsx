@@ -14,29 +14,12 @@ export default async function QuizzesPage() {
     const db = await getDatabase();
     const banks = await db
         .collection('questionBanks')
-        .find({})
+        .find({ type: 'quiz' })
         .sort({ updatedAt: -1, name: 1 })
         .toArray();
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-            <header className="bg-white dark:bg-slate-800 border-b sticky top-0 z-50">
-                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <SiteBrand />
-                    <div className="flex items-center gap-4">
-                        <ThemeToggle />
-                        {userId ? (
-                            <Link href="/dashboard">
-                                <Button variant="outline" size="sm">Dashboard</Button>
-                            </Link>
-                        ) : (
-                            <Link href="/sign-in">
-                                <Button size="sm">Sign In</Button>
-                            </Link>
-                        )}
-                    </div>
-                </div>
-            </header>
 
             <main className="container mx-auto px-4 py-8">
                 <div className="mb-8">
@@ -58,7 +41,7 @@ export default async function QuizzesPage() {
                             <Card key={String(bank._id)} className="flex flex-col h-full hover:shadow-md transition-shadow">
                                 <CardHeader>
                                     <div className="flex justify-between items-start mb-2">
-                                        <Badge variant={bank.examType ? 'inverse' : 'secondary'}>
+                                        <Badge variant={bank.examType ? 'default' : 'info'}>
                                             {bank.examType || 'General'}
                                         </Badge>
                                     </div>

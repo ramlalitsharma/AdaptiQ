@@ -11,35 +11,61 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, courseId, maxParticipants, enableRecording, enableScreenshare, enableChat, enableWhiteboard } = body;
+    const {
+      name,
+      courseId,
+      maxParticipants,
+      contentType = 'live',
+      playbackUrl,
+      videoRef,
+      enableRecording,
+      enableScreenshare,
+      enableChat,
+      enableWhiteboard
+    } = body;
 
     if (!name) {
-      return NextResponse.json({ error: 'Room name is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
-    // Create Jitsi room (free, no API key needed)
-    const room = createJitsiRoom({
+    let roomData: any = {
       roomName: name,
-      isModerator: true,
-      startWithAudioMuted: false,
-      startWithVideoMuted: false,
-    });
-
-    // Save room to database
-    const db = await getDatabase();
-    await db.collection('liveRooms').insertOne({
-      roomId: room.roomName,
-      roomName: room.roomName,
-      roomUrl: room.roomUrl,
-      provider: 'jitsi',
       courseId: courseId || null,
       createdBy: userId,
       createdAt: new Date(),
-      status: 'scheduled',
-      config: room.config,
-    });
+      status: contentType === 'video' ? 'ready' : 'scheduled',
+      contentType,
+      playbackUrl: playbackUrl || null,
+      videoRef: videoRef || null,
+    };
 
-    return NextResponse.json({ room });
+    if (contentType === 'live') {
+      // Create Jitsi room (free, no API key needed)
+      const room = createJitsiRoom({
+        roomName: name,
+        isModerator: true,
+        startWithAudioMuted: false,
+        startWithVideoMuted: false,
+      });
+      roomData = {
+        ...roomData,
+        roomId: room.roomName,
+        roomUrl: room.roomUrl,
+        provider: 'jitsi',
+        config: room.config,
+      };
+    } else {
+      // For video content, use the name as ID or a random one
+      roomData.roomId = `vid_${Date.now()}`;
+      roomData.roomUrl = playbackUrl || '';
+      roomData.provider = 'custom';
+    }
+
+    // Save to database
+    const db = await getDatabase();
+    await db.collection('liveRooms').insertOne(roomData);
+
+    return NextResponse.json({ room: roomData });
   } catch (error: any) {
     console.error('Live room creation error:', error);
     return NextResponse.json(

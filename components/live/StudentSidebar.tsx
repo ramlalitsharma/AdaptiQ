@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import WhiteboardView from './WhiteboardView';
 
 interface StudentSidebarProps {
   roomId: string;
@@ -11,7 +12,7 @@ interface StudentSidebarProps {
 }
 
 export function StudentSidebar({ roomId, isInstructor }: StudentSidebarProps) {
-  const [activeTab, setActiveTab] = useState<'notes' | 'qna' | 'polls' | 'resources'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'qna' | 'polls' | 'resources' | 'whiteboard'>('notes');
   const [notes, setNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState('');
   const [handRaised, setHandRaised] = useState(false);
@@ -155,6 +156,13 @@ export function StudentSidebar({ roomId, isInstructor }: StudentSidebarProps) {
           >
             Resources
           </Button>
+          <Button
+            variant={activeTab === 'whiteboard' ? 'inverse' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('whiteboard')}
+          >
+            Whiteboard
+          </Button>
         </div>
       </CardHeader>
 
@@ -286,6 +294,11 @@ export function StudentSidebar({ roomId, isInstructor }: StudentSidebarProps) {
             {resources.length === 0 && (
               <p className="text-sm text-slate-500 text-center py-4">No resources available</p>
             )}
+          </div>
+        )}
+        {activeTab === 'whiteboard' && (
+          <div className="h-full min-h-[500px]">
+            <WhiteboardView roomId={roomId} />
           </div>
         )}
       </CardContent>

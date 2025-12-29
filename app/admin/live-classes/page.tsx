@@ -40,27 +40,32 @@ export default async function AdminLiveClassesPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9]">
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Admin', href: '/admin' },
-            { label: 'Live Classes' },
-          ]}
-        />
+    <div className="min-h-screen bg-[#f8fafc] relative overflow-hidden">
+      {/* Premium Background Elements */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+      <div className="absolute -top-[10%] -right-[5%] w-[40%] h-[40%] bg-blue-100/50 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Live Classroom Management</h1>
-            <p className="text-slate-600 mt-2">Create and manage live video classrooms for courses</p>
+      <div className="container mx-auto px-4 py-12 relative z-10 space-y-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-slate-900 rounded-xl shadow-lg shadow-slate-200">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span className="text-sm font-black text-slate-500 uppercase tracking-widest text-[10px]">Universal Studio</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Live & Video Console</h1>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl">
+              Project real-time impact or deploy cinematic masterclasses. Manage your entire digital presence from one unified studio.
+            </p>
           </div>
           <div className="flex gap-3">
-            <Link href="/admin/live-classes/schedule">
-              <Button variant="inverse">Schedule Class</Button>
-            </Link>
             <Link href="/live/recordings">
-              <Button variant="outline">View Recordings</Button>
+              <Button variant="outline" className="rounded-xl font-bold bg-white text-slate-900 border-slate-200 shadow-sm px-6 h-12">
+                Archives
+              </Button>
             </Link>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { MediaUploader } from '@/components/media/MediaUploader';
 
 interface BlogSummary {
   id: string;
@@ -97,6 +98,10 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
 
   const addResource = () => setResources((prev) => [...prev, { type: 'link', label: '', url: '' }]);
   const removeResource = (index: number) => setResources((prev) => prev.filter((_, i) => i !== index));
+
+  const insertContent = (text: string) => {
+    setForm(prev => ({ ...prev, markdown: prev.markdown + '\n' + text }));
+  };
 
   const handleSubmit = async (saveAsStatus?: string) => {
     if (!canSubmit || loading) return;
@@ -337,6 +342,31 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
                 </>
               )}
 
+              {mode === 'ai' && !editingSlug && (
+                <div className="pt-2">
+                  <Button
+                    onClick={handleGeneratePreview}
+                    disabled={generatingPreview || !form.topic.trim()}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all flex items-center justify-center gap-2 py-6"
+                  >
+                    {generatingPreview ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Generating High-Quality Draft...
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">✨</span>
+                        Generate Professional AI Article
+                      </>
+                    )}
+                  </Button>
+                  <p className="mt-2 text-[10px] text-slate-500 text-center italic">
+                    AI will generate a 2,000+ word, SEO-optimized, and AdSense-compliant professional draft.
+                  </p>
+                </div>
+              )}
+
               <label className="space-y-1 text-sm text-slate-600">
                 Tags
                 <input
@@ -346,43 +376,55 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
                   className="w-full rounded-lg border border-slate-200 px-3 py-2"
                 />
               </label>
-              <label className="space-y-1 text-sm text-slate-600">
-                Hero image URL
-                <input
-                  value={form.heroImage}
-                  onChange={(e) => setForm((prev) => ({ ...prev, heroImage: e.target.value }))}
-                  placeholder="https://images..."
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                />
-              </label>
 
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-slate-700">SEO metadata</h4>
-                <label className="space-y-1 text-xs text-slate-600">
-                  SEO description
-                  <textarea
-                    value={form.seoDescription}
-                    onChange={(e) => setForm((prev) => ({ ...prev, seoDescription: e.target.value }))}
-                    placeholder="Discover how AI-powered adaptivity transforms exam preparation."
-                    rows={3}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2"
+
+
+
+
+              <label className="space-y-1 text-sm text-slate-600">
+                Hero Image
+                <div className="space-y-2">
+                  <MediaUploader
+                    accept="image/*"
+                    variant="dropzone"
+                    label="Upload Hero Image"
+                    onUploadComplete={(url: string) => setForm(prev => ({ ...prev, heroImage: url }))}
                   />
-                </label>
-              </div>
-              {mode === 'ai' && !editingSlug && (
-                <Button variant="outline" size="sm" onClick={handleGeneratePreview} disabled={generatingPreview}>
-                  {generatingPreview ? 'Generating preview…' : 'Generate AI preview'}
-                </Button>
-              )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">OR</span>
+                    <input
+                      value={form.heroImage}
+                      onChange={(e) => setForm((prev) => ({ ...prev, heroImage: e.target.value }))}
+                      placeholder="https://images..."
+                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              </label>
             </div>
           </section>
 
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-800">Content editor</h3>
+
+            <div className="flex gap-2 items-center flex-wrap border-b border-slate-100 pb-2">
+              <span className="text-xs font-semibold text-slate-500 mr-2">Insert:</span>
+              <MediaUploader
+                label="📷 Image"
+                accept="image/*"
+                onUploadComplete={(url: string, name: string) => insertContent(`![${name}](${url})`)}
+              />
+              <MediaUploader
+                label="📄 PDF"
+                accept="application/pdf"
+                onUploadComplete={(url: string, name: string) => insertContent(`\n[PDF: ${name}](${url})\n`)}
+              />
+            </div>
+
             <MarkdownEditor
               value={form.markdown}
               onChange={(next) => setForm((prev) => ({ ...prev, markdown: next }))}
-              height={400}
+              height={500}
               placeholder="# Outline\n- Intro\n- Key insight\n- CTA"
             />
             {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
@@ -439,7 +481,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-sm font-medium text-slate-800 line-clamp-1" title={blog.title}>{blog.title}</div>
-                        <Badge variant={blog.status === 'published' ? 'success' : 'secondary'} size="sm">
+                        <Badge variant={blog.status === 'published' ? 'success' : 'default'} size="sm">
                           {blog.status || 'draft'}
                         </Badge>
                       </div>

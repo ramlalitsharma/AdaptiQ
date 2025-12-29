@@ -34,7 +34,7 @@ export default async function AdminAnalyticsPage() {
 
   try {
     const db = await getDatabase();
-    
+
     const [users, courses, progress] = await Promise.all([
       db.collection('users').find({}).toArray(),
       db.collection('courses').find({}).toArray(),
@@ -48,13 +48,13 @@ export default async function AdminAnalyticsPage() {
 
     // Calculate average score
     const scores = progress.map((p: any) => p.score || 0).filter((s: number) => s > 0);
-    analytics.averageScore = scores.length > 0 
+    analytics.averageScore = scores.length > 0
       ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length)
       : 0;
 
     // Calculate completion rate
     const completed = progress.filter((p: any) => p.completed).length;
-    analytics.completionRate = progress.length > 0 
+    analytics.completionRate = progress.length > 0
       ? Math.round((completed / progress.length) * 100)
       : 0;
 
@@ -74,17 +74,7 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/admin">
-              <Button variant="outline" size="sm">← Admin Panel</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">

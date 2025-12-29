@@ -120,28 +120,28 @@ export function ViewAsSwitcher({ currentRole, isSuperAdmin }: ViewAsSwitcherProp
                 <div className="space-y-1">
                   <button
                     onClick={() => handleViewAs('superadmin')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 hover:bg-slate-100 ${!viewAs ? 'bg-slate-100 font-medium' : ''
+                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 ${!viewAs ? 'bg-slate-100 dark:bg-slate-700 font-medium' : ''
                       }`}
                   >
                     🛡️ Super Admin
                   </button>
                   <button
                     onClick={() => handleViewAs('admin')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 hover:bg-slate-100 ${viewAs === 'admin' ? 'bg-slate-100 font-medium' : ''
+                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 ${viewAs === 'admin' ? 'bg-slate-100 dark:bg-slate-700 font-medium' : ''
                       }`}
                   >
                     👨‍💼 Admin Dashboard
                   </button>
                   <button
                     onClick={() => handleViewAs('teacher')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 hover:bg-slate-100 ${viewAs === 'teacher' ? 'bg-slate-100 font-medium' : ''
+                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 ${viewAs === 'teacher' ? 'bg-slate-100 dark:bg-slate-700 font-medium' : ''
                       }`}
                   >
                     👨‍🏫 Teacher Dashboard
                   </button>
                   <button
                     onClick={() => handleViewAs('student')}
-                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 hover:bg-slate-100 ${viewAs === 'student' ? 'bg-slate-100 font-medium' : ''
+                    className={`w-full text-left px-3 py-2 rounded text-sm text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 ${viewAs === 'student' ? 'bg-slate-100 dark:bg-slate-700 font-medium' : ''
                       }`}
                   >
                     🎓 Student Dashboard

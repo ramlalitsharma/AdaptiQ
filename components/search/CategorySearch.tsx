@@ -19,8 +19,8 @@ interface CategorySearchProps {
 
 const getCategoryDisplayName = (category: string) => {
   const displayNames: Record<string, string> = {
-    'General': 'Programming',
-    'general': 'Programming',
+    'General': 'Featured Selection',
+    'general': 'Featured Selection',
     'academic': 'Academic',
     'professional': 'Professional',
     'language': 'Language',
@@ -179,9 +179,8 @@ export function CategorySearch({ categories, subjects, onSearch }: CategorySearc
             <button
               type="button"
               onClick={() => handleCategorySelect('')}
-              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition ${
-                !selectedCategory ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'
-              }`}
+              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition ${!selectedCategory ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'
+                }`}
             >
               All Categories
             </button>
@@ -192,11 +191,10 @@ export function CategorySearch({ categories, subjects, onSearch }: CategorySearc
                   key={category}
                   type="button"
                   onClick={() => handleCategorySelect(category)}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition flex items-center justify-between ${
-                    selectedCategory === category
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition flex items-center justify-between ${selectedCategory === category
                       ? 'bg-teal-50 text-teal-700 font-medium'
                       : 'text-slate-700'
-                  }`}
+                    }`}
                 >
                   <span>{getCategoryDisplayName(category)}</span>
                   {subjectCount > 0 && (
@@ -239,9 +237,8 @@ export function CategorySearch({ categories, subjects, onSearch }: CategorySearc
               <button
                 type="button"
                 onClick={() => handleSubjectSelect('')}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition ${
-                  !selectedSubject ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'
-                }`}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition ${!selectedSubject ? 'bg-teal-50 text-teal-700 font-medium' : 'text-slate-700'
+                  }`}
               >
                 All Subjects
               </button>
@@ -250,11 +247,10 @@ export function CategorySearch({ categories, subjects, onSearch }: CategorySearc
                   key={subject.id}
                   type="button"
                   onClick={() => handleSubjectSelect(subject.slug)}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition ${
-                    selectedSubject === subject.slug
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition ${selectedSubject === subject.slug
                       ? 'bg-teal-50 text-teal-700 font-medium'
                       : 'text-slate-700'
-                  }`}
+                    }`}
                 >
                   {subject.name}
                 </button>
@@ -323,9 +319,8 @@ export function CategorySearch({ categories, subjects, onSearch }: CategorySearc
                     setShowSuggestions(false);
                     setHighlightIndex(-1);
                   }}
-                  className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-slate-50 transition ${
-                    highlightIndex === idx ? 'bg-teal-50 text-teal-700' : 'text-slate-700'
-                  }`}
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-slate-50 transition ${highlightIndex === idx ? 'bg-teal-50 text-teal-700' : 'text-slate-700'
+                    }`}
                   role="option"
                   id={`${listboxId}-option-${idx}`}
                   aria-selected={highlightIndex === idx}

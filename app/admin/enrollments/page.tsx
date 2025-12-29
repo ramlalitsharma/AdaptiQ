@@ -100,17 +100,7 @@ export default async function AdminEnrollmentsPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f6f9] text-slate-900">
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Button asChild variant="outline" size="sm">
-              <Link href="/admin">← Admin Panel</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col gap-2">

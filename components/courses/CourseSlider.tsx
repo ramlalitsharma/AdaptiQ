@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
 interface Course {
@@ -108,10 +109,10 @@ export function CourseSlider({ courses }: CourseSliderProps) {
                   <div className="text-white text-6xl">📚</div>
                 </div>
               )}
-              
+
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              
+
               {/* Badges */}
               {badges.length > 0 && (
                 <div className="absolute top-4 right-4 flex gap-2 z-10">
@@ -127,19 +128,37 @@ export function CourseSlider({ courses }: CourseSliderProps) {
                 </div>
               )}
 
-              {/* Course Info */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
-                <h3 className="text-3xl font-bold mb-2 line-clamp-2">{currentCourse.title}</h3>
-                {currentCourse.summary && (
-                  <p className="text-white/90 text-lg mb-3 line-clamp-2">{currentCourse.summary}</p>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-semibold text-teal-300">
-                    {formatPrice(currentCourse.price)}
-                  </span>
-                  <span className="text-sm text-white/80">
-                    {currentIndex + 1} / {courses.length}
-                  </span>
+              {/* Course Info - Ultra HD Glassmorphism */}
+              <div className="absolute bottom-6 left-6 right-6 p-8 glass-effect rounded-[2rem] z-10">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Featured Course</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Expert Pick</span>
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-2 line-clamp-2">
+                    {currentCourse.title}
+                  </h3>
+                  {currentCourse.summary && (
+                    <p className="text-slate-600 text-base md:text-lg mb-6 line-clamp-2 font-medium leading-relaxed max-w-2xl">
+                      {currentCourse.summary}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between pt-6 border-t border-slate-200/50">
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl font-black text-slate-900 tracking-tighter">
+                        {formatPrice(currentCourse.price)}
+                      </span>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-6 rounded-2xl shadow-xl hover:scale-105 transition-all">
+                        Enroll Now
+                      </Button>
+                    </div>
+                    <div className="hidden md:flex items-center gap-2">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Slide {currentIndex + 1} of {courses.length}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -187,11 +206,10 @@ export function CourseSlider({ courses }: CourseSliderProps) {
                 e.preventDefault();
                 goToSlide(index);
               }}
-              className={`h-2 rounded-full transition-all ${
-                index === currentIndex
-                  ? 'w-8 bg-white'
-                  : 'w-2 bg-white/50 hover:bg-white/75'
-              }`}
+              className={`h-2 rounded-full transition-all ${index === currentIndex
+                ? 'w-8 bg-white'
+                : 'w-2 bg-white/50 hover:bg-white/75'
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
@@ -205,11 +223,10 @@ export function CourseSlider({ courses }: CourseSliderProps) {
             <button
               key={course.id}
               onClick={() => goToSlide(index)}
-              className={`flex-shrink-0 relative w-24 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                index === currentIndex
-                  ? 'border-teal-500 scale-105 shadow-lg'
-                  : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'
-              }`}
+              className={`flex-shrink-0 relative w-24 h-16 rounded-lg overflow-hidden border-2 transition-all ${index === currentIndex
+                ? 'border-teal-500 scale-105 shadow-lg'
+                : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'
+                }`}
             >
               {course.thumbnail ? (
                 <Image

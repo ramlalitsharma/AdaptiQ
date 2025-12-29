@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { requireAdmin } from '@/lib/admin-check';
+import { requireAdmin, getUserRole } from '@/lib/admin-check';
 import { getDatabase } from '@/lib/mongodb';
 
 export const runtime = 'nodejs';
@@ -9,7 +9,10 @@ export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    await requireAdmin();
+    const role = await getUserRole();
+    if (role !== 'student') {
+      return NextResponse.json({ error: 'Only students can create self practice quizzes' }, { status: 403 });
+    }
 
     const body = await req.json();
     const { title, description, bankIds, questionCount, tags, releaseAt, visibility } = body;
@@ -26,7 +29,7 @@ export async function POST(req: NextRequest) {
       questionCount: questionCount ? Number(questionCount) : undefined,
       tags: Array.isArray(tags) ? tags : [],
       releaseAt: releaseAt || null,
-      visibility: visibility || 'private',
+      visibility: 'private',
       createdAt: new Date(),
       updatedAt: new Date(),
     };

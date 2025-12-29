@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
 import { writeFile, mkdir } from 'fs/promises';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
+import { Readable } from 'stream';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { sanitizeInput } from '@/lib/validation';
@@ -38,9 +41,9 @@ export async function POST(req: NextRequest) {
     if (!file.type.startsWith('video/')) {
       return NextResponse.json({ error: 'File must be a video' }, { status: 400 });
     }
-    // Max 200MB per upload
-    if (file.size > 200 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 200MB' }, { status: 400 });
+    // Max 1GB per upload
+    if (file.size > 1024 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size must be less than 1GB' }, { status: 400 });
     }
 
     // Basic rate limiting per user and videoId
@@ -60,30 +63,31 @@ export async function POST(req: NextRequest) {
     // For production: upload to your CDN/storage service
     const safeVideoId = sanitizeInput(videoId).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
     const uploadDir = join(process.cwd(), 'public', 'videos', safeVideoId);
-    
+
     // Prevent path traversal
     const resolvedPath = join(process.cwd(), 'public', 'videos');
     if (!uploadDir.startsWith(resolvedPath)) {
       return NextResponse.json({ error: 'Invalid video ID' }, { status: 400 });
     }
-    
+
     // Create directory if it doesn't exist
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true });
     }
 
-    // Save file with sanitized filename
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Save file with sanitized filename using streams for efficiency
     const baseName = sanitizeFilename(file.name).slice(0, 200);
     const filePath = join(uploadDir, baseName);
-    
+
     // Double-check path safety
     if (!filePath.startsWith(uploadDir)) {
       return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
     }
-    
-    await writeFile(filePath, buffer);
+
+    // Use pipeline to stream the file to disk
+    const nodeStream = Readable.fromWeb(file.stream() as any);
+    const writeStream = createWriteStream(filePath);
+    await pipeline(nodeStream, writeStream);
 
     // Update video record
     const db = await getDatabase();

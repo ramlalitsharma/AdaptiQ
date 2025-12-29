@@ -7,6 +7,8 @@ import { getDatabase } from '@/lib/mongodb';
 import { auth } from '@/lib/auth';
 import { CourseSlider } from '@/components/courses/CourseSlider';
 import { CategorySearch } from '@/components/search/CategorySearch';
+import { BentoFeatures } from '@/components/home/BentoFeatures';
+import * as motion from 'framer-motion/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,8 +48,8 @@ const contactInfo = [
 
 const getCategoryDisplayName = (category: string) => {
   const displayNames: Record<string, string> = {
-    'General': 'Programming',
-    'general': 'Programming',
+    'General': 'Featured Selection',
+    'general': 'Featured Selection',
     'academic': 'Academic',
     'professional': 'Professional',
     'language': 'Language',
@@ -118,7 +120,7 @@ export default async function Home() {
       .catch(() => []),
     db
       .collection('practiceSets')
-      .find({})
+      .find({ visibility: 'public' })
       .sort({ updatedAt: -1 })
       .limit(6)
       .toArray()
@@ -280,52 +282,75 @@ export default async function Home() {
 
   return (
     <div className="bg-white text-slate-900 min-h-screen">
-      {/* Hero Section - Udemy Style */}
-      <section className="bg-gradient-to-r from-[#1e40af] via-[#3b82f6] to-[#60a5fa] text-white">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Learning that fits
-              <br />
-              <span className="text-yellow-300">your schedule</span>
-          </h1>
-            <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
-              Skills for your present (and your future). Get started with us.
+      {/* Ultra HD Hero Section */}
+      <section className="relative min-h-[95vh] flex flex-col items-center justify-center overflow-hidden bg-slate-950 pb-32">
+        {/* Animated Background Blobs */}
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-teal-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <Badge variant="outline" className="text-blue-400 border-blue-400/30 px-4 py-1 rounded-full bg-blue-400/10 backdrop-blur-sm">
+              ✨ The Future of Learning is Here
+            </Badge>
+
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[1.1] tracking-tight">
+              Master Your Future with <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-teal-400 to-indigo-400">
+                Ultra-Adaptive AI
+              </span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              Experience the world's most advanced learning platform. Real-time 4K classes, AI-personalized paths, and master-level certifications.
             </p>
-            <div className="flex flex-wrap gap-4">
+
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-8">
               <SignedOut>
                 <SignInButton mode="modal">
-                  <Button size="lg" className="px-8 py-4 text-lg font-bold bg-white text-blue-600 hover:bg-blue-50 shadow-lg">
-                    Get Started
+                  <Button size="lg" className="px-10 py-7 text-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] border-none rounded-2xl">
+                    Start Learning Free
                   </Button>
                 </SignInButton>
               </SignedOut>
               <SignedIn>
                 <Link href="/dashboard">
-                  <Button size="lg" className="px-8 py-4 text-lg font-bold bg-white text-blue-600 hover:bg-blue-50 shadow-lg">
-                    Go to Dashboard
+                  <Button size="lg" className="px-10 py-7 text-xl font-bold bg-white text-slate-950 hover:bg-slate-50 border-none rounded-2xl shadow-2xl">
+                    Open Dashboard
                   </Button>
                 </Link>
               </SignedIn>
+              <Button size="lg" variant="ghost" className="text-white hover:bg-white/10 px-8 py-7 text-xl font-semibold border border-white/10 rounded-2xl backdrop-blur-md">
+                View 4K Demos
+              </Button>
             </div>
+          </div>
+        </div>
+
+        {/* Hero Bottom Fade */}
+        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#f8fafc] to-transparent"></div>
+      </section>
+
+      {/* Glassmorphic Search & Features Showcase */}
+      <section className="relative z-20 -mt-16">
+        <div className="container mx-auto px-4">
+          <div className="glass-effect p-4 md:p-8 rounded-[2rem] shadow-2xl max-w-5xl mx-auto">
+            <CategorySearch
+              categories={categories}
+              subjects={subjects.map((s) => ({
+                id: s.id,
+                name: s.name,
+                slug: s.slug,
+                category: s.category || 'General',
+              }))}
+            />
           </div>
         </div>
       </section>
 
-      {/* Search Bar - Prominent */}
-      <section className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <CategorySearch
-            categories={categories}
-            subjects={subjects.map((s) => ({
-              id: s.id,
-              name: s.name,
-              slug: s.slug,
-              category: s.category || 'General',
-            }))}
-          />
-        </div>
-      </section>
+      {/* Bento Grid Features */}
+      <BentoFeatures />
 
       {/* Course Slider - Featured */}
       {latestCourses.length > 0 && (
@@ -351,35 +376,38 @@ export default async function Home() {
           ) : (
             categoryData.map((categoryInfo) => {
               if (categoryInfo.courses.length === 0) return null;
-              
+
               return (
                 <section key={categoryInfo.name} className="space-y-6">
                   {/* Category Header with Subcategories */}
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                  <div className="flex flex-col gap-8 mb-12">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                      <div className="space-y-2">
+                        <Badge variant="inverse" className="bg-blue-600 text-[10px] font-black uppercase tracking-widest px-3">
                           {categoryInfo.displayName}
+                        </Badge>
+                        <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+                          {categoryInfo.name.toLowerCase() === 'general' ? 'Featured Courses' : `Explore ${categoryInfo.displayName}`}
                         </h2>
-                        <p className="text-slate-600">
-                          {categoryInfo.courses.length} {categoryInfo.courses.length === 1 ? 'course' : 'courses'} • {categoryInfo.subjects.length} {categoryInfo.subjects.length === 1 ? 'subject' : 'subjects'}
+                        <p className="text-lg text-slate-500 font-medium">
+                          {categoryInfo.courses.length} {categoryInfo.courses.length === 1 ? 'Premium Course' : 'World-Class Courses'} • {categoryInfo.subjects.length} Specialized Paths
                         </p>
                       </div>
                       <Link href={`/courses?category=${encodeURIComponent(categoryInfo.name)}`}>
-                        <Button variant="ghost" className="text-blue-600 hover:text-blue-700 font-semibold">
-                          Explore {categoryInfo.displayName} →
+                        <Button variant="outline" className="rounded-2xl px-6 py-6 font-bold border-2 border-slate-200 hover:border-blue-600 hover:text-blue-600 transition-all">
+                          View All Specializations →
                         </Button>
                       </Link>
                     </div>
-                    
-                    {/* Subcategories (Subjects) */}
+
+                    {/* Subcategories (Subjects) as minimal pills */}
                     {categoryInfo.subjects.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-3">
                         {categoryInfo.subjects.map((subject) => (
                           <Link
                             key={subject.id}
                             href={`/courses?category=${encodeURIComponent(categoryInfo.name)}&subject=${encodeURIComponent(subject.slug)}`}
-                            className="px-4 py-2 bg-white border border-slate-300 rounded-full text-sm font-medium text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
+                            className="px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:shadow-lg transition-all"
                           >
                             {subject.name}
                           </Link>
@@ -391,120 +419,137 @@ export default async function Home() {
                   {/* Courses Grid */}
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
                     {categoryInfo.courses.slice(0, 10).map((course, courseIdx) => {
-                    const badges = getBadges(course.tags, course.createdAt);
-                    const enrollmentStatus = enrollmentStatuses[course.id];
-                    const statusBadge =
-                      enrollmentStatus === 'approved'
-                        ? 'Enrolled'
-                        : enrollmentStatus === 'completed'
-                        ? 'Completed'
-                        : enrollmentStatus === 'pending'
-                        ? 'Awaiting Approval'
-                        : enrollmentStatus === 'waitlisted'
-                        ? 'Waitlisted'
-                        : enrollmentStatus === 'rejected'
-                        ? 'Rejected'
-                        : null;
+                      const badges = getBadges(course.tags, course.createdAt);
+                      const enrollmentStatus = enrollmentStatuses[course.id];
+                      const statusBadge =
+                        enrollmentStatus === 'approved'
+                          ? 'Enrolled'
+                          : enrollmentStatus === 'completed'
+                            ? 'Completed'
+                            : enrollmentStatus === 'pending'
+                              ? 'Awaiting Approval'
+                              : enrollmentStatus === 'waitlisted'
+                                ? 'Waitlisted'
+                                : enrollmentStatus === 'rejected'
+                                  ? 'Rejected'
+                                  : null;
 
-                    const renderActionButton = () => {
-                      if (!userId) {
-                        return (
-                          <span className="text-xs font-semibold text-blue-600">View</span>
-                        );
-                      }
+                      const renderActionButton = () => {
+                        if (!userId) {
+                          return (
+                            <span className="text-xs font-semibold text-blue-600">View</span>
+                          );
+                        }
 
-                      if (enrollmentStatus === 'approved' || enrollmentStatus === 'completed') {
-                        return (
-                          <span className="text-xs font-semibold text-green-600">
-                            {enrollmentStatus === 'completed' ? 'Review' : 'Continue'}
-                          </span>
-                        );
-                      }
+                        if (enrollmentStatus === 'approved' || enrollmentStatus === 'completed') {
+                          return (
+                            <span className="text-xs font-semibold text-green-600">
+                              {enrollmentStatus === 'completed' ? 'Review' : 'Continue'}
+                            </span>
+                          );
+                        }
 
-                      if (enrollmentStatus === 'pending') {
-                        return (
-                          <span className="text-xs font-semibold text-yellow-600">Pending</span>
-                        );
-                      }
+                        if (enrollmentStatus === 'pending') {
+                          return (
+                            <span className="text-xs font-semibold text-yellow-600">Pending</span>
+                          );
+                        }
 
-                      if (enrollmentStatus === 'waitlisted') {
+                        if (enrollmentStatus === 'waitlisted') {
+                          return (
+                            <span className="text-xs font-semibold text-blue-600">Waitlisted</span>
+                          );
+                        }
+
                         return (
-                          <span className="text-xs font-semibold text-blue-600">Waitlisted</span>
+                          <span className="text-xs font-semibold text-blue-600">Enroll</span>
                         );
-                      }
+                      };
 
                       return (
-                        <span className="text-xs font-semibold text-blue-600">Enroll</span>
-                      );
-                    };
+                        <motion.div
+                          key={course.id}
+                          layout
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: courseIdx * 0.05 }}
+                        >
+                          <Link href={`/courses/${course.slug}`}>
+                            <Card className="group relative overflow-hidden border-none bg-white hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 cursor-pointer h-full flex flex-col rounded-3xl">
+                              {/* Shimmer Effect on Hover */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none z-10"></div>
 
-                    return (
-                      <Link key={course.id} href={`/courses/${course.slug}`}>
-                        <Card className="group overflow-hidden border border-slate-200 bg-white hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col">
-                          <div className="relative h-40 w-full overflow-hidden bg-slate-200">
-                            <img
-                              src={
-                                course.thumbnail ||
-                                'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80'
-                              }
-                              alt={course.title}
-                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            <div className="absolute top-2 right-2 flex gap-1">
-                              {badges.map((badge) => (
-                                <Badge key={badge} variant={badge === 'New' ? 'success' : 'info'} className="text-xs">
-                                  {badge}
-                                </Badge>
-                              ))}
-                            </div>
-                            {statusBadge && (
-                              <div className="absolute top-2 left-2">
-                                <Badge
-                                  variant={
-                                    enrollmentStatus === 'approved' || enrollmentStatus === 'completed'
-                                      ? 'success'
-                                      : enrollmentStatus === 'pending'
-                                      ? 'warning'
-                                      : enrollmentStatus === 'waitlisted'
-                                      ? 'info'
-                                      : 'error'
+                              <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                                <img
+                                  src={
+                                    course.thumbnail ||
+                                    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80'
                                   }
-                                  className="text-xs"
-                                >
-                                  {statusBadge}
-                                </Badge>
+                                  alt={course.title}
+                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                />
+                                <div className="absolute top-3 right-3 flex flex-col gap-2">
+                                  {badges.map((badge) => (
+                                    <Badge key={badge} variant={badge === 'New' ? 'success' : 'info'} className="text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-white/10 border-white/20 text-white">
+                                      {badge}
+                                    </Badge>
+                                  ))}
+                                </div>
+                                {statusBadge && (
+                                  <div className="absolute top-3 left-3">
+                                    <Badge
+                                      variant={
+                                        enrollmentStatus === 'approved' || enrollmentStatus === 'completed'
+                                          ? 'success'
+                                          : enrollmentStatus === 'pending'
+                                            ? 'warning'
+                                            : enrollmentStatus === 'waitlisted'
+                                              ? 'info'
+                                              : 'error'
+                                      }
+                                      className="text-xs font-bold"
+                                    >
+                                      {statusBadge}
+                                    </Badge>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          <CardContent className="p-4 flex-1 flex flex-col">
-                            <h3 className="text-sm font-bold text-slate-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors min-h-[2.5rem]">
-                              {course.title}
-                            </h3>
-                            <p className="text-xs text-slate-500 mb-2 line-clamp-2 flex-1">
-                              {course.summary || 'Interactive lessons and real projects'}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
-                              <span>{course.subject || 'General'}</span>
-                              {course.level && (
-                                <>
-                                  <span>•</span>
-                                  <span>{course.level}</span>
-                                </>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                              <span className="text-base font-bold text-slate-900">
-                                {formatPrice(course.price)}
-                              </span>
-                              {renderActionButton()}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
+                              <CardContent className="p-6 flex-1 flex flex-col">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{course.subject || 'General'}</span>
+                                  {course.level && (
+                                    <>
+                                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{course.level}</span>
+                                    </>
+                                  )}
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 line-clamp-2 mb-3 group-hover:text-blue-600 transition-colors duration-300">
+                                  {course.title}
+                                </h3>
+                                <p className="text-sm text-slate-500 mb-6 line-clamp-2 flex-1 leading-relaxed">
+                                  {course.summary || 'Interactive lessons and real projects'}
+                                </p>
+                                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                                  <div>
+                                    <span className="text-xs text-slate-400 block mb-0.5">Price</span>
+                                    <span className="text-xl font-black text-slate-900">
+                                      {formatPrice(course.price)}
+                                    </span>
+                                  </div>
+                                  <div className="bg-slate-50 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 px-4 py-2 rounded-xl">
+                                    {renderActionButton()}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        </motion.div>
                       );
                     })}
                   </div>
-                  
+
                   {categoryInfo.courses.length > 10 && (
                     <div className="text-center pt-4">
                       <Link href={`/courses?category=${encodeURIComponent(categoryInfo.name)}`}>

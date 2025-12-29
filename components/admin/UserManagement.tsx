@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/Input';
 
 interface User {
   id: string;
+  clerkId: string;
   email: string;
   firstName?: string;
   lastName?: string;
-  role: 'superadmin' | 'admin' | 'teacher' | 'student';
+  role: 'superadmin' | 'admin' | 'teacher' | 'student' | 'user';
   createdAt: string;
   createdBy?: string;
 }
@@ -20,16 +21,26 @@ export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState<string>('student');
+  const [currentUserRole, setCurrentUserRole] = useState<string>('user');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
     lastName: '',
-    role: 'student' as 'admin' | 'teacher' | 'student',
+    role: 'user' as 'superadmin' | 'admin' | 'teacher' | 'student' | 'user',
     password: '',
+  });
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    role: 'user' as User['role'],
+    password: '',
+    isBanned: false
   });
 
   useEffect(() => {
@@ -42,7 +53,7 @@ export function UserManagement() {
       const res = await fetch('/api/user/role');
       const data = await res.json();
       if (res.ok) {
-        setCurrentUserRole(data.role || 'student');
+        setCurrentUserRole(data.role || 'user');
       }
     } catch (error) {
       console.error('Failed to load current user role:', error);
@@ -54,7 +65,7 @@ export function UserManagement() {
       const res = await fetch('/api/admin/users');
       const data = await res.json();
       if (res.ok) {
-        setUsers(data.users || []);
+        setUsers(data.data?.users || []);
       }
     } catch (error) {
       console.error('Failed to load users:', error);
@@ -65,7 +76,6 @@ export function UserManagement() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       const res = await fetch('/api/admin/users/create', {
         method: 'POST',
@@ -76,7 +86,7 @@ export function UserManagement() {
       const data = await res.json();
       if (res.ok) {
         setShowCreateForm(false);
-        setFormData({ email: '', firstName: '', lastName: '', role: 'student', password: '' });
+        setFormData({ email: '', firstName: '', lastName: '', role: 'user', password: '' });
         loadUsers();
         alert('User created successfully!');
       } else {
@@ -86,6 +96,68 @@ export function UserManagement() {
       const msg = error instanceof Error ? error.message : String(error);
       alert(`Failed to create user: ${msg}`);
     }
+  };
+
+  const handleUpdateRole = async (targetUserId: string, newRole: string) => {
+    setUpdatingUserId(targetUserId);
+    try {
+      const res = await fetch('/api/admin/users/role', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId, role: newRole }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        loadUsers();
+        alert(`Role updated to ${newRole} successfully!`);
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      alert('Failed to update user role');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    setUpdatingUserId(editingUser.clerkId || editingUser.id);
+    try {
+      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setEditingUser(null);
+        loadUsers();
+        alert('User updated successfully!');
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      alert('Failed to update user');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const startEditing = (user: User) => {
+    setEditingUser(user);
+    setEditFormData({
+      email: user.email,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      role: user.role,
+      password: '', // Don't prepopulate password
+      isBanned: (user as any).isBanned || false
+    });
   };
 
   const handleDeleteUser = async (userId: string, userRole: string) => {
@@ -99,16 +171,15 @@ export function UserManagement() {
         method: 'DELETE',
       });
 
-      const data = await res.json();
       if (res.ok) {
         loadUsers();
         alert('User deleted successfully!');
       } else {
+        const data = await res.json();
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      alert(`Failed to delete user: ${msg}`);
+      alert('Failed to delete user');
     } finally {
       setDeletingUserId(null);
     }
@@ -116,289 +187,229 @@ export function UserManagement() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'superadmin':
-        return 'bg-purple-100 text-purple-800';
-      case 'admin':
-        return 'bg-blue-100 text-blue-800';
-      case 'teacher':
-        return 'bg-green-100 text-green-800';
-      case 'student':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'superadmin': return 'bg-purple-100 text-purple-800';
+      case 'admin': return 'bg-blue-100 text-blue-800';
+      case 'teacher': return 'bg-emerald-100 text-emerald-800';
+      case 'student': return 'bg-orange-100 text-orange-800';
+      case 'user': return 'bg-slate-100 text-slate-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const canCreateAdmin = currentUserRole === 'superadmin';
   const canCreateTeacher = currentUserRole === 'superadmin' || currentUserRole === 'admin';
-  const canCreateStudent = currentUserRole === 'superadmin';
+  const canCreateStudent = currentUserRole === 'superadmin' || currentUserRole === 'admin';
+  const canCreateUser = currentUserRole === 'superadmin' || currentUserRole === 'admin';
   const canDeleteUser = currentUserRole === 'superadmin';
+  const canUpdateRole = (targetRole: string) => {
+    if (currentUserRole === 'superadmin') return true;
+    if (currentUserRole === 'admin') return targetRole !== 'superadmin' && targetRole !== 'admin';
+    return false;
+  };
 
-  // Filter and search users
   const filteredUsers = useMemo(() => {
     let filtered = users;
-
-    // Role filter
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter((user) => user.role === roleFilter);
-    }
-
-    // Search filter
+    if (roleFilter !== 'all') filtered = filtered.filter((u) => u.role === roleFilter);
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (user) =>
-          user.email.toLowerCase().includes(query) ||
-          (user.firstName && user.firstName.toLowerCase().includes(query)) ||
-          (user.lastName && user.lastName.toLowerCase().includes(query)) ||
-          `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(query)
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(u =>
+        u.email.toLowerCase().includes(q) ||
+        `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase().includes(q)
       );
     }
-
     return filtered;
   }, [users, roleFilter, searchQuery]);
 
-  // Count users by role
-  const userCounts = useMemo(() => {
-    return {
-      all: users.length,
-      superadmin: users.filter((u) => u.role === 'superadmin').length,
-      admin: users.filter((u) => u.role === 'admin').length,
-      teacher: users.filter((u) => u.role === 'teacher').length,
-      student: users.filter((u) => u.role === 'student').length,
-    };
-  }, [users]);
+  const userCounts = useMemo(() => ({
+    all: users.length,
+    superadmin: users.filter(u => u.role === 'superadmin').length,
+    admin: users.filter(u => u.role === 'admin').length,
+    teacher: users.filter(u => u.role === 'teacher').length,
+    student: users.filter(u => u.role === 'student').length,
+    user: users.filter(u => u.role === 'user').length,
+  }), [users]);
 
-  if (loading) {
-    return <div className="text-center py-12">Loading users...</div>;
-  }
+  if (loading) return <div className="text-center py-12">Loading users...</div>;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">User Management</h2>
           <p className="text-slate-600 mt-1">
-            {currentUserRole === 'superadmin' && 'Create and manage all users: admins, teachers, and students'}
-            {currentUserRole === 'admin' && 'Create and manage teachers'}
-            {currentUserRole !== 'superadmin' && currentUserRole !== 'admin' && 'View users'}
+            {currentUserRole === 'superadmin' && 'Manage all platform roles and users'}
+            {currentUserRole === 'admin' && 'Manage teachers, students, and users'}
+            {currentUserRole !== 'superadmin' && currentUserRole !== 'admin' && 'Access restricted to view-only'}
           </p>
         </div>
-        {(canCreateAdmin || canCreateTeacher || canCreateStudent) && (
+        {(canCreateAdmin || canCreateTeacher || canCreateStudent || canCreateUser) && (
           <Button variant="inverse" onClick={() => setShowCreateForm(!showCreateForm)}>
-            + Create User
+            {showCreateForm ? 'Cancel' : '+ Create User'}
           </Button>
         )}
       </div>
 
-      {/* Create User Form */}
       {showCreateForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New User</CardTitle>
-          </CardHeader>
+        <Card className="animate-in fade-in slide-in-from-top-4 duration-300">
+          <CardHeader><CardTitle>Create New User</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    First Name
-                  </label>
-                  <Input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder="First name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Last Name
-                  </label>
-                  <Input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder="Last name"
-                  />
-                </div>
+                <Input placeholder="First Name" value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} />
+                <Input placeholder="Last Name" value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Email *
-                </label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="user@example.com"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Role *
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'teacher' | 'student' })}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                  required
-                >
+              <Input type="email" placeholder="Email (required)" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-500 uppercase">Role</label>
+                <select className="w-full rounded-lg border border-slate-300 p-2" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value as any })}>
                   {canCreateAdmin && <option value="admin">Admin</option>}
                   {canCreateTeacher && <option value="teacher">Teacher</option>}
-                  {canCreateStudent && <option value="student">Student</option>}
+                  <option value="student">Student</option>
+                  <option value="user">User</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Password (optional - user will set via email if not provided)
-                </label>
-                <Input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Leave empty for email invitation"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" variant="inverse">
-                  Create User
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
-                  Cancel
-                </Button>
-              </div>
+              <Input type="password" placeholder="Password (Optional)" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+              <Button type="submit" variant="inverse">Create User</Button>
             </form>
           </CardContent>
         </Card>
       )}
 
-      {/* Filters and Search */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={roleFilter === 'all' ? 'inverse' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('all')}
-              >
-                All ({userCounts.all})
-              </Button>
-              {currentUserRole === 'superadmin' && (
-                <Button
-                  variant={roleFilter === 'superadmin' ? 'inverse' : 'outline'}
-                  size="sm"
-                  onClick={() => setRoleFilter('superadmin')}
-                >
-                  Superadmin ({userCounts.superadmin})
-                </Button>
-              )}
-              <Button
-                variant={roleFilter === 'admin' ? 'inverse' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('admin')}
-              >
-                Admins ({userCounts.admin})
-              </Button>
-              <Button
-                variant={roleFilter === 'teacher' ? 'inverse' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('teacher')}
-              >
-                Teachers ({userCounts.teacher})
-              </Button>
-              <Button
-                variant={roleFilter === 'student' ? 'inverse' : 'outline'}
-                size="sm"
-                onClick={() => setRoleFilter('student')}
-              >
-                Students ({userCounts.student})
-              </Button>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <Input className="flex-1" placeholder="Search by name or email..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <div className="flex gap-1.5 flex-wrap">
+              <Button variant={roleFilter === 'all' ? 'inverse' : 'outline'} size="sm" onClick={() => setRoleFilter('all')}>All ({userCounts.all})</Button>
+              {currentUserRole === 'superadmin' && <Button variant={roleFilter === 'superadmin' ? 'inverse' : 'outline'} size="sm" onClick={() => setRoleFilter('superadmin')}>Superadmin ({userCounts.superadmin})</Button>}
+              <Button variant={roleFilter === 'admin' ? 'inverse' : 'outline'} size="sm" onClick={() => setRoleFilter('admin')}>Admins ({userCounts.admin})</Button>
+              <Button variant={roleFilter === 'teacher' ? 'inverse' : 'outline'} size="sm" onClick={() => setRoleFilter('teacher')}>Teachers ({userCounts.teacher})</Button>
+              <Button variant={roleFilter === 'student' ? 'inverse' : 'outline'} size="sm" onClick={() => setRoleFilter('student')}>Students ({userCounts.student})</Button>
+              <Button variant={roleFilter === 'user' ? 'inverse' : 'outline'} size="sm" onClick={() => setRoleFilter('user')}>Users ({userCounts.user})</Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Users List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {roleFilter === 'all' ? 'All Users' : `${roleFilter.charAt(0).toUpperCase() + roleFilter.slice(1)}s`} ({filteredUsers.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Name</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Email</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Role</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Created</th>
-                  {canDeleteUser && (
-                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Actions</th>
-                  )}
+            <table className="w-full text-sm">
+              <thead className="border-b border-slate-200">
+                <tr className="text-left text-slate-500 font-medium">
+                  <th className="py-3 px-4">Name</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Role / Actions</th>
+                  <th className="py-3 px-4">Created</th>
+                  <th className="py-3 px-4 text-center">Edit</th>
+                  {(canDeleteUser || currentUserRole === 'admin') && <th className="py-3 px-4 text-right">Delete</th>}
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={canDeleteUser ? 5 : 4} className="text-center py-8 text-slate-500">
-                      {searchQuery || roleFilter !== 'all' ? 'No users found matching your filters' : 'No users found'}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4">
-                        {user.firstName || user.lastName
-                          ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                          : 'N/A'}
-                      </td>
-                      <td className="py-3 px-4">{user.email}</td>
-                      <td className="py-3 px-4">
-                        <Badge className={getRoleBadgeColor(user.role)}>
-                          {user.role}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-slate-600">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                      {canDeleteUser && (
-                        <td className="py-3 px-4">
-                          {user.role !== 'superadmin' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteUser(user.id, user.role)}
-                              disabled={deletingUserId === user.id}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              {deletingUserId === user.id ? 'Deleting...' : 'Delete'}
-                            </Button>
-                          )}
-                        </td>
+                {filteredUsers.map(user => (
+                  <tr key={user.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="py-3 px-4 font-medium text-slate-800">{user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'N/A'}</td>
+                    <td className="py-3 px-4 text-slate-600">{user.email}</td>
+                    <td className="py-3 px-4">
+                      {canUpdateRole(user.role) ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="bg-white border rounded px-2 py-1 text-xs"
+                            value={user.role}
+                            onChange={e => handleUpdateRole(user.clerkId || user.id, e.target.value)}
+                            disabled={updatingUserId === (user.clerkId || user.id)}
+                          >
+                            {currentUserRole === 'superadmin' && <option value="superadmin">Superadmin</option>}
+                            {(currentUserRole === 'superadmin' || currentUserRole === 'admin') && <option value="admin">Admin</option>}
+                            <option value="teacher">Teacher</option>
+                            <option value="student">Student</option>
+                            <option value="user">User</option>
+                          </select>
+                          {updatingUserId === (user.clerkId || user.id) && <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>}
+                        </div>
+                      ) : (
+                        <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
                       )}
-                    </tr>
-                  ))
-                )}
+                    </td>
+                    <td className="py-3 px-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td className="py-3 px-4 text-center">
+                      <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700 hover:bg-teal-50" onClick={() => startEditing(user)}>
+                        Edit
+                      </Button>
+                    </td>
+                    {(canDeleteUser || (currentUserRole === 'admin' && canUpdateRole(user.role))) && (
+                      <td className="py-3 px-4 text-right">
+                        {user.role !== 'superadmin' && user.role !== currentUserRole && (
+                          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(user.id, user.role)} disabled={deletingUserId === user.id}>
+                            {deletingUserId === user.id ? '...' : 'Delete'}
+                          </Button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-300">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Edit User Profile</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setEditingUser(null)}>✕</Button>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdateUser} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase">First Name</label>
+                    <Input placeholder="First Name" value={editFormData.firstName} onChange={e => setEditFormData({ ...editFormData, firstName: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase">Last Name</label>
+                    <Input placeholder="Last Name" value={editFormData.lastName} onChange={e => setEditFormData({ ...editFormData, lastName: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Email</label>
+                  <Input type="email" placeholder="Email" required value={editFormData.email} onChange={e => setEditFormData({ ...editFormData, email: e.target.value })} />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Role</label>
+                  <select className="w-full rounded-lg border border-slate-300 p-2 text-sm" value={editFormData.role} onChange={e => setEditFormData({ ...editFormData, role: e.target.value as any })}>
+                    {canUpdateRole('superadmin') && <option value="superadmin">Superadmin</option>}
+                    {canUpdateRole('admin') && <option value="admin">Admin</option>}
+                    <option value="teacher">Teacher</option>
+                    <option value="student">Student</option>
+                    <option value="user">User</option>
+                  </select>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-amber-600 uppercase flex items-center gap-1">
+                      <span>🔑 Change Password</span>
+                      <span className="normal-case font-normal text-slate-400 ml-auto">(Leave blank to keep current)</span>
+                    </label>
+                    <Input type="password" placeholder="New Password" value={editFormData.password} onChange={e => setEditFormData({ ...editFormData, password: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-4">
+                  <Button type="submit" variant="inverse" className="flex-1" disabled={updatingUserId === (editingUser.clerkId || editingUser.id)}>
+                    {updatingUserId === (editingUser.clerkId || editingUser.id) ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingUser(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

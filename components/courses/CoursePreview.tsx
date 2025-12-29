@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { VideoPlayer } from './VideoPlayer';
 import { WishlistButton } from './WishlistButton';
+import Link from 'next/link';
 
 type EnrollmentStatus = 'pending' | 'approved' | 'waitlisted' | 'rejected' | 'completed';
 
@@ -34,6 +35,7 @@ interface CoursePreviewProps {
     modules?: Module[];
     price?: { amount?: number; currency?: string };
     id?: string;
+    authorId?: string;
   };
   isEnrolled?: boolean;
   isAuthenticated?: boolean;
@@ -80,7 +82,7 @@ export function CoursePreview({
   const courseId = course._id || course.slug;
   const signInRedirect = `/sign-in?redirect_url=${encodeURIComponent(`/courses/${course.slug}`)}`;
 
-  const handleEnrollment = async () => {
+  const handleEnrollment = async (isManual: boolean = false) => {
     setError(null);
 
     if (!courseId) {
@@ -104,28 +106,30 @@ export function CoursePreview({
 
     try {
       setIsSubmitting(true);
-      
-      // Use smart enrollment API that handles free/paid courses
+
       const res = await fetch('/api/enrollments/enroll', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, courseSlug: course.slug }),
+        body: JSON.stringify({
+          courseId,
+          courseSlug: course.slug,
+          manualEnrollment: isManual
+        }),
       });
-      
+
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Unable to enroll');
       }
 
       if (data.enrolled) {
-        // Free course - enrolled directly
         setStatus('approved');
-        // Redirect to course after a moment
         setTimeout(() => {
           window.location.href = `/courses/${course.slug}`;
         }, 1000);
+      } else if (data.status === 'pending') {
+        setStatus('pending');
       } else if (data.requiresPayment) {
-        // Paid course - redirect to payment
         window.location.href = data.paymentUrl || `/checkout?courseId=${courseId}&amount=${data.amount}`;
       } else {
         setStatus(data.status || 'pending');
@@ -181,7 +185,7 @@ export function CoursePreview({
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Preview this course with free access to the first lesson. Enroll to access all content.
           </p>
-          
+
           {previewModule && (
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">Preview Module</label>
@@ -227,7 +231,7 @@ export function CoursePreview({
                 videoUrl={previewLesson.videoUrl}
                 videoId={previewLesson.videoId}
                 title={previewLesson.title}
-                provider={previewLesson.videoProvider || 'youtube'}
+                provider={(previewLesson.videoProvider as any) || 'youtube'}
               />
             ) : (
               <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -252,12 +256,12 @@ export function CoursePreview({
                 This is a preview. Enroll to access all {totalLessons} lessons.
               </p>
               {error && <p className="text-sm text-red-600">{error}</p>}
-              {course.price?.amount > 0 && (
+              {course.price && (course.price.amount ?? 0) > 0 && (
                 <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 mb-3">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-700 font-medium">Course Price</span>
                     <span className="text-xl font-bold text-teal-600">
-                      {course.price.currency === 'USD' ? '$' : course.price.currency}{course.price.amount}
+                      {course.price.currency === 'USD' ? '$' : course.price.currency}{course.price.amount ?? 0}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">Payment required to enroll</p>
@@ -272,15 +276,46 @@ export function CoursePreview({
                 </div>
               )}
               <div className="space-y-2">
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleEnrollment}
-                  disabled={buttonDisabled}
-                  variant={status === 'approved' ? 'default' : undefined}
-                >
-                  {buttonLabel}
-                </Button>
+                {course.price && (course.price.amount ?? 0) > 0 && !status ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      className="w-full bg-teal-600 hover:bg-teal-700"
+                      size="lg"
+                      onClick={() => handleEnrollment(false)}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Processing...' : 'Pay & Enroll'}
+                    </Button>
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      variant="outline"
+                      onClick={() => handleEnrollment(true)}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Manual Approval'}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => handleEnrollment(false)}
+                    disabled={buttonDisabled}
+                    variant={status === 'approved' ? 'default' : undefined}
+                  >
+                    {buttonLabel}
+                  </Button>
+                )}
+
+                {status === 'pending' && course.authorId && (
+                  <Link href={`/messages?with=${course.authorId}`} className="block">
+                    <Button variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50">
+                      💬 Chat with Instructor
+                    </Button>
+                  </Link>
+                )}
+
                 {isAuthenticated && course.id && (
                   <WishlistButton courseId={course.id} className="w-full" />
                 )}

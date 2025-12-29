@@ -176,17 +176,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       >
         {JSON.stringify(jsonLd)}
       </Script>
-      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/courses">
-              <Button variant="outline" size="sm">← Back</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12">
@@ -240,11 +229,13 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
           <div className="lg:col-span-2 space-y-8">
             {/* Course Preview (for non-enrolled users) */}
             {!isEnrolled && (
-              <CoursePreview
-                course={courseData}
-                isAuthenticated={Boolean(userId)}
-                initialEnrollmentStatus={initialEnrollmentStatus}
-              />
+              <div id="enrollment-section">
+                <CoursePreview
+                  course={courseData}
+                  isAuthenticated={Boolean(userId)}
+                  initialEnrollmentStatus={initialEnrollmentStatus}
+                />
+              </div>
             )}
 
             {/* Course Completion (for enrolled users) */}
@@ -318,12 +309,36 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                       </div>
                     </div>
                   </div>
-                  <Button className="w-full" size="lg">
-                    {userId ? 'Continue Learning' : 'Enroll Now'}
-                  </Button>
-                  <Link href="/my-learning" className="block text-center text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                    View My Learning
-                  </Link>
+                  {!isEnrolled ? (
+                    <Button
+                      asChild
+                      className="w-full bg-teal-600 hover:bg-teal-700 font-bold"
+                      size="lg"
+                    >
+                      <Link href={
+                        !userId
+                          ? `/sign-in?redirect_url=${encodeURIComponent(`/courses/${slug}`)}`
+                          : (enrollmentStatus === 'pending' || enrollmentStatus === 'waitlisted')
+                            ? "#enrollment-section"
+                            : (courseData.price?.amount > 0)
+                              ? `/checkout?courseId=${courseData._id || courseData.slug}&amount=${courseData.price.amount}`
+                              : "#enrollment-section"
+                      }>
+                        {courseData.price?.amount > 0 ? `Enroll for ${courseData.price.currency === 'USD' ? '$' : courseData.price.currency}${courseData.price.amount}` : 'Enroll for Free'}
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Link href={`/courses/${slug}/${courseData.modules?.[0]?.lessons?.[0]?.slug || ''}`}>
+                      <Button className="w-full bg-teal-600 hover:bg-teal-700 font-bold" size="lg">
+                        {isCompleted ? 'Review Course' : 'Continue Learning'}
+                      </Button>
+                    </Link>
+                  )}
+                  {isEnrolled && (
+                    <Link href="/my-learning" className="block text-center text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                      View My Learning
+                    </Link>
+                  )}
                 </div>
               </CardContent>
             </Card>

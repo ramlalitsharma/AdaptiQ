@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
-import { isAdmin } from '@/lib/admin-check';
+import { isAdmin, getUserRole } from '@/lib/admin-check';
 import { serializeQuestionBank } from '@/lib/models/QuestionBank';
 import type { QuestionBank } from '@/lib/models/QuestionBank';
 
@@ -8,7 +8,9 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    if (!(await isAdmin())) {
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -25,13 +27,17 @@ export async function GET() {
   }
 }
 
+
+
 export async function POST(req: NextRequest) {
   try {
-    if (!(await isAdmin())) {
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { name, description, subject, examType, tags } = await req.json();
+    const { name, description, subject, examType, tags, type } = await req.json();
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
@@ -41,6 +47,7 @@ export async function POST(req: NextRequest) {
       description: description || '',
       subject: subject || '',
       examType: examType || '',
+      type: type || 'bank', // Default to 'bank' if not provided
       tags: Array.isArray(tags) ? tags : [],
       createdAt: new Date(),
       updatedAt: new Date(),

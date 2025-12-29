@@ -1,8 +1,9 @@
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-const cn = (...classes: (string | false | null | undefined)[]) =>
-  classes.filter(Boolean).join(' ');
+const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-colors transition-transform active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
@@ -24,14 +25,14 @@ const buttonVariants = cva(
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      
+
     },
   }
 );
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   isLoading?: boolean;
 }

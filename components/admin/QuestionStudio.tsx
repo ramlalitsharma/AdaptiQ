@@ -26,10 +26,30 @@ interface OptionField {
   correct: boolean;
 }
 
+import { useSearchParams } from 'next/navigation';
+
+// ...
+
 export function QuestionStudio({ banks }: QuestionStudioProps) {
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode') as 'quiz' | 'bank' || 'bank';
+
   const [selectedBank, setSelectedBank] = useState<string>(banks[0]?.id || '');
   const [creatingBank, setCreatingBank] = useState(false);
-  const [newBank, setNewBank] = useState({ name: '', subject: '', examType: '', tags: '' });
+  const [newBank, setNewBank] = useState({
+    name: '',
+    subject: '',
+    examType: '',
+    tags: '',
+    type: mode // 'quiz' or 'bank'
+  });
+
+  // Effect to sync mode if user navigates
+  useEffect(() => {
+    if (searchParams.get('mode')) {
+      setNewBank(prev => ({ ...prev, type: searchParams.get('mode') as any }));
+    }
+  }, [searchParams]);
 
   const [form, setForm] = useState({
     question: '',
@@ -140,6 +160,7 @@ export function QuestionStudio({ banks }: QuestionStudioProps) {
           description: newBank.subject ? `Subject: ${newBank.subject}` : undefined,
           subject: newBank.subject.trim() || undefined,
           examType: newBank.examType.trim() || undefined,
+          type: newBank.type, // Send the type
           tags: newBank.tags
             .split(',')
             .map((tag) => tag.trim())

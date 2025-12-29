@@ -43,22 +43,7 @@ export default async function AdminCoursesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/admin">
-              <Button variant="outline" size="sm">
-                ← Admin Panel
-              </Button>
-            </Link>
-            <Link href="/admin/studio/courses">
-              <Button size="sm">+ Create Course</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col gap-2">

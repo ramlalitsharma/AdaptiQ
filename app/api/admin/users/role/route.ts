@@ -19,7 +19,8 @@ export async function PATCH(request: NextRequest) {
         const body = await request.json();
         const { targetUserId, role } = body;
 
-        if (!targetUserId || !['user', 'admin'].includes(role)) {
+        const validRoles = ['superadmin', 'admin', 'teacher', 'student', 'user'];
+        if (!targetUserId || !validRoles.includes(role)) {
             return NextResponse.json(
                 { error: 'Invalid parameters' },
                 { status: 400 }

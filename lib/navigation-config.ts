@@ -3,7 +3,7 @@
  * Defines navigation links and features for each user role
  */
 
-export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student';
+export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'user';
 
 export interface NavLink {
   href: string;
@@ -13,8 +13,20 @@ export interface NavLink {
   requiresPermission?: string;
 }
 
+export interface NavDropdown {
+  label: string;
+  icon?: string;
+  items: NavLink[];
+}
+
+export type NavItem = NavLink | NavDropdown;
+
+export function isDropdown(item: NavItem): item is NavDropdown {
+  return 'items' in item;
+}
+
 export interface RoleNavigationConfig {
-  primaryLinks: NavLink[];
+  primaryLinks: NavItem[];
   dashboardLink: { href: string; label: string };
   consoleLink?: { href: string; label: string };
   showAdminBadge: boolean;
@@ -25,16 +37,34 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
   superadmin: {
     primaryLinks: [
       { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/quizzes', label: 'Quizzes', icon: '📝' },
-      { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
       { href: '/blog', label: 'Blogs', icon: '📰' },
-      { href: '/admin/super', label: 'Super Admin', icon: '🛡️' },
-      { href: '/admin', label: 'Admin Panel', icon: '👨‍💼' },
-      { href: '/admin/users', label: 'Users', icon: '👥' },
-      { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
-      { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
-      { href: '/live', label: 'Live Classes', icon: '🎥' },
-      { href: '/forum', label: 'Forum', icon: '💬' },
+      {
+        label: 'Resources',
+        icon: '📚',
+        items: [
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
+          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+        ],
+      },
+      {
+        label: 'Community',
+        icon: '💬',
+        items: [
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/forum', label: 'Forum', icon: '💬' },
+        ],
+      },
+      {
+        label: 'Admin',
+        icon: '🛡️',
+        items: [
+          { href: '/admin/super', label: 'Super Admin', icon: '🛡️' },
+          { href: '/admin', label: 'Admin Panel', icon: '👨‍💼' },
+          { href: '/admin/users', label: 'Users', icon: '👥' },
+          { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
+          { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
+        ],
+      },
     ],
     dashboardLink: { href: '/admin/super', label: 'Super Admin Console' },
     consoleLink: { href: '/admin/super', label: 'Super Admin Console' },
@@ -44,16 +74,34 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
   admin: {
     primaryLinks: [
       { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/quizzes', label: 'Quizzes', icon: '📝' },
-      { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
       { href: '/blog', label: 'Blogs', icon: '📰' },
-      { href: '/admin', label: 'Admin Panel', icon: '👨‍💼' },
-      { href: '/admin/users', label: 'Users', icon: '👥' },
-      { href: '/admin/courses', label: 'Manage Courses', icon: '📚' },
-      { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
-      { href: '/admin/videos', label: 'Videos', icon: '🎥' },
-      { href: '/live', label: 'Live Classes', icon: '🎥' },
-      { href: '/forum', label: 'Forum', icon: '💬' },
+      {
+        label: 'Resources',
+        icon: '📚',
+        items: [
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
+          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+        ],
+      },
+      {
+        label: 'Community',
+        icon: '💬',
+        items: [
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/forum', label: 'Forum', icon: '💬' },
+        ],
+      },
+      {
+        label: 'Admin',
+        icon: '👨‍💼',
+        items: [
+          { href: '/admin', label: 'Admin Panel', icon: '👨‍💼' },
+          { href: '/admin/users', label: 'Users', icon: '👥' },
+          { href: '/admin/courses', label: 'Manage Courses', icon: '📚' },
+          { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
+          { href: '/admin/videos', label: 'Videos', icon: '🎥' },
+        ],
+      },
     ],
     dashboardLink: { href: '/admin/dashboard', label: 'Admin Dashboard' },
     consoleLink: { href: '/admin', label: 'Admin Console' },
@@ -63,15 +111,34 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
   teacher: {
     primaryLinks: [
       { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/quizzes', label: 'Quizzes', icon: '📝' },
-      { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
       { href: '/blog', label: 'Blogs', icon: '📰' },
-      { href: '/teacher/dashboard', label: 'Teacher Dashboard', icon: '👨‍🏫' },
-      { href: '/admin/studio/courses', label: 'Create Course', icon: '➕' },
-      { href: '/admin/studio/blogs', label: 'Write Blog', icon: '✍️' },
-      { href: '/admin/studio/questions', label: 'Create Quiz', icon: '❓' },
-      { href: '/admin/courses', label: 'My Courses', icon: '📚' },
-      { href: '/live', label: 'Live Classes', icon: '🎥' },
+      {
+        label: 'Resources',
+        icon: '📚',
+        items: [
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
+          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+        ],
+      },
+      {
+        label: 'Community',
+        icon: '💬',
+        items: [
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/forum', label: 'Forum', icon: '💬' },
+        ],
+      },
+      {
+        label: 'Teaching',
+        icon: '👨‍🏫',
+        items: [
+          { href: '/teacher/dashboard', label: 'Teacher Dashboard', icon: '👨‍🏫' },
+          { href: '/admin/studio/courses', label: 'Create Course', icon: '➕' },
+          { href: '/admin/studio/blogs', label: 'Write Blog', icon: '✍️' },
+          { href: '/admin/studio/questions', label: 'Create Quiz', icon: '❓' },
+          { href: '/admin/courses', label: 'My Courses', icon: '📚' },
+        ],
+      },
     ],
     dashboardLink: { href: '/teacher/dashboard', label: 'Teacher Dashboard' },
     showAdminBadge: false,
@@ -80,15 +147,59 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
   student: {
     primaryLinks: [
       { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/quizzes', label: 'Quizzes', icon: '📝' },
-      { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
       { href: '/blog', label: 'Blogs', icon: '📰' },
-      { href: '/dashboard', label: 'My Dashboard', icon: '📊' },
-      { href: '/my-learning', label: 'My Learning', icon: '📖' },
+      {
+        label: 'Resources',
+        icon: '📚',
+        items: [
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
+          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+        ],
+      },
+      {
+        label: 'Community',
+        icon: '💬',
+        items: [
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/forum', label: 'Forum', icon: '💬' },
+          { href: '/contact', label: 'Contact', icon: '📧' },
+        ],
+      },
+      {
+        label: 'Learning',
+        icon: '📖',
+        items: [
+          { href: '/dashboard', label: 'My Dashboard', icon: '📊' },
+          { href: '/my-learning', label: 'My Learning', icon: '📖' },
+          { href: '/subjects', label: 'Subjects', icon: '📚' },
+        ],
+      },
+    ],
+    dashboardLink: { href: '/dashboard', label: 'My Dashboard' },
+    showAdminBadge: false,
+    showViewAs: false,
+  },
+  user: {
+    primaryLinks: [
+      { href: '/courses', label: 'Courses', icon: '📚' },
+      { href: '/blog', label: 'Blogs', icon: '📰' },
+      {
+        label: 'Resources',
+        icon: '📚',
+        items: [
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
+          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+        ],
+      },
+      {
+        label: 'Community',
+        icon: '💬',
+        items: [
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/forum', label: 'Forum', icon: '💬' },
+        ],
+      },
       { href: '/subjects', label: 'Subjects', icon: '📚' },
-      { href: '/live', label: 'Live Classes', icon: '🎥' },
-      { href: '/forum', label: 'Forum', icon: '💬' },
-      { href: '/contact', label: 'Contact', icon: '📧' },
     ],
     dashboardLink: { href: '/dashboard', label: 'My Dashboard' },
     showAdminBadge: false,

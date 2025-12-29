@@ -65,9 +65,9 @@ export function PracticeStudio({ banks, recentPracticeSets }: PracticeStudioProp
         cohorts:
           form.visibility === 'cohort'
             ? form.cohorts
-                .split(',')
-                .map((cohort) => cohort.trim())
-                .filter(Boolean)
+              .split(',')
+              .map((cohort) => cohort.trim())
+              .filter(Boolean)
             : [],
       };
 
@@ -91,10 +91,10 @@ export function PracticeStudio({ banks, recentPracticeSets }: PracticeStudioProp
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Practice Set Studio</h2>
-            <p className="text-sm text-slate-500">Build adaptive practice sets from curated question banks and release on schedule.</p>
+            <h2 className="text-xl font-semibold text-slate-900">Self Practice Studio</h2>
+            <p className="text-sm text-slate-500">Create personal adaptive practice sets to master your subjects. These are private and only visible to you.</p>
           </div>
-          <Badge variant="info">Practice</Badge>
+          <Badge variant="info">Self Practice</Badge>
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.2fr),minmax(0,1fr)]">
@@ -136,9 +136,8 @@ export function PracticeStudio({ banks, recentPracticeSets }: PracticeStudioProp
                       type="button"
                       key={bank.id}
                       onClick={() => toggleBank(bank.id)}
-                      className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
-                        selected ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200'
-                      }`}
+                      className={`rounded-lg border px-3 py-2 text-left text-xs transition ${selected ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200'
+                        }`}
                     >
                       <div className="font-semibold text-slate-700">{bank.name}</div>
                       <div className="text-[11px] text-slate-500">{selected ? 'Selected' : 'Tap to include'}</div>
@@ -165,29 +164,6 @@ export function PracticeStudio({ banks, recentPracticeSets }: PracticeStudioProp
                 className="w-full rounded-lg border border-slate-200 px-3 py-2"
               />
             </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              Visibility
-              <select
-                value={form.visibility}
-                onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value as 'private' | 'public' | 'cohort' }))}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
-              >
-                <option value="private">Private</option>
-                <option value="public">Public</option>
-                <option value="cohort">Specific cohorts</option>
-              </select>
-            </label>
-            {form.visibility === 'cohort' && (
-              <label className="space-y-1 text-sm text-slate-600">
-                Cohorts
-                <input
-                  value={form.cohorts}
-                  onChange={(e) => setForm((prev) => ({ ...prev, cohorts: e.target.value }))}
-                  placeholder="cohort-2025, pilot"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                />
-              </label>
-            )}
             {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
             <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
               {saving ? 'Saving…' : 'Save practice set'}

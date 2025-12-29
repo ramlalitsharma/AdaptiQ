@@ -17,7 +17,7 @@ export default async function AnalyticsPage() {
   try {
     const db = await getDatabase();
     const progress = await db.collection('userProgress').find({ userId }).sort({ completedAt: -1 }).limit(100).toArray();
-    
+
     // Cohort analysis: group by week/month
     const cohorts: Record<string, { count: number; avgScore: number }> = {};
     progress.forEach((p: any) => {
@@ -63,15 +63,10 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <header className="bg-white/70 backdrop-blur border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <Link href="/dashboard" className="text-blue-600 hover:underline">← Dashboard</Link>
-        </div>
-      </header>
+
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Analytics & Insights</h1>
-        
+
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           <StatCard title="Total Quizzes" value={stats.cohorts.reduce((n: number, c: any) => n + c.count, 0)} subtitle="Completed" icon={<span>📊</span>} color="blue" />
           <StatCard title="Avg Score" value={`${Math.round(stats.cohorts.reduce((s: number, c: any) => s + c.avgScore, 0) / (stats.cohorts.length || 1))}%`} subtitle="Overall" icon={<span>📈</span>} color="green" />

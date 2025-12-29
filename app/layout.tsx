@@ -6,6 +6,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { GlobalBackButton } from '@/components/layout/GlobalBackButton';
 import { ServiceWorkerRegistration } from '@/components/pwa/ServiceWorkerRegistration';
 import "./globals.css";
 import "@/styles/md-editor.css";
@@ -122,6 +123,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <ThemeProvider>
+            <GlobalBackButton />
             <div className="flex min-h-screen flex-col bg-[#f4f6f9] text-slate-900">
               <Suspense>
                 <Navbar />

@@ -32,16 +32,16 @@ export function Navbar() {
         setIsSuperAdmin(Boolean(data?.isSuperAdmin || data?.role === "superadmin"));
 
         // Set user role
-        if (data?.role && ['superadmin', 'admin', 'teacher', 'student'].includes(data.role)) {
+        if (data?.role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(data.role)) {
           setUserRole(data.role as UserRole);
         } else {
-          setUserRole('student');
+          setUserRole('user');
         }
       })
       .catch(() => {
         if (mounted) {
           setIsSuperAdmin(false);
-          setUserRole('student');
+          setUserRole('user');
         }
       });
 
@@ -80,6 +80,8 @@ export function Navbar() {
 
   const navConfig = getNavigationForRole(userRole, viewAsRole);
 
+  const effectiveRole = viewAsRole || userRole || 'user';
+
   // Determine if we should show View As switcher
   const showViewAs = isSuperAdmin && !viewAsRole; // Only show when not already viewing as another role
 
@@ -87,7 +89,7 @@ export function Navbar() {
   const isViewingAs = viewAsRole && viewAsRole !== userRole;
 
   return (
-    <header className="sticky top-0 z-50 bg-teal-700/90 backdrop-blur supports-[backdrop-filter]:bg-teal-700/70 text-white shadow-md">
+    <header className="sticky top-0 z-[1000] bg-teal-700 text-white shadow-xl overflow-visible">
       {!isOnline && (
         <div className="bg-red-500 text-white text-xs font-medium py-1.5 px-4 text-center">
           ⚠️ You appear to be offline.
@@ -115,18 +117,57 @@ export function Navbar() {
           </Link>
         </div>
       )}
-      <div className="container mx-auto px-4 py-3 flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
+      <div className="container mx-auto px-4 py-3 flex flex-col gap-3 overflow-visible">
+        <div className="flex items-center justify-between gap-2 overflow-visible">
+          <div className="flex items-center gap-3">
             <SiteBrand />
-            <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
-              {navConfig.primaryLinks.map((link) => {
+            <nav className="hidden lg:flex items-center gap-0.5 text-sm font-medium">
+              {navConfig.primaryLinks.map((item, idx) => {
+                // Check if this is a dropdown menu
+                if ('items' in item) {
+                  const dropdown = item as import('@/lib/navigation-config').NavDropdown;
+                  return (
+                    <div key={idx} className="relative group">
+                      <button
+                        className="px-2 py-1.5 rounded-full transition-colors hover:bg-white/10 flex items-center gap-1 text-white/80 hover:text-white text-sm"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                      >
+                        {dropdown.icon && <span>{dropdown.icon}</span>}
+                        <span>{dropdown.label}</span>
+                        <span className="text-xs transition-transform group-hover:rotate-180">▼</span>
+                      </button>
+                      {/* Dropdown Menu */}
+                      <div className="absolute left-0 top-full mt-1 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[1001]">
+                        <div className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden backdrop-blur-sm">
+                          {dropdown.items.map((subItem) => {
+                            const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
+                            return (
+                              <Link
+                                key={subItem.href}
+                                href={subItem.href}
+                                className={`block px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-slate-800 font-semibold text-teal-700 dark:text-teal-400' : ''
+                                  }`}
+                              >
+                                {subItem.icon && <span className="text-base">{subItem.icon}</span>}
+                                <span className="text-sm">{subItem.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Regular link
+                const link = item as import('@/lib/navigation-config').NavLink;
                 const isActive = pathname?.startsWith(link.href.split("?")[0]);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-3 py-1.5 rounded-full transition-colors hover:bg-white/10 flex items-center gap-1 ${isActive ? "bg-white/15 text-white" : "text-white/80"
+                    className={`px-2 py-1.5 rounded-full transition-colors hover:bg-white/10 flex items-center gap-1 whitespace-nowrap text-sm ${isActive ? "bg-white/15 text-white" : "text-white/80 hover:text-white"
                       }`}
                     title={link.label}
                   >
@@ -144,18 +185,18 @@ export function Navbar() {
           </div>
 
           {/* Desktop Search */}
-          <div className="hidden lg:block flex-1 max-w-xl mx-4">
-            <div className="bg-white/95 text-slate-600 rounded-2xl border border-white/40 shadow-sm h-10 flex items-center">
-              <div className="w-full -mt-2"> {/* Adjust alignment for the specific Search component styles */}
+          <div className="hidden xl:block flex-1 max-w-md mx-2 min-w-0">
+            <div className="bg-white/95 text-slate-600 rounded-2xl border border-white/40 shadow-sm h-10 flex items-center overflow-visible">
+              <div className="w-full">
                 <GlobalSearch />
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 overflow-visible">
             <button
               aria-label="Open menu"
-              className="md:hidden inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 p-2"
+              className="lg:hidden inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 p-2"
               onClick={() => setMobileOpen((v) => !v)}
             >
               <span className="text-lg">☰</span>
@@ -167,54 +208,99 @@ export function Navbar() {
               />
             )}
             {navConfig.showAdminBadge && (
-              <span className="hidden md:inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white">
-                {isSuperAdmin ? "🛡️ Superadmin" : userRole === 'teacher' ? '👨‍🏫 Teacher' : "🛡️ Admin"}
+              <span className={`hidden xl:inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider border ${effectiveRole === 'superadmin' ? 'bg-purple-100/10 text-purple-200 border-purple-400/30' :
+                effectiveRole === 'admin' ? 'bg-blue-100/10 text-blue-200 border-blue-400/30' :
+                  effectiveRole === 'teacher' ? 'bg-emerald-100/10 text-emerald-200 border-emerald-400/30' :
+                    'bg-white/20 text-white border-white/30'
+                }`}>
+                {effectiveRole === 'superadmin' ? "🛡️ Super" : effectiveRole === 'admin' ? "🛡️ Admin" : effectiveRole === 'teacher' ? "👨‍🏫 Teacher" : effectiveRole}
               </span>
             )}
-            {(isSuperAdmin || userRole === 'admin' || userRole === 'teacher') && (
-              <div className="relative hidden md:block">
-                <Button
-                  variant="inverse"
-                  size="sm"
-                  onClick={() => setActionsOpen((v) => !v)}
+
+            {/* Actions Menu - Consolidated */}
+            <div className="relative hidden lg:block z-[1002]">
+              <button
+                onClick={() => setActionsOpen((v) => !v)}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors text-white"
+                aria-label="Actions"
+              >
+                <span className="text-lg">⚡</span>
+              </button>
+              {actionsOpen && (
+                <div
+                  className="fixed mt-12 w-64 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl border border-slate-200 dark:border-slate-700 z-[9999] overflow-y-auto max-h-[85vh] custom-scrollbar animate-in fade-in zoom-in-95 duration-200"
+                  style={{
+                    right: 'max(1rem, calc((100vw - 1280px) / 2 + 1rem))',
+                    top: '3.5rem'
+                  }}
                 >
-                  Create
-                </Button>
-                {actionsOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white text-slate-800 shadow-xl border z-50">
-                    <Link href="/admin/studio/courses" className="block px-4 py-2 hover:bg-slate-50">📚 Create Course</Link>
-                    <Link href="/admin/studio/blogs" className="block px-4 py-2 hover:bg-slate-50">📝 Write Blog</Link>
-                    <Link href="/admin/studio/questions" className="block px-4 py-2 hover:bg-slate-50">❓ Create Quiz</Link>
-                    <Link href="/admin/videos" className="block px-4 py-2 hover:bg-slate-50">🎥 Upload Video</Link>
-                  </div>
-                )}
-              </div>
-            )}
-            <ThemeToggle />
-            <SignedIn>
-              <NotificationBell />
-              {navConfig.consoleLink ? (
-                <Link href={navConfig.consoleLink.href}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-white text-white hover:bg-white/10"
-                  >
-                    {navConfig.consoleLink.label}
-                  </Button>
-                </Link>
-              ) : (
-                <Link href={navConfig.dashboardLink.href}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-white text-white hover:bg-white/10"
-                  >
-                    {navConfig.dashboardLink.label}
-                  </Button>
-                </Link>
+                  {!userRole ? (
+                    <div className="px-4 py-8 text-center">
+                      <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-xs text-slate-500 font-medium">Loading your tools...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {/* Admin/Superadmin Specific */}
+                      {(effectiveRole === 'superadmin' || effectiveRole === 'admin') && (
+                        <div className="p-2 border-b dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
+                          <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Administration</div>
+                          <Link href="/admin/users" className="block px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all mb-1" onClick={() => setActionsOpen(false)}>👥 User Control</Link>
+                          <Link href="/admin/enrollments" className="block px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all" onClick={() => setActionsOpen(false)}>💳 Enrollment Ops</Link>
+                        </div>
+                      )}
+
+                      {/* Content Creation tools - Available to Students (Blogs/Practice), Teacher, Admin */}
+                      <div className="p-2 border-b dark:border-slate-700">
+                        <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Creation Studio</div>
+
+                        {/* Higher roles can create courses */}
+                        {(effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
+                          <Link href="/admin/studio/courses" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>📚 Create Course</Link>
+                        )}
+
+                        {/* Blogs are for everyone, Practice Quizzes are for students only */}
+                        {(effectiveRole === 'student' || effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin' || effectiveRole === 'user') && (
+                          <Link href="/admin/studio/blogs" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>📝 Write Blog</Link>
+                        )}
+
+                        {effectiveRole === 'student' && (
+                          <Link href="/admin/studio/practice" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>🎯 Self Practice Quiz</Link>
+                        )}
+
+                        {(effectiveRole !== 'user' && effectiveRole !== 'student') && (
+                          <Link href="/admin/studio/questions?mode=quiz" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" onClick={() => setActionsOpen(false)}>❓ Create Quiz Instance</Link>
+                        )}
+                      </div>
+
+                      {/* Quick Navigation / Dashboards */}
+                      <div className="p-2 bg-slate-50/30 dark:bg-slate-900/10">
+                        <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Personal Dashboard</div>
+                        {effectiveRole === 'superadmin' && (
+                          <Link href="/admin/super" className="block px-3 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 shadow-sm transition-all mb-2 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>🛡️ SUPER ADMIN CONSOLE</Link>
+                        )}
+                        {(effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
+                          <Link href="/admin/dashboard" className="block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all mb-1 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>📊 ADMIN DASHBOARD</Link>
+                        )}
+                        {effectiveRole === 'teacher' && (
+                          <Link href="/teacher/dashboard" className="block px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all mb-1 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>👨‍🏫 TEACHER DASHBOARD</Link>
+                        )}
+                        <Link href="/dashboard" className="block px-3 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-all text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>📊 MY DASHBOARD</Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
-              <UserButton afterSignOutUrl="/" />
+            </div>
+
+            <div className="hidden xl:block">
+              <ThemeToggle />
+            </div>
+            <SignedIn>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserButton afterSignOutUrl="/" />
+              </div>
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
@@ -236,36 +322,73 @@ export function Navbar() {
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden fixed inset-0 z-[100] bg-teal-900/60 backdrop-blur">
-            <div className="absolute top-0 right-0 w-80 max-w-[75vw] h-full bg-white text-slate-800 shadow-xl p-4 flex flex-col gap-4">
+          <div className="lg:hidden fixed inset-0 z-[2000] bg-teal-900/60 backdrop-blur">
+            <div className="absolute top-0 right-0 w-80 max-w-[75vw] h-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-xl p-4 flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Menu</span>
-                <button className="text-slate-600" onClick={() => setMobileOpen(false)}>✕</button>
+                <button className="text-slate-600 dark:text-slate-400" onClick={() => setMobileOpen(false)}>✕</button>
               </div>
               <div className="flex flex-col gap-2">
-                {navConfig.primaryLinks.map((link) => {
+                {navConfig.primaryLinks.map((item, idx) => {
+                  // Check if this is a dropdown menu
+                  if ('items' in item) {
+                    const dropdown = item as import('@/lib/navigation-config').NavDropdown;
+                    return (
+                      <div key={idx}>
+                        <div className="px-3 py-2 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide flex items-center gap-2">
+                          {dropdown.icon && <span>{dropdown.icon}</span>}
+                          {dropdown.label}
+                        </div>
+                        {dropdown.items.map((subItem) => {
+                          const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
+                          return (
+                            <Link
+                              key={subItem.href}
+                              href={subItem.href}
+                              className={`pl-6 pr-3 py-2 rounded-lg flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                                }`}
+                              onClick={() => setMobileOpen(false)}
+                            >
+                              {subItem.icon && <span className="text-base">{subItem.icon}</span>}
+                              <span className="text-sm">{subItem.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+
+                  // Regular link
+                  const link = item as import('@/lib/navigation-config').NavLink;
                   const isActive = pathname?.startsWith(link.href.split("?")[0]);
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`px-3 py-2 rounded-lg ${isActive ? 'bg-slate-100 font-semibold' : 'hover:bg-slate-50'}`}
+                      className={`px-3 py-2 rounded-lg flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                        }`}
                       onClick={() => setMobileOpen(false)}
                     >
-                      {link.icon && <span className="mr-2">{link.icon}</span>}
+                      {link.icon && <span className="mr-1">{link.icon}</span>}
                       {link.label}
                     </Link>
                   );
                 })}
               </div>
-              {(isSuperAdmin || userRole === 'admin' || userRole === 'teacher') && (
+              {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher' || effectiveRole === 'student') && (
                 <div className="mt-2 border-t pt-2">
-                  <div className="text-xs font-semibold text-slate-500 mb-2">Create</div>
+                  <div className="text-xs font-semibold text-slate-500 mb-2">Actions</div>
                   <div className="flex flex-col gap-2">
-                    <Link href="/admin/studio/courses" className="px-3 py-2 rounded-lg hover:bg-slate-50" onClick={() => setMobileOpen(false)}>📚 Create Course</Link>
-                    <Link href="/admin/studio/blogs" className="px-3 py-2 rounded-lg hover:bg-slate-50" onClick={() => setMobileOpen(false)}>📝 Write Blog</Link>
-                    <Link href="/admin/studio/questions" className="px-3 py-2 rounded-lg hover:bg-slate-50" onClick={() => setMobileOpen(false)}>❓ Create Quiz</Link>
-                    <Link href="/admin/videos" className="px-3 py-2 rounded-lg hover:bg-slate-50" onClick={() => setMobileOpen(false)}>🎥 Upload Video</Link>
+                    {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher') && (
+                      <Link href="/admin/studio/courses" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>📚 Create Course</Link>
+                    )}
+                    <Link href="/admin/studio/blogs" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>📝 Write Blog</Link>
+                    {effectiveRole === 'student' && (
+                      <Link href="/admin/studio/practice" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>🎯 Self Practice</Link>
+                    )}
+                    {(effectiveRole === 'superadmin' || effectiveRole === 'admin') && (
+                      <Link href="/admin/users" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>👥 Manage Users</Link>
+                    )}
                   </div>
                 </div>
               )}
@@ -274,7 +397,7 @@ export function Navbar() {
         )}
 
         {/* Mobile/Tablet Search (Row 2) */}
-        <div className="lg:hidden bg-white/95 text-slate-600 rounded-2xl border border-white/40 shadow-sm">
+        <div className="xl:hidden bg-white/95 text-slate-600 rounded-2xl border border-white/40 shadow-sm">
           <GlobalSearch />
         </div>
       </div>

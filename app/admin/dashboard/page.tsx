@@ -38,7 +38,7 @@ export default async function AdminDashboardPage() {
 
   try {
     const db = await getDatabase();
-    
+
     // Get all stats
     const [users, courses, blogs, quizzes, progress] = await Promise.all([
       db.collection('users').countDocuments(),
@@ -50,9 +50,9 @@ export default async function AdminDashboardPage() {
 
     const publishedCourses = await db.collection('courses').countDocuments({ status: 'published' });
     const activeUsers = new Set(progress.map((p: any) => p.userId)).size;
-    
+
     // Calculate revenue (mock for now - integrate with subscription provider)
-    const premiumUsers = await db.collection('users').countDocuments({ 
+    const premiumUsers = await db.collection('users').countDocuments({
       $or: [
         { 'subscriptionStatus': 'premium' },
         { 'subscriptionStatus': 'pro' },
@@ -78,28 +78,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white dark:bg-gray-800 border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <SiteBrand />
-          <div className="flex items-center gap-4">
-            {isSuperAdminUser && (
-              <ViewAsSwitcher currentRole={role || 'student'} isSuperAdmin={isSuperAdminUser} />
-            )}
-            <ThemeToggle />
-            {role === 'superadmin' && (
-              <Link href="/admin/super">
-                <Button variant="outline" size="sm">Super Admin Console</Button>
-              </Link>
-            )}
-            <Link href="/admin">
-              <Button variant="outline" size="sm">← Admin Panel</Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">User Dashboard</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">

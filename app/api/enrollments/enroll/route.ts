@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { validateSlug } from '@/lib/validation';
+import { clerkClient } from '@clerk/nextjs/server';
+import { getUserRole } from '@/lib/admin-check';
 
 const RATE_LIMIT_WINDOW_MS = 60000;
 const RATE_LIMIT_MAX = 10;
@@ -21,8 +23,9 @@ export async function POST(req: NextRequest) {
     }
 
     const rawBody = await req.json();
-    const courseId = typeof rawBody.courseId === 'string' ? rawBody.courseId.trim() : undefined;
-    const courseSlug = typeof rawBody.courseSlug === 'string' ? rawBody.courseSlug.trim() : undefined;
+    const { courseId: rawCourseId, courseSlug: rawCourseSlug, manualEnrollment = false } = rawBody;
+    const courseId = typeof rawCourseId === 'string' ? rawCourseId.trim() : undefined;
+    const courseSlug = typeof rawCourseSlug === 'string' ? rawCourseSlug.trim() : undefined;
     if (!courseId && !courseSlug) {
       return NextResponse.json({ error: 'Course ID or slug is required' }, { status: 400 });
     }
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest) {
     if (ObjectId.isValid(courseId || courseSlug || '')) {
       course = await db.collection('courses').findOne({ _id: new ObjectId(courseId || courseSlug) });
     }
-    
+
     if (!course) {
       course = await db.collection('courses').findOne({ slug: courseSlug || courseId });
     }
@@ -117,6 +120,35 @@ export async function POST(req: NextRequest) {
         await db.collection('enrollments').insertOne(enrollment);
       }
 
+      // After successful enrollment, check if user needs role upgrade
+      const currentRole = await getUserRole();
+      if (currentRole === 'user') {
+        const client = await clerkClient();
+
+        // Update in MongoDB
+        await db.collection('users').updateOne(
+          { clerkId: userId },
+          {
+            $set: {
+              role: 'student',
+              isStudent: true,
+              updatedAt: new Date()
+            }
+          }
+        );
+
+        // Update in Clerk
+        try {
+          await client.users.updateUserMetadata(userId, {
+            publicMetadata: {
+              role: 'student',
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to update Clerk metadata during auto-promotion:', e);
+        }
+      }
+
       return NextResponse.json({
         success: true,
         enrolled: true,
@@ -124,7 +156,49 @@ export async function POST(req: NextRequest) {
         enrollment: { ...enrollment, id: existing?._id || enrollment },
       });
     } else {
-      // Paid course: Return payment URL
+      // Paid course: Direct checkout or Manual enrollment
+      if (manualEnrollment) {
+        // Manual enrollment request for paid course
+        const enrollment = {
+          userId,
+          courseId: courseIdentifier,
+          status: 'pending',
+          enrollmentType: 'manual',
+          requestedAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        if (existing) {
+          await db.collection('enrollments').updateOne(
+            { _id: existing._id },
+            {
+              $set: {
+                ...enrollment,
+                status: 'pending',
+              },
+              $push: (({
+                history: {
+                  status: 'pending',
+                  changedAt: new Date(),
+                  note: 'Requested manual enrollment for paid course',
+                },
+              }) as unknown as import('mongodb').PushOperator<any>),
+            }
+          );
+        } else {
+          await db.collection('enrollments').insertOne(enrollment);
+        }
+
+        return NextResponse.json({
+          success: true,
+          enrolled: false,
+          status: 'pending',
+          message: 'Manual enrollment request received',
+        });
+      }
+
+      // Default: Return payment URL for direct checkout
       return NextResponse.json({
         success: true,
         enrolled: false,

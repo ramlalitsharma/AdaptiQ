@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getDatabase } from '@/lib/mongodb';
-import { isAdmin } from '@/lib/admin-check';
+import { isAdmin, getUserRole } from '@/lib/admin-check';
 import { serializeQuestionBank, serializeQuestion } from '@/lib/models/QuestionBank';
 import type { QuestionBank, QuestionItem } from '@/lib/models/QuestionBank';
 
@@ -9,7 +9,9 @@ export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ bankId: string }> }) {
   try {
-    if (!(await isAdmin())) {
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const { bankId } = await params;
@@ -37,7 +39,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ bank
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ bankId: string }> }) {
   try {
-    if (!(await isAdmin())) {
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -88,7 +92,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ b
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ bankId: string }> }) {
   try {
-    if (!(await isAdmin())) {
+    const role = await getUserRole();
+    const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
+    if (!isAllowed) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

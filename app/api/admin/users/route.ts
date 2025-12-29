@@ -4,10 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { isAdmin } from '@/lib/admin-service';
 import { getDatabase } from '@/lib/mongodb';
-import { sanitizeString, escapeRegex } from '@/lib/security';
+import { sanitizeString, escapeRegex, generateRateLimitKey, getClientIP } from '@/lib/security';
 import { createErrorResponse, createSuccessResponse } from '@/lib/error-handler';
-import { rateLimit, generateRateLimitKey } from '@/lib/rate-limit';
-import { getClientIP } from '@/lib/security';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -51,7 +50,7 @@ export async function GET(request: NextRequest) {
     const search = sanitizeString(searchParams.get('search') || '', 100);
     const role = sanitizeString(searchParams.get('role') || '', 20);
     const status = sanitizeString(searchParams.get('status') || '', 10);
-    
+
     // Validate and sanitize pagination
     const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '20', 10)));
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10));
@@ -60,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // Build Query with proper sanitization
     const query: any = {};
-    
+
     if (search) {
       // Escape regex to prevent ReDoS
       const escapedSearch = escapeRegex(search);
@@ -69,13 +68,13 @@ export async function GET(request: NextRequest) {
         { email: { $regex: escapedSearch, $options: 'i' } }
       ];
     }
-    
+
     // Validate role against allowed values
     const allowedRoles = ['student', 'teacher', 'admin', 'superadmin'];
     if (role && allowedRoles.includes(role)) {
       query.role = role;
     }
-    
+
     // Validate status
     if (status === 'banned') {
       query.isBanned = true;
@@ -86,25 +85,33 @@ export async function GET(request: NextRequest) {
     // Use indexes for better performance
     const users = await db.collection('users')
       .find(query)
-      .project({ 
-        _id: 1, 
-        userId: 1, 
-        name: 1, 
-        email: 1, 
-        role: 1, 
-        isBanned: 1, 
-        createdAt: 1 
+      .project({
+        _id: 1,
+        clerkId: 1,
+        name: 1,
+        firstName: 1,
+        lastName: 1,
+        email: 1,
+        role: 1,
+        isBanned: 1,
+        createdAt: 1
       })
       .sort({ createdAt: -1 })
       .skip(offset)
       .limit(limit)
       .toArray();
 
+    // Transform _id to id for frontend compatibility
+    const transformedUsers = users.map(u => ({
+      ...u,
+      id: u._id.toString()
+    }));
+
     const total = await db.collection('users').countDocuments(query);
 
     return createSuccessResponse(
       {
-        users,
+        users: transformedUsers,
         total,
         page: Math.floor(offset / limit) + 1,
         totalPages: Math.ceil(total / limit),

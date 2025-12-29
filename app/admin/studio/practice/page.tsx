@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { requireAdmin } from '@/lib/admin-check';
+import { getUserRole } from '@/lib/admin-check';
 import { getDatabase } from '@/lib/mongodb';
 import { PracticeStudio } from '@/components/admin/PracticeStudio';
 
@@ -11,7 +11,10 @@ export default async function PracticeStudioPage() {
   if (!userId) redirect('/sign-in');
 
   try {
-    await requireAdmin();
+    const role = await getUserRole();
+    if (role !== 'student') {
+      redirect('/dashboard');
+    }
   } catch {
     redirect('/dashboard');
   }
@@ -19,7 +22,7 @@ export default async function PracticeStudioPage() {
   const db = await getDatabase();
   const [banks, practiceSets] = await Promise.all([
     db.collection('questionBanks').find({}).sort({ name: 1 }).toArray(),
-    db.collection('practiceSets').find({}).sort({ updatedAt: -1 }).limit(12).toArray(),
+    db.collection('practiceSets').find({ authorId: userId }).sort({ updatedAt: -1 }).limit(12).toArray(),
   ]);
 
   const bankSummaries = banks.map((bank: any) => ({ id: String(bank._id), name: bank.name }));
@@ -29,9 +32,9 @@ export default async function PracticeStudioPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
       <header className="border-b bg-white/80 backdrop-blur">
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-2xl font-semibold text-slate-900">Practice Set Studio</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Self Practice Studio</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Assemble adaptive practice sets from curated question banks and schedule releases for cohorts.
+            Generate personal adaptive practice sets from curated question banks to master your subjects.
           </p>
         </div>
       </header>

@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
       enableScreenshare = true,
       enableChat = true,
       enableWhiteboard = false,
+      provider = 'jitsi',
+      meetingLink,
+      meetingId,
     } = body;
 
     if (!roomName || !scheduledStartTime) {
@@ -61,19 +64,22 @@ export async function POST(req: NextRequest) {
     }
 
     const db = await getDatabase();
-    
+
     // Generate room ID
     const roomId = sanitizeString(roomName.toLowerCase().replace(/\s+/g, '-'), 50)
       .replace(/[^a-z0-9-]/g, '')
       + '-' + Date.now().toString(36);
 
-    const roomUrl = `https://meet.jit.si/${roomId}`;
+    const roomUrl = provider === 'jitsi'
+      ? `https://meet.jit.si/${roomId}`
+      : (meetingLink || `https://meet.jit.si/${roomId}`);
 
     const roomData = {
       roomId,
       roomName: sanitizeString(roomName, 200),
       roomUrl,
-      provider: 'jitsi',
+      provider: provider || 'jitsi',
+      meetingId: meetingId || null,
       courseId: courseId || null,
       createdBy: userId,
       status: 'scheduled',
