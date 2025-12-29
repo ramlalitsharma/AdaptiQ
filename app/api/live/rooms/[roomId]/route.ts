@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { roomId: string } }
+    { params }: { params: Promise<{ roomId: string }> }
 ) {
     try {
         const { userId } = await auth();
@@ -13,7 +13,7 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { roomId } = params;
+        const { roomId } = await params;
         if (!roomId) {
             return NextResponse.json({ error: 'Room ID is required' }, { status: 400 });
         }
