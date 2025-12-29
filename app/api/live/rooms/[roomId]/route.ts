@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
+export const runtime = 'nodejs';
+
 export async function DELETE(
     req: NextRequest,
     { params }: { params: Promise<{ roomId: string }> }
@@ -13,15 +15,17 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { roomId } = await params;
+        // Next.js 15+ REQUIRES awaiting params
+        const resolvedParams = await params;
+        const { roomId } = resolvedParams;
+
         if (!roomId) {
             return NextResponse.json({ error: 'Room ID is required' }, { status: 400 });
         }
 
         const db = await getDatabase();
 
-        // Attempt deletion by roomId (the string identifier)
-        // Note: We search by the string roomId or the _id if it's a valid ObjectId
+        // Search by roomId string or _id if valid ObjectId
         const query = ObjectId.isValid(roomId)
             ? { $or: [{ roomId: roomId }, { _id: new ObjectId(roomId) }] }
             : { roomId: roomId };
@@ -32,12 +36,12 @@ export async function DELETE(
             return NextResponse.json({ error: 'Room not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, message: 'Room deleted successfully' });
+        return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('Live room deletion error:', error);
-        return NextResponse.json(
-            { error: 'Failed to delete room', message: error.message },
-            { status: 500 }
-        );
+        console.error('Delete room failed:', error);
+        return NextResponse.json({
+            error: 'Failed to delete',
+            message: error.message
+        }, { status: 500 });
     }
 }
