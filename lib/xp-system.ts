@@ -1,6 +1,9 @@
 // XP System Utilities
 // Handles level calculation, XP requirements, and rewards
 
+import { getDatabase } from './mongodb';
+import { UserStats, createUserStats } from './models/UserStats';
+
 export interface XPReward {
     action: string;
     baseXP: number;
@@ -126,4 +129,34 @@ export function checkLevelUp(oldXP: number, newXP: number): {
         oldLevel,
         newLevel,
     };
+}
+
+// Award XP to a user and update their level
+export async function awardXP(userId: string, amount: number, action?: string): Promise<number> {
+    const db = await getDatabase();
+    const collection = db.collection<UserStats>('userStats');
+
+    const existing = await collection.findOne({ userId });
+    if (!existing) {
+        const newStats = createUserStats(userId);
+        await collection.insertOne(newStats);
+    }
+    const statsDoc = existing || (await collection.findOne({ userId }))!;
+
+    const oldXP = statsDoc.currentXP || 0;
+    const newXP = oldXP + Math.max(0, amount || 0);
+    const newLevel = getLevelFromXP(newXP);
+
+    await collection.updateOne(
+        { userId },
+        {
+            $set: {
+                currentXP: newXP,
+                currentLevel: newLevel,
+                updatedAt: new Date(),
+            },
+        }
+    );
+
+    return newLevel;
 }

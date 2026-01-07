@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
 import { MediaUploader } from '@/components/media/MediaUploader';
+import Image from 'next/image';
 
 interface BlogSummary {
   id: string;
@@ -30,8 +31,10 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
   const [loading, setLoading] = useState(false);
   const [generatingPreview, setGeneratingPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [assisting, setAssisting] = useState(false);
+  const [improving, setImproving] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -44,7 +47,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
     heroImage: '',
     seoTitle: '',
     seoDescription: '',
-    markdown: '# Outline\n- Intro\n- Key insight\n- CTA',
+    markdown: '',
   });
   const [resources, setResources] = useState<BlogResource[]>([]);
 
@@ -84,23 +87,99 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
         throw new Error(data.error || 'Failed to generate blog preview');
       }
       setForm((prev) => ({ ...prev, markdown: data.markdown }));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Unable to generate preview');
+      const msg = (err as { message?: string })?.message || 'Unable to generate preview';
+      setError(msg);
     } finally {
       setGeneratingPreview(false);
     }
   };
 
-  const updateResource = (index: number, key: keyof BlogResource, value: string) => {
-    setResources((prev) => prev.map((resource, i) => (i === index ? { ...resource, [key]: value } : resource)));
-  };
-
-  const addResource = () => setResources((prev) => [...prev, { type: 'link', label: '', url: '' }]);
-  const removeResource = (index: number) => setResources((prev) => prev.filter((_, i) => i !== index));
-
   const insertContent = (text: string) => {
     setForm(prev => ({ ...prev, markdown: prev.markdown + '\n' + text }));
+  };
+
+  const handleAssistFields = async () => {
+    const topic = form.topic.trim() || form.title.trim();
+    if (!topic) {
+      setError('Provide a topic or title before AI assist.');
+      return;
+    }
+    setError(null);
+    setAssisting(true);
+    try {
+      const res = await fetch('/api/admin/blogs/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'suggest_fields', topic, title: form.title }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch suggestions');
+      const s = data.suggestions || {};
+      setForm(prev => ({
+        ...prev,
+        audience: s.audience || prev.audience,
+        tone: s.tone || prev.tone,
+        callToAction: s.callToAction || prev.callToAction,
+        keywords: Array.isArray(s.keywords) ? s.keywords.join(', ') : (prev.keywords || ''),
+        tags: Array.isArray(s.tags) ? s.tags.join(', ') : (prev.tags || ''),
+        seoTitle: s.seoTitle || prev.seoTitle,
+        seoDescription: s.seoDescription || prev.seoDescription,
+      }));
+    } catch (e: unknown) {
+      const msg = (e as { message?: string })?.message || 'Failed to fetch suggestions';
+      setError(msg);
+    } finally {
+      setAssisting(false);
+    }
+  };
+
+  const handleImproveContent = async () => {
+    if (!form.markdown.trim()) return;
+    setImproving(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/blogs/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'improve_markdown',
+          markdown: form.markdown,
+          topic: form.topic || form.title,
+          audience: form.audience,
+          tone: form.tone,
+          keywords: form.keywords.split(',').map(x => x.trim()).filter(Boolean),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to improve content');
+      setForm(prev => ({ ...prev, markdown: data.markdown || prev.markdown }));
+    } catch (e: unknown) {
+      const msg = (e as { message?: string })?.message || 'Failed to improve content';
+      setError(msg);
+    } finally {
+      setImproving(false);
+    }
+  };
+
+  const enhanceWithMedia = async (type: 'image' | 'pdf', url: string, name?: string) => {
+    const topic = form.topic.trim() || form.title.trim();
+    try {
+      const res = await fetch('/api/admin/blogs/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'analyze_media',
+          topic,
+          media: [{ type, url, name }],
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.markdown) {
+        insertContent('\n' + data.markdown + '\n');
+      }
+    } catch {}
   };
 
   const handleSubmit = async (saveAsStatus?: string) => {
@@ -108,7 +187,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
     setLoading(true);
     setError(null);
     try {
-      const payload: any = {
+      const base: Record<string, unknown> = {
         mode,
         title: form.title.trim() || undefined,
         topic: form.topic.trim() || undefined,
@@ -131,19 +210,28 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
         resources: resources.filter((resource) => resource.label.trim() && resource.url.trim()),
         status: saveAsStatus
       };
-      if (mode === 'manual') {
-        payload.markdown = form.markdown;
-      }
-
+      const isManual = mode === 'manual';
       const url = editingSlug ? `/api/admin/blogs/${editingSlug}` : '/api/admin/blogs';
       const method = editingSlug ? 'PUT' : 'POST';
 
-      if (editingSlug) {
-        // Adapt payload for PUT
-        payload.content = payload.markdown;
-        delete payload.markdown;
-        delete payload.mode; // Mode irrelevant on update usually
-      }
+      const payload = (() => {
+        if (editingSlug) {
+          const updateData: Record<string, unknown> = { ...base };
+          // Remove mode for PUT
+          delete updateData.mode;
+          // Adapt content for PUT
+          if (isManual) {
+            updateData.content = form.markdown;
+          }
+          return updateData;
+        } else {
+          const createData: Record<string, unknown> = { ...base };
+          if (isManual) {
+            createData.markdown = form.markdown;
+          }
+          return createData;
+        }
+      })();
 
       const res = await fetch(url, {
         method,
@@ -154,7 +242,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
       if (!res.ok) {
         throw new Error(data.error || 'Failed to save blog');
       }
-      setResult(editingSlug ? { ...data, title: form.title, status: saveAsStatus || 'draft' } : data.blog);
+      setResult(editingSlug ? { ...data, title: form.title, status: saveAsStatus || 'draft' } : (data.blog as Record<string, unknown>));
 
       // Update local list if editing or new
       if (editingSlug) {
@@ -166,9 +254,10 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
         window.location.reload(); // Simplest way to refresh list
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Unexpected error');
+      const msg = (err as { message?: string })?.message || 'Unexpected error';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -186,7 +275,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
       heroImage: '',
       seoTitle: '',
       seoDescription: '',
-      markdown: '# Outline\n- Intro\n- Key insight\n- CTA',
+      markdown: '',
     });
     setResources([]);
     setEditingSlug(null);
@@ -218,8 +307,8 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
       });
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (e: any) {
-      setError(e.message);
+    } catch {
+      setError('Failed to fetch blog details');
     } finally {
       setLoading(false);
     }
@@ -231,7 +320,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
       const res = await fetch(`/api/admin/blogs/${slug}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       setRecentBlogs(prev => prev.filter(b => b.slug !== slug));
-    } catch (e) {
+    } catch {
       alert('Failed to delete blog');
     }
   };
@@ -246,7 +335,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
       });
       if (!res.ok) throw new Error('Failed to update status');
       setRecentBlogs(prev => prev.map(b => b.slug === blog.slug ? { ...b, status: newStatus } : b));
-    } catch (e) {
+    } catch {
       alert('Failed to update status');
     }
   };
@@ -302,6 +391,11 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
                       placeholder="Adaptive assessments for competitive exams"
                       className="w-full rounded-lg border border-slate-200 px-3 py-2"
                     />
+                    <div className="mt-2">
+                      <Button size="sm" variant="outline" onClick={handleAssistFields} disabled={assisting || !(form.topic.trim() || form.title.trim())}>
+                        {assisting ? 'Thinking…' : 'AI Auto-fill metadata'}
+                      </Button>
+                    </div>
                   </label>
                   <label className="space-y-1 text-sm text-slate-600">
                     Target audience
@@ -412,20 +506,29 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
               <MediaUploader
                 label="📷 Image"
                 accept="image/*"
-                onUploadComplete={(url: string, name: string) => insertContent(`![${name}](${url})`)}
+                onUploadComplete={async (url: string, name: string) => {
+                  insertContent(`![${name}](${url})`);
+                  await enhanceWithMedia('image', url, name);
+                }}
               />
               <MediaUploader
                 label="📄 PDF"
                 accept="application/pdf"
-                onUploadComplete={(url: string, name: string) => insertContent(`\n[PDF: ${name}](${url})\n`)}
+                onUploadComplete={async (url: string, name: string) => {
+                  insertContent(`\n[PDF: ${name}](${url})\n`);
+                  await enhanceWithMedia('pdf', url, name);
+                }}
               />
+              <Button size="sm" variant="outline" onClick={handleImproveContent} disabled={improving || !form.markdown.trim()}>
+                {improving ? 'Improving…' : 'Improve with AI'}
+              </Button>
             </div>
 
             <MarkdownEditor
               value={form.markdown}
               onChange={(next) => setForm((prev) => ({ ...prev, markdown: next }))}
               height={500}
-              placeholder="# Outline\n- Intro\n- Key insight\n- CTA"
+              placeholder="Start writing your blog…"
             />
             {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
             <div className="flex gap-3">
@@ -447,8 +550,10 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
                   <p className="text-xs text-slate-500">{form.audience || 'Audience TBD'} • {form.tone}</p>
                 </div>
                 {form.heroImage && (
-                  <div className="overflow-hidden rounded-lg border border-slate-200">
-                    <img src={form.heroImage} alt="Hero" className="h-32 w-full object-cover" />
+                  <div className="overflow-hidden rounded-lg border border-slate-200 relative h-32 w-full">
+                    {form.heroImage && (
+                      <Image src={form.heroImage} alt="Hero" fill className="object-cover" />
+                    )}
                   </div>
                 )}
                 <p className="text-sm text-slate-600">

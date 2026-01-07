@@ -65,3 +65,84 @@ IMPORTANT: Return ONLY the raw markdown content. Do NOT include frontmatter or c
   const content = resp.choices[0]?.message?.content || '# Draft\nComing soon.';
   return content;
 }
+
+export interface FieldSuggestions {
+  audience: string;
+  tone: string;
+  callToAction: string;
+  keywords: string[];
+  tags: string[];
+  seoTitle: string;
+  seoDescription: string;
+}
+
+export async function suggestBlogFields(input: { topic: string; title?: string }) {
+  if (!openai) throw new Error('OPENAI_API_KEY not configured');
+  const t = input.topic || input.title || '';
+  const prompt = `Based on the topic, suggest concise values for blog metadata.
+Topic: ${t}
+Return strict JSON:
+{
+  "audience": "",
+  "tone": "",
+  "callToAction": "",
+  "keywords": ["", ""],
+  "tags": ["", ""],
+  "seoTitle": "",
+  "seoDescription": ""
+}`;
+  const resp = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+    temperature: 0.4,
+  });
+  const content = resp.choices[0]?.message?.content || '{}';
+  const parsed = JSON.parse(content);
+  return parsed as FieldSuggestions;
+}
+
+export async function improveBlogMarkdown(params: {
+  markdown: string;
+  topic?: string;
+  audience?: string;
+  tone?: string;
+  keywords?: string[];
+}) {
+  if (!openai) throw new Error('OPENAI_API_KEY not configured');
+  const system = `You improve blog markdown to be long-form, original, and AdSense compliant. Keep existing media/links intact. Output raw markdown only.`;
+  const context = `Topic: ${params.topic || ''}\n${params.audience ? `Audience: ${params.audience}\n` : ''}${params.tone ? `Tone: ${params.tone}\n` : ''}${params.keywords && params.keywords.length ? `Keywords: ${params.keywords.join(', ')}\n` : ''}`;
+  const user = `Improve the following markdown. Preserve all images, PDFs, links, headings. Increase depth, add executive summary, FAQs, and better structure when appropriate.\n\n${params.markdown}`;
+  const resp = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: context },
+      { role: 'user', content: user },
+    ],
+    temperature: 0.5,
+  });
+  const content = resp.choices[0]?.message?.content || params.markdown;
+  return content;
+}
+
+export async function describeMediaForBlog(params: {
+  topic?: string;
+  media: Array<{ type: 'image' | 'pdf'; url: string; name?: string }>;
+}) {
+  if (!openai) throw new Error('OPENAI_API_KEY not configured');
+  const items = params.media.map(m => `${m.type.toUpperCase()}: ${m.name || ''} ${m.url}`).join('\n');
+  const prompt = `Write markdown paragraphs that reference and explain these media items in a blog context. Keep URLs as given and do not remove or alter them. Make the text informative and high quality for AdSense compliance.
+${params.topic ? `Topic: ${params.topic}\n` : ''}
+Media:
+${items}
+
+Return raw markdown only.`;
+  const resp = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.5,
+  });
+  const content = resp.choices[0]?.message?.content || '';
+  return content;
+}

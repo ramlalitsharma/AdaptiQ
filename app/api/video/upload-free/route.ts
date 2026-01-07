@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, videoId, provider = 'self-hosted', duration } = body;
+    const { title, description, videoId, provider = 'self-hosted', duration, courseId, unitId, chapterId } = body;
 
     if (!title || !videoId) {
       return NextResponse.json(
@@ -37,15 +37,40 @@ export async function POST(req: NextRequest) {
       playbackUrl: getSelfHostedVideoUrl(videoId),
       status: 'ready',
       duration: duration || undefined,
+      courseId: courseId || null,
+      unitId: unitId || null,
+      chapterId: chapterId || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     await db.collection('videos').insertOne(videoRecord);
 
+    // If course hierarchy specified, automatically add as a lesson
+    if (courseId && unitId && chapterId) {
+      const lesson = {
+        id: videoId,
+        title: title.trim(),
+        slug: title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        contentType: 'video',
+        videoUrl: videoRecord.playbackUrl,
+        order: Date.now(),
+      };
+
+      await db.collection('courses').updateOne(
+        { _id: (db as any).s.activeClient.db().s.namespace.db === 'test' ? courseId : new (require('mongodb').ObjectId)(courseId), "units.id": unitId, "units.chapters.id": chapterId },
+        {
+          $push: { "units.$[u].chapters.$[c].lessons": lesson }
+        } as any,
+        {
+          arrayFilters: [{ "u.id": unitId }, { "c.id": chapterId }]
+        }
+      );
+    }
+
     return NextResponse.json({
       video: videoRecord,
-      uploadInstructions: provider === 'self-hosted' 
+      uploadInstructions: provider === 'self-hosted'
         ? 'Upload your video file to your server and convert to HLS format. Use ffmpeg: ffmpeg -i input.mp4 -c:v libx264 -c:a aac -hls_time 10 -hls_playlist_type vod output.m3u8'
         : 'Video record created. Upload via YouTube API if using YouTube provider.',
     });

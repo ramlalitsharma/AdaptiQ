@@ -1,0 +1,104 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { getDatabase } from '@/lib/mongodb';
+import { requireAdmin } from '@/lib/admin-check';
+import { ObjectId } from 'mongodb';
+
+export const runtime = 'nodejs';
+
+// GET - Get live course by ID
+export async function GET(req: NextRequest, { params }: { params: Promise<{ courseId: string }> }) {
+    try {
+        const { userId } = await auth();
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        const { courseId } = await params;
+        const db = await getDatabase();
+
+        const course = await db.collection('courses').findOne({
+            _id: new ObjectId(courseId),
+            type: 'live-course'
+        });
+
+        if (!course) {
+            return NextResponse.json({ error: 'Live course not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ course });
+    } catch (error: any) {
+        console.error('Live course fetch error:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch live course', message: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+// PUT - Update live course
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ courseId: string }> }) {
+    try {
+        const { userId } = await auth();
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        await requireAdmin();
+
+        const { courseId } = await params;
+        const body = await req.json();
+        const { title, description, thumbnail, categoryId, units, status, defaultLiveRoomId } = body;
+
+        const db = await getDatabase();
+
+        const updateData: any = {
+            updatedAt: new Date(),
+        };
+
+        if (title) updateData.title = title;
+        if (description !== undefined) updateData.description = description;
+        if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
+        if (categoryId !== undefined) updateData.categoryId = categoryId;
+        if (units) updateData.units = units;
+        if (status) updateData.status = status;
+        if (defaultLiveRoomId !== undefined) updateData.defaultLiveRoomId = defaultLiveRoomId || null;
+
+        await db.collection('courses').updateOne(
+            { _id: new ObjectId(courseId), type: 'live-course' },
+            { $set: updateData }
+        );
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('Live course update error:', error);
+        return NextResponse.json(
+            { error: 'Failed to update live course', message: error.message },
+            { status: 500 }
+        );
+    }
+}
+
+// DELETE - Delete live course
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ courseId: string }> }) {
+    try {
+        const { userId } = await auth();
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        await requireAdmin();
+
+        const { courseId } = await params;
+        const db = await getDatabase();
+
+        const result = await db.collection('courses').deleteOne({
+            _id: new ObjectId(courseId),
+            type: 'live-course'
+        });
+
+        if (result.deletedCount === 0) {
+            return NextResponse.json({ error: 'Live course not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('Live course deletion error:', error);
+        return NextResponse.json(
+            { error: 'Failed to delete live course', message: error.message },
+            { status: 500 }
+        );
+    }
+}

@@ -14,12 +14,14 @@ const buttonVariants = cva(
         outline: 'border border-slate-300 text-slate-700 hover:bg-slate-100 focus-visible:ring-teal-500',
         ghost: 'text-slate-600 hover:bg-slate-100',
         inverse: 'bg-white text-teal-600 hover:bg-slate-50 focus-visible:ring-teal-400',
+        destructive: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
       },
       size: {
         default: 'px-4 py-2',
         sm: 'px-3 py-1.5 text-sm',
         xs: 'px-2 py-1 text-xs',
         lg: 'px-6 py-3 text-base',
+        icon: 'p-2 rounded-full h-10 w-10',
       },
     },
     defaultVariants: {

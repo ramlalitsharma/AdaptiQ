@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { AdminSubjectForm } from '@/components/admin/AdminSubjectForm';
 import { AdminTopicForm } from '@/components/admin/AdminTopicForm';
 import { requireAdmin } from '@/lib/admin-check';
+import { resolveBaseUrl } from '@/lib/brand';
 
 async function fetchSubjects() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = await resolveBaseUrl();
   const res = await fetch(`${baseUrl}/api/subjects`, { cache: 'no-store' });
   return res.ok ? res.json() : [];
 }

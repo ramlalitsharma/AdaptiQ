@@ -21,6 +21,7 @@ export function Navbar() {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -87,6 +88,10 @@ export function Navbar() {
 
   // Show banner when viewing as another role
   const isViewingAs = viewAsRole && viewAsRole !== userRole;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-[1000] bg-teal-700 text-white shadow-xl overflow-visible">
@@ -296,12 +301,14 @@ export function Navbar() {
             <div className="hidden xl:block">
               <ThemeToggle />
             </div>
-            <SignedIn>
-              <div className="flex items-center gap-2">
-                <NotificationBell />
-                <UserButton afterSignOutUrl="/" />
-              </div>
-            </SignedIn>
+            {mounted && (
+              <SignedIn>
+                <div className="flex items-center gap-2" suppressHydrationWarning={true}>
+                  <NotificationBell />
+                  <UserButton afterSignOutUrl="/" />
+                </div>
+              </SignedIn>
+            )}
             <SignedOut>
               <SignInButton mode="modal">
                 <Button

@@ -67,6 +67,9 @@ export function ScheduleClassForm({ courses }: ScheduleClassFormProps) {
         enableScreenshare: true,
         enableChat: true,
         enableWhiteboard: false,
+        provider: 'jitsi',
+        meetingLink: '',
+        meetingId: '',
       });
     } catch (error: any) {
       alert(error.message || 'Failed to schedule class');

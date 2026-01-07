@@ -100,8 +100,8 @@ export function TutorialStudio({ recentTutorials }: TutorialStudioProps) {
       if (!res.ok) throw new Error(data.error || 'Failed to generate outline');
       const rawSections = (data.outline.sections || []) as Array<{ title?: string; duration?: number; narrative?: string; demo?: string }>;
       const generatedSections = rawSections.map((section) => ({
-        title: section.title,
-        duration: section.duration || 10,
+        title: typeof section.title === 'string' && section.title.trim() ? section.title : 'Untitled',
+        duration: typeof section.duration === 'number' && section.duration > 0 ? section.duration : 10,
         narrative: section.narrative || '',
         demo: section.demo || '',
       }));

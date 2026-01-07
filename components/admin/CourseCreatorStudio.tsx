@@ -37,9 +37,17 @@ interface SelectedCourse extends Partial<CourseSummary> {
   };
   price?: { currency: string; amount: number } | null;
   seo?: { title?: string; description?: string; keywords?: string[] };
-  modules?: Array<{
+  categoryId?: string;
+  units?: Array<{
     title: string;
-    lessons?: Array<{ title: string; content?: string }>;
+    chapters?: Array<{
+      title: string;
+      lessons?: Array<{
+        title: string;
+        contentType: string;
+        content?: string;
+      }>;
+    }>;
   }>;
   resources?: Array<{ type: 'video' | 'pdf' | 'link' | 'image'; label?: string; url: string }>;
 }
@@ -49,14 +57,24 @@ interface CourseCreatorStudioProps {
   selectedCourse?: SelectedCourse;
 }
 
-interface ManualLesson {
-  title: string;
-  content?: string;
-}
-
-interface ManualModule {
+interface ManualChapter {
+  id?: string;
   title: string;
   lessons: ManualLesson[];
+}
+
+interface ManualLesson {
+  id?: string;
+  title: string;
+  contentType: 'video' | 'live' | 'quiz' | 'document' | 'text' | 'video-link';
+  content?: string;
+  videoUrl?: string;
+  liveRoomId?: string;
+}
+interface ManualUnit {
+  id?: string;
+  title: string;
+  chapters: ManualChapter[];
 }
 
 interface CourseResource {
@@ -64,17 +82,18 @@ interface CourseResource {
   label: string;
   url: string;
 }
-
 const DEFAULT_FORM = {
   title: '',
+  categoryId: '',
   subject: '',
   level: '',
   summary: '',
   audience: '',
   goals: '',
   tone: 'Professional and encouraging',
-  modulesCount: 4,
-  lessonsPerModule: 3,
+  unitsCount: 4,
+  chaptersPerUnit: 2,
+  lessonsPerChapter: 3,
   language: 'English',
   tags: 'adaptive learning, ai quizzes',
   priceAmount: '',
@@ -96,13 +115,30 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
   const [result, setResult] = useState<any>(null);
 
   const [form, setForm] = useState({ ...DEFAULT_FORM });
-  const [modules, setModules] = useState<ManualModule[]>([
-    { title: 'Introduction', lessons: [{ title: 'Welcome', content: 'Overview and objectives.' }] },
+  const [categories, setCategories] = useState<any[]>([]);
+  const [units, setUnits] = useState<ManualUnit[]>([
+    {
+      title: 'Introduction Unit',
+      chapters: [
+        {
+          title: 'Getting Started',
+          lessons: [{ title: 'Welcome', content: 'Overview and objectives.', contentType: 'text' }]
+        }
+      ]
+    },
   ]);
   const [resources, setResources] = useState<CourseResource[]>([]);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState<string>('draft');
   const [courseList, setCourseList] = useState<CourseSummary[]>(recentCourses);
+
+  useEffect(() => {
+    // Fetch categories
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data.categories || []))
+      .catch(err => console.error('Failed to fetch categories:', err));
+  }, []);
 
   useEffect(() => {
     setCourseList(recentCourses);
@@ -114,7 +150,13 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
       setEditingSlug(null);
       setCurrentStatus('draft');
       setForm({ ...DEFAULT_FORM });
-      setModules([{ title: 'Introduction', lessons: [{ title: 'Welcome', content: 'Overview and objectives.' }] }]);
+      setUnits([{
+        title: 'Introduction Unit',
+        chapters: [{
+          title: 'Getting Started',
+          lessons: [{ title: 'Welcome', content: 'Overview and objectives.', contentType: 'text' }]
+        }]
+      }]);
       setResources([]);
       setMode('ai');
       return;
@@ -125,14 +167,16 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
     setCurrentStatus(selectedCourse.status || 'draft');
     setForm({
       title: selectedCourse.title || '',
+      categoryId: selectedCourse.categoryId || '',
       subject: selectedCourse.subject || '',
       level: selectedCourse.level || '',
       summary: selectedCourse.summary || '',
       audience: selectedCourse.metadata?.audience || '',
       goals: selectedCourse.metadata?.goals || '',
       tone: selectedCourse.metadata?.tone || DEFAULT_FORM.tone,
-      modulesCount: selectedCourse.metadata?.modulesCount || DEFAULT_FORM.modulesCount,
-      lessonsPerModule: selectedCourse.metadata?.lessonsPerModule || DEFAULT_FORM.lessonsPerModule,
+      unitsCount: (selectedCourse.metadata as any)?.modulesCount || DEFAULT_FORM.unitsCount,
+      chaptersPerUnit: DEFAULT_FORM.chaptersPerUnit,
+      lessonsPerChapter: (selectedCourse.metadata as any)?.lessonsPerModule || DEFAULT_FORM.lessonsPerChapter,
       language: selectedCourse.language || DEFAULT_FORM.language,
       tags: (selectedCourse.tags || []).join(', ') || DEFAULT_FORM.tags,
       priceAmount: selectedCourse.price?.amount ? String(selectedCourse.price.amount) : '',
@@ -141,10 +185,20 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
       seoDescription: selectedCourse.seo?.description || '',
       thumbnail: selectedCourse.thumbnail || '',
     });
-    setModules(
-      (selectedCourse.modules || []).map((module) => ({
-        title: module.title,
-        lessons: (module.lessons || []).map((lesson) => ({ title: lesson.title, content: lesson.content || '' })),
+
+    // Handle legacy modules or new units
+    const sourceUnits = selectedCourse.units || (selectedCourse as any).modules || [];
+    setUnits(
+      sourceUnits.map((u: any) => ({
+        title: u.title,
+        chapters: (u.chapters || [{ title: 'Main Lessons', lessons: u.lessons || [] }]).map((c: any) => ({
+          title: c.title,
+          lessons: (c.lessons || []).map((l: any) => ({
+            title: l.title,
+            content: l.content || '',
+            contentType: l.contentType || 'text'
+          })),
+        })),
       })) || [],
     );
     setResources(
@@ -156,56 +210,20 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
     );
   }, [selectedCourse?.slug]);
 
-  const canSubmit = useMemo(() => {
-    if (!form.title.trim()) return false;
-    if (mode === 'manual' || editingSlug) {
-      return modules.every((module) => module.title.trim()) && modules.every((module) => module.lessons.every((lesson) => lesson.title.trim()));
-    }
-    return true;
-  }, [form.title, mode, modules, editingSlug]);
-
-  const updateModuleTitle = (index: number, title: string) => {
-    setModules((prev) => prev.map((m, i) => (i === index ? { ...m, title } : m)));
+  // Curriculum helper functions for the new hierarchy
+  const updateUnitTitle = (index: number, title: string) => {
+    setUnits((prev) => prev.map((u, i) => (i === index ? { ...u, title } : u)));
   };
 
-  const updateLesson = (moduleIndex: number, lessonIndex: number, key: keyof ManualLesson, value: string) => {
-    setModules((prev) =>
-      prev.map((module, mi) =>
-        mi === moduleIndex
-          ? {
-            ...module,
-            lessons: module.lessons.map((lesson, li) => (li === lessonIndex ? { ...lesson, [key]: value } : lesson)),
-          }
-          : module,
-      ),
-    );
+  const addUnit = () => {
+    setUnits((prev) => [...prev, {
+      title: `Unit ${prev.length + 1}`,
+      chapters: [{ title: 'Chapter 1', lessons: [] }]
+    }]);
   };
 
-  const addModule = () => {
-    setModules((prev) => [...prev, { title: `Module ${prev.length + 1}`, lessons: [{ title: 'Lesson 1', content: '' }] }]);
-  };
-
-  const addLesson = (moduleIndex: number) => {
-    setModules((prev) =>
-      prev.map((module, mi) =>
-        mi === moduleIndex
-          ? { ...module, lessons: [...module.lessons, { title: `Lesson ${module.lessons.length + 1}`, content: '' }] }
-          : module,
-      ),
-    );
-  };
-
-  const removeLesson = (moduleIndex: number, lessonIndex: number) => {
-    setModules((prev) =>
-      prev.map((module, mi) =>
-        mi === moduleIndex
-          ? {
-            ...module,
-            lessons: module.lessons.filter((_, li) => li !== lessonIndex),
-          }
-          : module,
-      ),
-    );
+  const removeUnit = (index: number) => {
+    setUnits((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateResource = (index: number, key: keyof CourseResource, value: string) => {
@@ -219,6 +237,14 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
   const removeResource = (index: number) => {
     setResources((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const canSubmit = useMemo(() => {
+    if (!form.title.trim()) return false;
+    if (mode === 'manual' || editingSlug) {
+      return units.length > 0 && units.every(u => u.title.trim());
+    }
+    return true;
+  }, [form.title, mode, units, editingSlug]);
 
   const handleGenerateOutline = async () => {
     if (!form.title.trim()) {
@@ -235,8 +261,8 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
         audience: form.audience.trim() || undefined,
         goals: form.goals.trim() || undefined,
         tone: form.tone.trim() || undefined,
-        modulesCount: Number(form.modulesCount) || undefined,
-        lessonsPerModule: Number(form.lessonsPerModule) || undefined,
+        modulesCount: Number(form.unitsCount) || undefined,
+        lessonsPerModule: Number(form.lessonsPerChapter) || undefined,
       };
       const res = await fetch('/api/admin/courses/preview', {
         method: 'POST',
@@ -247,14 +273,24 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
       if (!res.ok) {
         throw new Error(data.error || 'Failed to generate outline');
       }
-      const generatedModules: ManualModule[] = (data.outline.modules || []).map((module: any) => ({
+
+      // Mapping AI modules to the new Unit -> Chapter -> Lesson hierarchy
+      const generatedUnits: ManualUnit[] = (data.outline.modules || []).map((module: any) => ({
         title: module.title,
-        lessons: (module.lessons || []).map((lesson: any) => ({ title: lesson.title, content: lesson.content })),
+        chapters: [{
+          title: 'Core Concepts',
+          lessons: (module.lessons || []).map((lesson: any) => ({
+            title: lesson.title,
+            content: lesson.content,
+            contentType: 'text'
+          })),
+        }]
       }));
-      if (generatedModules.length) {
-        setModules(generatedModules);
+
+      if (generatedUnits.length) {
+        setUnits(generatedUnits);
       }
-      setFeedback('Outline generated. Review modules before saving.');
+      setFeedback('Outline generated. Review curriculum before saving.');
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Unable to generate outline');
@@ -263,14 +299,22 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
     }
   };
 
-  const buildModulePayload = () =>
-    modules.map((module) => ({
-      ...module,
-      lessons: module.lessons.map((lesson) => ({ title: lesson.title, content: lesson.content })),
+  const buildCurriculumPayload = () =>
+    units.map((unit) => ({
+      title: unit.title,
+      chapters: unit.chapters.map(chapter => ({
+        title: chapter.title,
+        lessons: chapter.lessons.map(lesson => ({
+          title: lesson.title,
+          content: lesson.content,
+          contentType: lesson.contentType || 'text'
+        }))
+      }))
     }));
 
   const buildSharedPayload = () => ({
     title: form.title.trim(),
+    categoryId: form.categoryId || undefined,
     summary: form.summary.trim() || undefined,
     subject: form.subject.trim() || undefined,
     level: form.level || undefined,
@@ -299,8 +343,8 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
       audience: form.audience.trim() || undefined,
       goals: form.goals.trim() || undefined,
       tone: form.tone.trim() || undefined,
-      modulesCount: Number(form.modulesCount) || undefined,
-      lessonsPerModule: Number(form.lessonsPerModule) || undefined,
+      unitsCount: units.length,
+      lessonsCount: units.reduce((acc, u) => acc + u.chapters.reduce((cAcc, c) => cAcc + c.lessons.length, 0), 0),
     },
   });
 
@@ -342,7 +386,17 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
       if (editingSlug) {
         const payload: any = {
           ...buildSharedPayload(),
-          modules: buildModulePayload(),
+          units: units.map(u => ({
+            title: u.title,
+            chapters: u.chapters.map(c => ({
+              title: c.title,
+              lessons: c.lessons.map(l => ({
+                title: l.title,
+                content: l.content,
+                contentType: (l as any).contentType || 'text'
+              }))
+            }))
+          })),
         };
         if (nextStatus) payload.status = nextStatus;
         const res = await fetch(`/api/admin/courses/${editingSlug}`, {
@@ -361,8 +415,18 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
           mode,
           ...buildSharedPayload(),
         };
-        if (mode === 'manual' || modules.length) {
-          payload.outline = { modules: buildModulePayload() };
+        if (mode === 'manual' || units.length) {
+          payload.units = units.map(u => ({
+            title: u.title,
+            chapters: u.chapters.map(c => ({
+              title: c.title,
+              lessons: c.lessons.map(l => ({
+                title: l.title,
+                content: l.content,
+                contentType: (l as any).contentType || 'text'
+              }))
+            }))
+          }));
         }
         const res = await fetch('/api/admin/courses', {
           method: 'POST',
@@ -426,10 +490,11 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
         )}
 
         <div className="mt-6 grid gap-6 2xl:grid-cols-3">
+          {/* Column 1: Metadata */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-800">Course metadata</h3>
             <div className="space-y-3">
-              <label className="space-y-1 text-sm text-slate-600">
+              <label className="space-y-1 text-sm text-slate-600 block">
                 Title
                 <input
                   value={form.title}
@@ -438,7 +503,22 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                   className="w-full rounded-lg border border-slate-200 px-3 py-2"
                 />
               </label>
-              <label className="space-y-1 text-sm text-slate-600">
+              <label className="space-y-1 text-sm text-slate-600 block">
+                Category
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => setForm((prev) => ({ ...prev, categoryId: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                >
+                  <option value="">Uncategorized</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1 text-sm text-slate-600 block">
                 Subject
                 <input
                   value={form.subject}
@@ -447,7 +527,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                   className="w-full rounded-lg border border-slate-200 px-3 py-2"
                 />
               </label>
-              <label className="space-y-1 text-sm text-slate-600">
+              <label className="space-y-1 text-sm text-slate-600 block">
                 Level
                 <select
                   value={form.level}
@@ -460,7 +540,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                   <option value="advanced">Advanced</option>
                 </select>
               </label>
-              <label className="space-y-1 text-sm text-slate-600">
+              <div className="space-y-1 text-sm text-slate-600">
                 Executive summary
                 <MarkdownEditor
                   value={form.summary}
@@ -468,9 +548,9 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                   placeholder="3-week accelerator to master adaptive testing."
                   height={180}
                 />
-              </label>
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <label className="space-y-1 text-sm text-slate-600">
+                <label className="space-y-1 text-sm text-slate-600 block">
                   Language
                   <input
                     value={form.language}
@@ -479,7 +559,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                     className="w-full rounded-lg border border-slate-200 px-3 py-2"
                   />
                 </label>
-                <label className="space-y-1 text-sm text-slate-600">
+                <label className="space-y-1 text-sm text-slate-600 block">
                   Tags
                   <input
                     value={form.tags}
@@ -490,7 +570,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                 </label>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <label className="space-y-1 text-sm text-slate-600">
+                <label className="space-y-1 text-sm text-slate-600 block">
                   Price amount
                   <input
                     type="number"
@@ -500,7 +580,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                     className="w-full rounded-lg border border-slate-200 px-3 py-2"
                   />
                 </label>
-                <label className="space-y-1 text-sm text-slate-600">
+                <label className="space-y-1 text-sm text-slate-600 block">
                   Currency
                   <input
                     value={form.priceCurrency}
@@ -517,10 +597,11 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                   label="Course Thumbnail"
                 />
               </div>
+
               {(mode === 'ai' && !editingSlug) && (
                 <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <h4 className="text-sm font-semibold text-slate-700">AI guidance</h4>
-                  <label className="space-y-1 text-xs text-slate-600">
+                  <label className="space-y-1 text-xs text-slate-600 block">
                     Target audience
                     <input
                       value={form.audience}
@@ -529,7 +610,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                       className="w-full rounded-lg border border-slate-200 px-3 py-2"
                     />
                   </label>
-                  <label className="space-y-1 text-xs text-slate-600">
+                  <label className="space-y-1 text-xs text-slate-600 block">
                     Learning outcomes
                     <input
                       value={form.goals}
@@ -538,7 +619,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                       className="w-full rounded-lg border border-slate-200 px-3 py-2"
                     />
                   </label>
-                  <label className="space-y-1 text-xs text-slate-600">
+                  <label className="space-y-1 text-xs text-slate-600 block">
                     Tone or style
                     <input
                       value={form.tone}
@@ -548,23 +629,23 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                     />
                   </label>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <label className="space-y-1 text-xs text-slate-600">
-                      Module count
+                    <label className="space-y-1 text-xs text-slate-600 block">
+                      Unit count
                       <input
                         type="number"
-                        min={2}
-                        value={form.modulesCount}
-                        onChange={(e) => setForm((prev) => ({ ...prev, modulesCount: Number(e.target.value) }))}
+                        min={1}
+                        value={form.unitsCount}
+                        onChange={(e) => setForm((prev) => ({ ...prev, unitsCount: Number(e.target.value) }))}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2"
                       />
                     </label>
-                    <label className="space-y-1 text-xs text-slate-600">
-                      Lessons per module
+                    <label className="space-y-1 text-xs text-slate-600 block">
+                      Lessons per chapter
                       <input
                         type="number"
-                        min={2}
-                        value={form.lessonsPerModule}
-                        onChange={(e) => setForm((prev) => ({ ...prev, lessonsPerModule: Number(e.target.value) }))}
+                        min={1}
+                        value={form.lessonsPerChapter}
+                        onChange={(e) => setForm((prev) => ({ ...prev, lessonsPerChapter: Number(e.target.value) }))}
                         className="w-full rounded-lg border border-slate-200 px-3 py-2"
                       />
                     </label>
@@ -574,72 +655,11 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                   </Button>
                 </div>
               )}
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-3">Video Upload</h4>
-                  <VideoUploader
-                    onUploadComplete={(uploadId) => {
-                      setFeedback(`Video uploaded successfully! Upload ID: ${uploadId}`);
-                      // Optionally add to resources
-                      setResources((prev) => [
-                        ...prev,
-                        {
-                          type: 'video',
-                          label: 'Uploaded Video',
-                          url: `/videos/${uploadId}/playlist.m3u8`, // Self-hosted HLS
-                        },
-                      ]);
-                    }}
-                    onError={(error) => setError(error)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-700">Resource links</span>
-                    <Button variant="outline" size="sm" onClick={addResource}>
-                      + Resource
-                    </Button>
-                  </div>
-                  {resources.length === 0 && <p className="text-xs text-slate-400">Add supportive videos, PDFs, or external links.</p>}
-                  <div className="space-y-3">
-                    {resources.map((resource, index) => (
-                      <div key={index} className="rounded-lg border border-slate-200 p-3 space-y-2">
-                        <div className="flex gap-2">
-                          <select
-                            value={resource.type}
-                            onChange={(e) => updateResource(index, 'type', e.target.value)}
-                            className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
-                          >
-                            <option value="link">Link</option>
-                            <option value="video">Video</option>
-                            <option value="pdf">PDF</option>
-                            <option value="image">Image</option>
-                          </select>
-                          <input
-                            value={resource.label}
-                            onChange={(e) => updateResource(index, 'label', e.target.value)}
-                            placeholder="Resource title"
-                            className="flex-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <input
-                            value={resource.url}
-                            onChange={(e) => updateResource(index, 'url', e.target.value)}
-                            placeholder="https://"
-                            className="flex-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
-                          />
-                          <Button variant="ghost" size="sm" onClick={() => removeResource(index)}>
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold text-slate-700">SEO metadata</h4>
-                  <label className="space-y-1 text-xs text-slate-600">
+
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-semibold text-slate-700 mb-3">SEO metadata</h4>
+                <div className="space-y-3">
+                  <label className="space-y-1 text-xs text-slate-600 block">
                     SEO title
                     <input
                       value={form.seoTitle}
@@ -648,7 +668,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                       className="w-full rounded-lg border border-slate-200 px-3 py-2"
                     />
                   </label>
-                  <label className="space-y-1 text-xs text-slate-600">
+                  <label className="space-y-1 text-xs text-slate-600 block">
                     SEO description
                     <textarea
                       value={form.seoDescription}
@@ -661,25 +681,26 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                 </div>
               </div>
             </div>
-
           </section>
 
+          {/* Column 2: Outline Builder */}
           <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-slate-800">Outline builder</h3>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">Outline builder</h3>
-              <Button variant="outline" size="sm" onClick={addModule}>
-                + Module
+              <Button variant="outline" size="sm" onClick={() => setUnits([...units, { title: 'New Unit', chapters: [] }])}>
+                + Unit
               </Button>
             </div>
+
             <div className="space-y-4">
               <CourseOutlineEditor
-                modules={modules}
-                onChange={setModules}
+                units={units}
+                onChange={setUnits}
               />
             </div>
 
             {editingSlug && (
-              <>
+              <div className="space-y-6 pt-6 border-t border-slate-100">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <h4 className="text-sm font-semibold text-slate-700">Workflow status</h4>
                   <WorkflowControls
@@ -704,10 +725,10 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                     }}
                   />
                 </div>
-              </>
+              </div>
             )}
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 pt-6">
               <Button onClick={() => handleSubmit()} disabled={!canSubmit || loading}>
                 {loading ? 'Saving…' : editingSlug ? 'Update course' : 'Save draft'}
               </Button>
@@ -719,8 +740,10 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
             </div>
           </section>
 
-          <aside className="space-y-4">
-            <CoursePreviewPanel form={form} modules={modules} resources={resources} />
+          {/* Column 3: Preview & History */}
+          <aside className="space-y-6">
+            <CoursePreviewPanel form={form} units={units} resources={resources} />
+
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent courses</h3>
               {courseList.length === 0 ? (
@@ -728,22 +751,24 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
               ) : (
                 <div className="mt-3 space-y-3">
                   {courseList.map((course) => {
-                    const isActive = searchParams?.get('slug') === course.slug;
+                    const isActive = editingSlug === course.slug;
                     return (
                       <div
                         key={course.id}
-                        className={`rounded-lg border px-3 py-2 transition ${isActive ? 'border-teal-400 bg-teal-50 text-teal-800' : 'border-slate-100 text-slate-700 hover:border-slate-300'
+                        className={`rounded-lg border px-3 py-2 transition ${isActive
+                          ? 'border-teal-400 bg-teal-50 text-teal-800'
+                          : 'border-slate-100 text-slate-700 hover:border-slate-300'
                           }`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="font-medium line-clamp-1">{course.title}</div>
-                            <div className="text-xs text-slate-400">
+                            <div className="font-medium line-clamp-1 text-sm">{course.title}</div>
+                            <div className="text-[10px] text-slate-400">
                               {course.level ? `${course.level} • ` : ''}
-                              {course.createdAt ? new Date(course.createdAt).toLocaleString() : ''}
+                              {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : ''}
                             </div>
                           </div>
-                          <Badge variant={course.status === 'published' ? 'success' : course.status === 'in_review' ? 'info' : 'default'}>
+                          <Badge variant={course.status === 'published' ? 'success' : course.status === 'in_review' ? 'info' : 'default'} className="text-[9px] px-1.5 py-0">
                             {course.status}
                           </Badge>
                         </div>
@@ -751,6 +776,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                           <Button
                             variant="outline"
                             size="xs"
+                            className="h-7 text-[10px]"
                             onClick={() => router.push(`/admin/studio/courses?slug=${course.slug}`)}
                           >
                             Edit
@@ -758,14 +784,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                           <Button
                             variant="ghost"
                             size="xs"
-                            onClick={() => handleQuickStatus(course.slug, 'draft')}
-                            disabled={loading}
-                          >
-                            Mark draft
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="xs"
+                            className="h-7 text-[10px]"
                             onClick={() => handleQuickStatus(course.slug, 'published')}
                             disabled={loading}
                           >
@@ -787,7 +806,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
           <h3 className="text-lg font-semibold text-emerald-900">Course drafted</h3>
           <p className="text-sm text-emerald-700">{result.title} — status {result.status}</p>
           <pre className="mt-3 max-h-72 overflow-auto rounded-lg bg-white/80 p-4 text-xs text-slate-700">
-            {JSON.stringify(result.modules, null, 2)}
+            {JSON.stringify(result.units || result.modules, null, 2)}
           </pre>
         </div>
       )}
@@ -797,7 +816,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
 
 function CoursePreviewPanel({
   form,
-  modules,
+  units,
   resources,
 }: {
   form: {
@@ -810,7 +829,7 @@ function CoursePreviewPanel({
     seoTitle: string;
     seoDescription: string;
   };
-  modules: ManualModule[];
+  units: ManualUnit[];
   resources: CourseResource[];
 }) {
   const seoTitle = form.seoTitle || `${form.title} | Course Preview`;
@@ -829,17 +848,20 @@ function CoursePreviewPanel({
         </div>
         <p className="text-sm text-slate-600">{form.summary || 'A compelling summary will appear here once provided.'}</p>
         <div className="space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Curriculum</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Curriculum Structure</span>
           <ul className="space-y-1 text-sm text-slate-600">
-            {modules.slice(0, 6).map((module, index) => (
-              <li key={index} className="rounded-lg bg-white px-3 py-2 shadow-sm">
-                <div className="font-medium text-slate-800">{module.title}</div>
-                <div className="text-xs text-slate-500">
-                  {module.lessons.length} lesson{module.lessons.length === 1 ? '' : 's'}
-                </div>
-              </li>
-            ))}
-            {modules.length > 6 && <li className="text-xs text-slate-400">+ {modules.length - 6} more modules</li>}
+            {units.slice(0, 4).map((unit, index) => {
+              const lessonCount = unit.chapters.reduce((acc, c) => acc + c.lessons.length, 0);
+              return (
+                <li key={index} className="rounded-lg bg-white px-3 py-2 shadow-sm border border-slate-100">
+                  <div className="font-semibold text-slate-800 text-xs uppercase tracking-tight">{unit.title}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {unit.chapters.length} Chapter{unit.chapters.length === 1 ? '' : 's'} • {lessonCount} Lesson{lessonCount === 1 ? '' : 's'}
+                  </div>
+                </li>
+              );
+            })}
+            {units.length > 4 && <li className="text-xs text-slate-400 pl-2">+ {units.length - 4} more units</li>}
           </ul>
         </div>
         {resources.length > 0 && (

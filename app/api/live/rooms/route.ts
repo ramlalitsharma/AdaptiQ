@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
     const {
       name,
       courseId,
+      unitId,
+      chapterId,
       maxParticipants,
       contentType = 'live',
       playbackUrl,
@@ -31,6 +33,8 @@ export async function POST(req: NextRequest) {
     let roomData: any = {
       roomName: name,
       courseId: courseId || null,
+      unitId: unitId || null,
+      chapterId: chapterId || null,
       createdBy: userId,
       createdAt: new Date(),
       status: contentType === 'video' ? 'ready' : 'scheduled',
@@ -40,12 +44,9 @@ export async function POST(req: NextRequest) {
     };
 
     if (contentType === 'live') {
-      // Create Jitsi room (free, no API key needed)
       const room = createJitsiRoom({
         roomName: name,
         isModerator: true,
-        startWithAudioMuted: false,
-        startWithVideoMuted: false,
       });
       roomData = {
         ...roomData,
@@ -55,15 +56,35 @@ export async function POST(req: NextRequest) {
         config: room.config,
       };
     } else {
-      // For video content, use the name as ID or a random one
       roomData.roomId = `vid_${Date.now()}`;
       roomData.roomUrl = playbackUrl || '';
       roomData.provider = 'custom';
     }
 
-    // Save to database
     const db = await getDatabase();
     await db.collection('liveRooms').insertOne(roomData);
+
+    // If course hierarchy specified, automatically add as a lesson
+    if (courseId && unitId && chapterId) {
+      const lesson = {
+        id: roomData.roomId,
+        title: name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        contentType: 'live',
+        liveRoomId: roomData.roomId,
+        order: Date.now(),
+      };
+
+      await db.collection('courses').updateOne(
+        { _id: (db as any).s.activeClient.db().s.namespace.db === 'test' ? courseId : new (require('mongodb').ObjectId)(courseId), "units.id": unitId, "units.chapters.id": chapterId },
+        {
+          $push: { "units.$[u].chapters.$[c].lessons": lesson }
+        } as any,
+        {
+          arrayFilters: [{ "u.id": unitId }, { "c.id": chapterId }]
+        }
+      );
+    }
 
     return NextResponse.json({ room: roomData });
   } catch (error: any) {

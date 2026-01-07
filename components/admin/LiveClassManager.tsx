@@ -77,6 +77,8 @@ export function LiveClassManager({ initialRooms }: LiveClassManagerProps) {
       setFormData({
         name: '',
         courseId: '',
+        contentType: 'live',
+        playbackUrl: '',
         maxParticipants: 50,
         enableRecording: true,
         enableScreenshare: true,

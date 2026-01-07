@@ -1,9 +1,10 @@
 import { MetadataRoute } from 'next';
+import { BRAND_NAME, BRAND_SHORT_NAME, BRAND_OG_IMAGE } from '@/lib/brand';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'AdaptIQ - Adaptive Learning Platform',
-    short_name: 'AdaptIQ',
+    name: `${BRAND_NAME} - Adaptive Learning Platform`,
+    short_name: BRAND_SHORT_NAME,
     description: 'AI-powered adaptive learning platform with real-time quiz adaptation, live classes, and personalized learning paths',
     start_url: '/',
     display: 'standalone',
@@ -13,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ['education', 'learning', 'productivity'],
     icons: [
       {
-        src: '/adaptiq.svg',
+        src: BRAND_OG_IMAGE,
         sizes: 'any',
         type: 'image/svg+xml',
         purpose: 'any',

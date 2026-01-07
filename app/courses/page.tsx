@@ -40,7 +40,10 @@ export default async function CoursesIndexPage({ searchParams }: { searchParams:
     db = await getDatabase();
     rawCourses = await db
       .collection('courses')
-      .find({ status: 'published' })
+      .find({
+        status: 'published',
+        type: { $nin: ['live-course', 'video-course'] } // Exclude special types
+      })
       .sort({ createdAt: -1 })
       .limit(200)
       .toArray();

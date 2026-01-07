@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { MessagingPanel } from '@/components/messaging/MessagingPanel';
 import { SiteBrand } from '@/components/layout/SiteBrand';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -15,7 +16,9 @@ export default function MessagesPage() {
                         <p className="text-slate-600 dark:text-slate-400">Communicate with your instructors and classmates.</p>
                     </div>
 
-                    <MessagingPanel />
+                    <Suspense fallback={<div className="text-slate-600">Loading messages…</div>}>
+                        <MessagingPanel />
+                    </Suspense>
                 </div>
             </main>
         </div>

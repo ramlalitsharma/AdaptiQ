@@ -21,9 +21,21 @@ export async function createLeaderboardSnapshot(type: SnapshotType): Promise<Lea
 
     // Get all user stats for rankings
     const userStats = await db.collection('userStats').find({}).toArray();
+    const users = await db.collection('users').find({}, { projection: { clerkId: 1, name: 1, avatar: 1 } }).toArray();
+    const byId = new Map<string, { name?: string; avatar?: string }>(
+        users.map((u: any) => [u.clerkId, { name: u.name, avatar: (u as any).avatar }])
+    );
 
     // Calculate current rankings
-    const rankings = calculateRankings(userStats);
+    const rankings = calculateRankings(
+        userStats.map((s: any) => ({
+            userId: s.userId,
+            userName: byId.get(s.userId)?.name || s.userId,
+            avatar: byId.get(s.userId)?.avatar || '👤',
+            xp: s.currentXP || 0,
+            level: s.currentLevel || 1,
+        }))
+    );
 
     // Create snapshot
     const snapshot: LeaderboardSnapshot = {

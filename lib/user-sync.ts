@@ -52,7 +52,11 @@ export async function syncUserToDatabase(): Promise<User | null> {
     //   manually-promoted superadmin in the database is not downgraded
     //   back to "student" or "admin" just because Clerk metadata is missing.
     if (roleClaims) {
-      baseUpdates.role = roleClaims.role;
+      const rcRole = roleClaims.role;
+      baseUpdates.role =
+        rcRole === 'user'
+          ? 'student'
+          : (['superadmin', 'admin', 'teacher', 'student'].includes(rcRole) ? (rcRole as any) : 'student');
       baseUpdates.isSuperAdmin = roleClaims.isSuperAdmin;
       baseUpdates.isAdmin = roleClaims.isAdmin;
       baseUpdates.isTeacher = roleClaims.isTeacher;
@@ -84,7 +88,10 @@ export async function syncUserToDatabase(): Promise<User | null> {
       clerkId: userId,
       email: baseUpdates.email || '',
       name: baseUpdates.name || '',
-      role: roleClaims?.role || 'student',
+      role:
+        roleClaims?.role === 'user'
+          ? 'student'
+          : (roleClaims?.role as any) || 'student',
       isSuperAdmin: roleClaims?.isSuperAdmin || false,
       isAdmin: roleClaims?.isAdmin || false,
       isTeacher: roleClaims?.isTeacher || false,

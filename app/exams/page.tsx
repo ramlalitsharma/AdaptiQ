@@ -344,7 +344,7 @@ export default async function ExamsPage({ searchParams }: { searchParams: Promis
 export async function generateMetadata() {
   const kws = await getLatestKeywords();
   return {
-    title: 'Exam Preparation | AdaptIQ',
+    title: 'Exam Preparation | ' + (await import('@/lib/brand')).BRAND_NAME,
     description: 'Prepare for SAT, ACT, GRE, GMAT, IELTS and more with AI-adaptive practice and analytics.',
     keywords: kws.length ? kws : undefined,
   };

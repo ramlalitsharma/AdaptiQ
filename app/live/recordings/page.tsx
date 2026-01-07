@@ -140,6 +140,15 @@ export default async function RecordingsPage() {
                             Watch Recording
                           </Button>
                         </a>
+                        <a
+                          href={recording.recordingUrl}
+                          download
+                          className="flex-1"
+                        >
+                          <Button variant="outline" size="sm" className="w-full">
+                            Download Video
+                          </Button>
+                        </a>
                       </div>
                     ) : (
                       <p className="text-sm text-slate-500">Processing...</p>

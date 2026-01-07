@@ -208,7 +208,7 @@ export async function checkAchievements(
 
         // Initialize if not exists
         if (!userRecord) {
-            userRecord = {
+            const newRecord: Omit<UserAchievement, '_id'> = {
                 userId,
                 achievementId: achievement.id,
                 currentTier: 0,
@@ -220,17 +220,20 @@ export async function checkAchievements(
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
-            await userAchCol.insertOne(userRecord);
+            await userAchCol.insertOne(newRecord as any);
+            userRecord = newRecord as any;
         }
+
+        const safeRecord = userRecord as UserAchievement;
 
         // Check each tier
         for (const tier of achievement.tiers) {
-            const tierUnlocked = userRecord.unlockedTiers?.includes(tier.level) || false;
+            const tierUnlocked = safeRecord.unlockedTiers?.includes(tier.level) || false;
 
             if (!tierUnlocked && currentValue >= tier.requirement.value) {
                 // Unlock this tier!
-                const unlockedTiers = [...(userRecord.unlockedTiers || []), tier.level];
-                const isFullyUnlocked = tier.level === 1 || userRecord.unlocked;
+                const unlockedTiers = [...(safeRecord.unlockedTiers || []), tier.level];
+                const isFullyUnlocked = tier.level === 1 || safeRecord.unlocked;
 
                 await userAchCol.updateOne(
                     { userId, achievementId: achievement.id },
@@ -257,7 +260,7 @@ export async function checkAchievements(
         }
 
         // Calculate progress to next tier
-        const nextTier = achievement.tiers.find(t => !(userRecord.unlockedTiers || []).includes(t.level));
+        const nextTier = achievement.tiers.find(t => !(safeRecord.unlockedTiers || []).includes(t.level));
         if (nextTier) {
             const progress = Math.min(100, (currentValue / nextTier.requirement.value) * 100);
 

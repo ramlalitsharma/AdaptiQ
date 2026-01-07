@@ -10,6 +10,8 @@ import { GlobalBackButton } from '@/components/layout/GlobalBackButton';
 import { ServiceWorkerRegistration } from '@/components/pwa/ServiceWorkerRegistration';
 import "./globals.css";
 import "@/styles/md-editor.css";
+import { ToastProvider } from '@/components/ui/ToastManager';
+import { BRAND_NAME, BRAND_URL, BRAND_TWITTER, BRAND_OG_IMAGE, brandLogoUrl } from '@/lib/brand';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,42 +25,42 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AdaptIQ - AI-Powered Adaptive Learning Platform",
-    template: "%s | AdaptIQ",
+    default: `${BRAND_NAME} - AI-Powered Adaptive Learning Platform`,
+    template: `%s | ${BRAND_NAME}`,
   },
-  description: "Transform your learning with AI-orchestrated adaptive quizzes that evolve in real-time. Get personalized learning paths, predict knowledge gaps with 95% accuracy, and master any subject faster with AdaptIQ.",
+  description: `Transform your learning with AI-orchestrated adaptive quizzes that evolve in real-time. Get personalized learning paths, predict knowledge gaps with 95% accuracy, and master any subject faster with ${BRAND_NAME}.`,
   keywords: ["adaptive learning", "AI quizzes", "online education", "learning platform", "adaptive testing", "personalized learning", "quiz generator", "education technology"],
-  authors: [{ name: "AdaptIQ" }],
-  creator: "AdaptIQ",
-  publisher: "AdaptIQ",
+  authors: [{ name: BRAND_NAME }],
+  creator: BRAND_NAME,
+  publisher: BRAND_NAME,
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://adaptiq.com'),
+  metadataBase: new URL(BRAND_URL),
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: process.env.NEXT_PUBLIC_APP_URL || 'https://adaptiq.com',
-    title: "AdaptIQ - AI-Powered Adaptive Learning Platform",
+    url: BRAND_URL,
+    title: `${BRAND_NAME} - AI-Powered Adaptive Learning Platform`,
     description: "Transform your learning with AI-orchestrated adaptive quizzes, real-time performance tracking, and personalized learning paths.",
-    siteName: "AdaptIQ",
+    siteName: BRAND_NAME,
     images: [
       {
-        url: "/og-image.png",
+        url: BRAND_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "AdaptIQ - Adaptive Learning Platform",
+        alt: `${BRAND_NAME} - Adaptive Learning Platform`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AdaptIQ - AI-Powered Adaptive Learning Platform",
+    title: `${BRAND_NAME} - AI-Powered Adaptive Learning Platform`,
     description: "Transform your learning with AI-orchestrated adaptive quizzes and personalized learning paths.",
-    images: ["/og-image.png"],
-    creator: "@adaptiq",
+    images: [BRAND_OG_IMAGE],
+    creator: BRAND_TWITTER,
   },
   robots: {
     index: true,
@@ -77,10 +79,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/adaptiq.svg', type: 'image/svg+xml' },
+      { url: BRAND_OG_IMAGE, type: 'image/svg+xml' },
     ],
     shortcut: ['/favicon.svg'],
-    apple: [{ url: '/adaptiq.svg' }],
+    apple: [{ url: BRAND_OG_IMAGE }],
   },
 };
 
@@ -101,13 +103,12 @@ export default function RootLayout({
               __html: JSON.stringify({
                 '@context': 'https://schema.org',
                 '@type': 'EducationalOrganization',
-                name: 'AdaptIQ',
+                name: BRAND_NAME,
                 description: 'AI-powered adaptive learning platform with real-time quiz adaptation',
-                url: process.env.NEXT_PUBLIC_APP_URL || 'https://adaptiq.com',
-                logo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://adaptiq.com'}/logo.png`,
+                url: BRAND_URL,
+                logo: brandLogoUrl(),
                 sameAs: [
-                  'https://twitter.com/adaptiq',
-                  'https://facebook.com/adaptiq',
+                  `https://twitter.com/${BRAND_TWITTER.replace('@','')}`,
                 ],
                 offers: {
                   '@type': 'Offer',
@@ -123,6 +124,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <ThemeProvider>
+            <ToastProvider>
             <GlobalBackButton />
             <div className="flex min-h-screen flex-col bg-[#f4f6f9] text-slate-900">
               <Suspense>
@@ -135,6 +137,7 @@ export default function RootLayout({
             </div>
             <CookieConsent />
             <ServiceWorkerRegistration />
+            </ToastProvider>
           </ThemeProvider>
         </body>
       </html>

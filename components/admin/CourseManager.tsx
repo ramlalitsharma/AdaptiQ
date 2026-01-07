@@ -35,6 +35,9 @@ const STATUS_FILTERS = [
 export function CourseManager({ courses }: CourseManagerProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statuses, setStatuses] = useState<Record<string, string>>(
+    Object.fromEntries(courses.map((c) => [c.slug, c.status || 'draft']))
+  );
 
   const filtered = useMemo(() => {
     return courses.filter((course) => {
@@ -89,55 +92,49 @@ export function CourseManager({ courses }: CourseManagerProps) {
 
       {filtered.length === 0 ? (
         <Card>
-          <CardContent className="py-16 text-center text-sm text-slate-500">No courses match the current filters.</CardContent>
+          <CardContent className="py-12 text-center text-slate-600">No courses match your filters.</CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((course) => {
+            const courseStatus = statuses[course.slug] || course.status || 'draft';
+            const setCourseStatus = (next: string) =>
+              setStatuses((prev) => ({ ...prev, [course.slug]: next }));
+            return (
+              <Card key={course.slug} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg">{course.title}</CardTitle>
+                    <Badge variant={courseStatus === 'published' ? 'success' : courseStatus === 'in_review' ? 'info' : 'default'}>
+                      {courseStatus}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    Updated {course.updatedAt ? new Date(course.updatedAt).toLocaleString() : '—'}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild className="flex-1">
+                      <Link href={`/admin/studio/courses?slug=${course.slug}`}>Manage</Link>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild className="flex-1">
+                      <Link href={`/courses/${course.slug}`}>View</Link>
+                    </Button>
+                  </div>
+                  <WorkflowControls
+                    contentType="course"
+                    contentId={course.slug}
+                    status={courseStatus}
+                    updatedAt={course.updatedAt}
+                    onStatusChange={setCourseStatus}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
-  );
-}
-
-function CourseCard({ course }: { course: CourseSummary }) {
-  const [courseStatus, setCourseStatus] = useState(course.status || 'draft');
-  const lessons = useMemo(() => {
-    return (course.modules || []).reduce((total, module) => total + (module.lessons?.length || 0), 0);
-  }, [course.modules]);
-
-  return (
-    <Card className="h-full border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-      <div className="aspect-video rounded-t-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500" />
-      <CardHeader>
-        <CardTitle className="line-clamp-2 text-lg font-semibold text-slate-900">{course.title}</CardTitle>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <Badge variant={courseStatus === 'published' ? 'success' : courseStatus === 'in_review' ? 'info' : 'default'}>{courseStatus}</Badge>
-          {course.subject && <Badge variant="info">{course.subject}</Badge>}
-          {course.level && <Badge variant="info">{course.level}</Badge>}
-          <span>{lessons} lessons</span>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-slate-600 line-clamp-3">{course.summary || 'No summary provided.'}</p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild className="flex-1">
-            <Link href={`/courses/${course.slug}`}>View</Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="flex-1">
-            <Link href={`/admin/studio/courses?slug=${course.slug}`}>Manage</Link>
-          </Button>
-        </div>
-        <WorkflowControls
-          contentType="course"
-          contentId={course.slug}
-          status={courseStatus}
-          updatedAt={course.updatedAt}
-          onStatusChange={setCourseStatus}
-        />
-      </CardContent>
-    </Card>
   );
 }

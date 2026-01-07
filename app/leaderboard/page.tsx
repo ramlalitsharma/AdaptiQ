@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { resolveBaseUrl } from '@/lib/brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export default async function LeaderboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = await resolveBaseUrl();
   const res = await fetch(`${baseUrl}/api/leaderboard`, {
     cache: 'no-store',
   });

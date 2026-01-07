@@ -9,9 +9,10 @@ interface VideoPlayerProps {
   title?: string;
   provider?: 'youtube' | 'vimeo' | 'direct' | 'self-hosted' | 'hls';
   playbackId?: string; // For self-hosted HLS videos
+  onEnded?: () => void;
 }
 
-export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', playbackId }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', playbackId, onEnded }: VideoPlayerProps) {
 
   if (!videoUrl && !videoId) {
     return (
@@ -62,6 +63,7 @@ export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', pl
         title={title}
         provider="self-hosted"
         baseUrl={process.env.NEXT_PUBLIC_VIDEO_BASE_URL}
+        onEnded={onEnded}
       />
     );
   }
@@ -74,6 +76,7 @@ export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', pl
           controls
           className="w-full h-full"
           onError={() => {}}
+          onEnded={onEnded}
         >
           Your browser does not support the video tag.
         </video>

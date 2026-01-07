@@ -22,40 +22,23 @@ export async function POST(req: NextRequest) {
     const {
       mode,
       title,
+      categoryId,
       subject,
       level,
-      outline,
+      units,
       summary,
       audience,
       goals,
       tone,
-      modulesCount,
-      lessonsPerModule,
+      unitsCount,
+      lessonsPerChapter,
       language,
       tags,
       resources,
       price,
       seo,
       thumbnail,
-    } = body as {
-      mode: 'ai' | 'manual';
-      title?: string;
-      subject?: string;
-      level?: 'basic' | 'intermediate' | 'advanced';
-      outline?: any;
-      summary?: string;
-      audience?: string;
-      goals?: string;
-      tone?: string;
-      modulesCount?: number;
-      lessonsPerModule?: number;
-      language?: string;
-      tags?: string[];
-      resources?: Course['resources'];
-      price?: Course['price'];
-      seo?: Course['seo'];
-      thumbnail?: string;
-    };
+    } = body as any;
 
     const db = await getDatabase();
     const col = db.collection<Course>('courses');
@@ -66,18 +49,19 @@ export async function POST(req: NextRequest) {
       audience,
       goals,
       tone,
-      modulesCount: modulesCount ? Number(modulesCount) : undefined,
-      lessonsPerModule: lessonsPerModule ? Number(lessonsPerModule) : undefined,
+      unitsCount: unitsCount ? Number(unitsCount) : undefined,
+      lessonsCount: lessonsPerChapter ? Number(lessonsPerChapter) : undefined,
     };
 
     if (mode === 'manual') {
-      if (!title || !outline) return NextResponse.json({ error: 'title and outline required' }, { status: 400 });
-      course = buildCourseFromOutline({
+      if (!title || !units) return NextResponse.json({ error: 'title and units required' }, { status: 400 });
+      course = buildCourseFromHierarchy({
         authorId: userId,
         title,
+        categoryId,
         subject,
         level,
-        outline,
+        units,
         summary,
         metadata,
         language,
@@ -96,15 +80,26 @@ export async function POST(req: NextRequest) {
         audience,
         goals,
         tone,
-        modulesCount,
-        lessonsPerModule,
+        modulesCount: unitsCount,
+        lessonsPerModule: lessonsPerChapter,
       });
-      course = buildCourseFromOutline({
+      course = buildCourseFromHierarchy({
         authorId: userId,
         title,
+        categoryId,
         subject,
         level,
-        outline: generated,
+        units: generated.modules.map((m: any) => ({
+          title: m.title,
+          chapters: [{
+            title: 'Basics',
+            lessons: m.lessons.map((l: any) => ({
+              title: l.title,
+              content: l.content,
+              contentType: 'text'
+            }))
+          }]
+        })),
         summary,
         metadata,
         language,
@@ -117,6 +112,21 @@ export async function POST(req: NextRequest) {
     }
 
     await col.insertOne(course);
+
+    // Sync Live Rooms
+    if (course.units) {
+      try {
+        const { syncLiveRooms } = await import('@/lib/live-sync');
+        // Course _id is technically ObjectId, need to handle that if inserted
+        const courseId = (course as any)._id?.toString() || (course as any).insertedId?.toString();
+        if (courseId) {
+          await syncLiveRooms(courseId, course.units);
+        }
+      } catch (err) {
+        console.error('Failed to sync live rooms', err);
+      }
+    }
+
     return NextResponse.json({ course });
   } catch (e: any) {
     console.error('Create course failed:', e);
@@ -124,12 +134,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function buildCourseFromOutline({
+function buildCourseFromHierarchy({
   authorId,
   title,
+  categoryId,
   subject,
   level,
-  outline,
+  units,
   summary,
   metadata,
   language,
@@ -141,9 +152,10 @@ function buildCourseFromOutline({
 }: {
   authorId: string;
   title: string;
+  categoryId?: string;
   subject?: string;
   level?: 'basic' | 'intermediate' | 'advanced';
-  outline: any;
+  units: any[];
   summary?: string;
   metadata?: Course['metadata'];
   language?: string;
@@ -155,27 +167,43 @@ function buildCourseFromOutline({
 }): Course {
   const now = new Date().toISOString();
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const modules = (outline.modules || outline || []).map((m: any, mi: number) => ({
-    id: `m${mi + 1}`,
-    title: m.title || `Module ${mi + 1}`,
-    slug: (m.title || `module-${mi + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    lessons: (m.lessons || []).map((l: any, li: number) => ({
-      id: `m${mi + 1}-l${li + 1}`,
-      title: l.title || `Lesson ${li + 1}`,
-      slug: (l.title || `lesson-${li + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      content: l.content,
+
+  const formattedUnits = units.map((u: any, ui: number) => ({
+    id: `u${ui + 1}`,
+    title: u.title || `Unit ${ui + 1}`,
+    slug: (u.title || `unit-${ui + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    order: ui,
+    chapters: (u.chapters || []).map((c: any, ci: number) => ({
+      id: `u${ui + 1}-c${ci + 1}`,
+      title: c.title || `Chapter ${ci + 1}`,
+      slug: (c.title || `chapter-${ci + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      order: ci,
+      lessons: (c.lessons || []).map((l: any, li: number) => ({
+        id: `u${ui + 1}-c${ci + 1}-l${li + 1}`,
+        title: l.title || `Lesson ${li + 1}`,
+        slug: (l.title || `lesson-${li + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        contentType: l.contentType || 'text',
+        content: l.content,
+        videoUrl: l.videoUrl,
+        liveRoomId: l.liveRoomId,
+        liveRoomConfig: l.liveRoomConfig,
+        order: li,
+        order: li,
+      })),
     })),
   }));
+
   return {
     authorId,
+    categoryId,
     title,
-    slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    slug,
     summary,
     subject,
     level,
     language,
     tags,
-    modules,
+    units: formattedUnits as any,
     status: 'draft',
     createdAt: now,
     updatedAt: now,
@@ -183,7 +211,6 @@ function buildCourseFromOutline({
     resources,
     price,
     seo,
+    thumbnail,
   };
 }
-
-

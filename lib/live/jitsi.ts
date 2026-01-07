@@ -74,7 +74,16 @@ export function createJitsiRoom(config: {
  */
 export function getJitsiEmbedUrl(roomName: string, domain?: string): string {
   const domainName = domain || 'meet.jit.si';
-  return `https://${domainName}/${roomName}`;
+  const params = [
+    'config.prejoinPageEnabled=false',
+    'config.startWithAudioMuted=true',
+    'config.startWithVideoMuted=true',
+    'config.channelLastN=2',
+    'config.disableAudioLevels=true',
+    'config.disableThirdPartyRequests=true',
+    'config.analytics.disabled=true',
+  ].join('&');
+  return `https://${domainName}/${roomName}#${params}`;
 }
 
 /**

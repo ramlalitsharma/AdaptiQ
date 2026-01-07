@@ -1,4 +1,5 @@
 // GET /api/notifications - Get user's notifications
+// Rebuild trigger
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';

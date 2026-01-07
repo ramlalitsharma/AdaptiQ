@@ -11,15 +11,17 @@ interface LiveClassroomProps {
   token?: string; // Optional for Jitsi (not needed)
   isInstructor?: boolean;
   onLeave?: () => void;
+  onEnd?: () => void;
   provider?: 'jitsi' | 'daily'; // Default to Jitsi (free)
 }
 
-export function LiveClassroom({ 
-  roomUrl, 
+export function LiveClassroom({
+  roomUrl,
   roomName,
-  token, 
-  isInstructor = false, 
+  token,
+  isInstructor = false,
   onLeave,
+  onEnd,
   provider = 'jitsi' // Use Jitsi by default (free)
 }: LiveClassroomProps) {
   // Use Jitsi by default (free), fallback to Daily.co if provider is specified
@@ -30,6 +32,7 @@ export function LiveClassroom({
         roomName={roomName}
         isModerator={isInstructor}
         onLeave={onLeave}
+        onEnd={onEnd}
       />
     );
   }

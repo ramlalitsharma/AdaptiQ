@@ -211,7 +211,7 @@ export default async function SubjectsPage() {
 export async function generateMetadata(): Promise<import('next').Metadata> {
   const kws = await getLatestKeywords();
   return {
-    title: 'Browse Subjects | AdaptIQ',
+    title: 'Browse Subjects | ' + (await import('@/lib/brand')).BRAND_NAME,
     description: 'Select a subject and level to start AI-powered adaptive quizzes and track mastery.',
     keywords: kws.length ? kws : undefined,
   };

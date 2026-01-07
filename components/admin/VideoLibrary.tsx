@@ -33,8 +33,10 @@ export function VideoLibrary() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showUpload, setShowUpload] = useState(false);
   const [showCreateLive, setShowCreateLive] = useState(false);
-  const [courses, setCourses] = useState<{ id: string; title: string; slug: string }[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string; slug: string; units?: any[] }[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedUnit, setSelectedUnit] = useState('');
+  const [selectedChapter, setSelectedChapter] = useState('');
 
   useEffect(() => {
     loadContent();
@@ -235,6 +237,36 @@ export function VideoLibrary() {
                     ))}
                   </select>
                 </div>
+                {selectedCourse && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Unit</label>
+                      <select
+                        value={selectedUnit}
+                        onChange={(e) => { setSelectedUnit(e.target.value); setSelectedChapter(''); }}
+                        className="w-full py-3 px-4 rounded-xl border border-slate-100 bg-slate-50/50 text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
+                      >
+                        <option value="">Select Unit</option>
+                        {courses.find(c => c.id === selectedCourse)?.units?.map((u: any) => (
+                          <option key={u.id} value={u.id}>{u.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Chapter</label>
+                      <select
+                        value={selectedChapter}
+                        onChange={(e) => setSelectedChapter(e.target.value)}
+                        className="w-full py-3 px-4 rounded-xl border border-slate-100 bg-slate-50/50 text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
+                      >
+                        <option value="">Select Chapter</option>
+                        {courses.find(c => c.id === selectedCourse)?.units?.find((u: any) => u.id === selectedUnit)?.chapters?.map((ch: any) => (
+                          <option key={ch.id} value={ch.id}>{ch.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-slate-50 rounded-3xl p-6 space-y-4 border border-slate-100">
@@ -270,6 +302,8 @@ export function VideoLibrary() {
                   body: JSON.stringify({
                     name: title,
                     courseId: selectedCourse,
+                    unitId: selectedUnit,
+                    chapterId: selectedChapter,
                     contentType: 'live'
                   })
                 });
@@ -344,9 +378,59 @@ export function VideoLibrary() {
               <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
               <h3 className="text-xl font-black text-slate-900">Upload Media Asset</h3>
             </div>
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Target Course</label>
+                <select
+                  value={selectedCourse}
+                  onChange={(e) => { setSelectedCourse(e.target.value); setSelectedUnit(''); setSelectedChapter(''); }}
+                  className="w-full py-3 px-4 rounded-xl border border-slate-100 bg-slate-50 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">None (Library Only)</option>
+                  {courses.map(course => (
+                    <option key={course.id} value={course.id}>{course.title}</option>
+                  ))}
+                </select>
+              </div>
+              {selectedCourse && (
+                <>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Unit</label>
+                    <select
+                      value={selectedUnit}
+                      onChange={(e) => { setSelectedUnit(e.target.value); setSelectedChapter(''); }}
+                      className="w-full py-3 px-4 rounded-xl border border-slate-100 bg-slate-50 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Unit</option>
+                      {courses.find(c => c.id === selectedCourse)?.units?.map((u: any) => (
+                        <option key={u.id} value={u.id}>{u.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Chapter</label>
+                    <select
+                      value={selectedChapter}
+                      onChange={(e) => setSelectedChapter(e.target.value)}
+                      className="w-full py-3 px-4 rounded-xl border border-slate-100 bg-slate-50 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Chapter</option>
+                      {courses.find(c => c.id === selectedCourse)?.units?.find((u: any) => u.id === selectedUnit)?.chapters?.map((ch: any) => (
+                        <option key={ch.id} value={ch.id}>{ch.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
             <VideoUploader
               onUploadComplete={handleActionComplete}
               onError={(error) => alert(`Upload error: ${error}`)}
+              metadata={{
+                courseId: selectedCourse || undefined,
+                unitId: selectedUnit || undefined,
+                chapterId: selectedChapter || undefined,
+              }}
             />
           </div>
         </div>

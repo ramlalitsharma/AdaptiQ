@@ -9,6 +9,7 @@ import { CourseSlider } from '@/components/courses/CourseSlider';
 import { CategorySearch } from '@/components/search/CategorySearch';
 import { BentoFeatures } from '@/components/home/BentoFeatures';
 import * as motion from 'framer-motion/client';
+import { BRAND_NAME } from '@/lib/brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,9 +79,9 @@ export async function generateMetadata() {
   const { getLatestKeywords } = await import('@/lib/seo');
   const kws = await getLatestKeywords();
   return {
-    title: 'AdaptIQ - Grow Your Skills, Build Your Future',
+    title: `${BRAND_NAME} - Grow Your Skills, Build Your Future`,
     description:
-      'Discover trending courses, live classes, and online batches on AdaptIQ. Start learning with AI-powered personalization today.',
+      `Discover trending courses, live classes, and online batches on ${BRAND_NAME}. Start learning with AI-powered personalization today.`,
     keywords: kws.length ? kws : undefined,
   };
 }

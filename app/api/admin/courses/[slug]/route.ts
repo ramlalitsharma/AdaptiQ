@@ -38,10 +38,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     const body = await req.json();
     const {
       title,
+      categoryId,
       summary,
       subject,
       level,
-      modules,
+      units,
       language,
       tags,
       resources,
@@ -64,10 +65,41 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     };
 
     if (title) updateData.title = title;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
     if (summary !== undefined) updateData.summary = summary;
     if (subject) updateData.subject = subject;
     if (level) updateData.level = level;
-    if (modules) updateData.modules = modules;
+
+    // Handle hierarchical units
+    let unsetData: any = {};
+    if (units) {
+      updateData.units = units.map((u: any, ui: number) => ({
+        id: u.id || `u${ui + 1}`,
+        title: u.title,
+        slug: (u.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        order: ui,
+        chapters: (u.chapters || []).map((c: any, ci: number) => ({
+          id: c.id || `u${ui + 1}-c${ci + 1}`,
+          title: c.title,
+          slug: (c.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          order: ci,
+          lessons: (c.lessons || []).map((l: any, li: number) => ({
+            id: l.id || `u${ui + 1}-c${ci + 1}-l${li + 1}`,
+            title: l.title,
+            slug: (l.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            contentType: l.contentType || 'text',
+            content: l.content,
+            videoUrl: l.videoUrl,
+            liveRoomId: l.liveRoomId,
+            liveRoomConfig: l.liveRoomConfig,
+            order: li,
+            order: li,
+          })),
+        })),
+      }));
+      // Remove legacy modules field on update
+      unsetData.modules = "";
+    }
     if (language !== undefined) updateData.language = language;
     if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
     if (resources !== undefined) updateData.resources = resources;
@@ -84,9 +116,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
       updateData.workflowUpdatedBy = userId;
     }
 
-    await db.collection('courses').updateOne({ slug }, { $set: updateData });
+    const finalUpdate: any = { $set: updateData };
+    if (Object.keys(unsetData).length > 0) {
+      finalUpdate.$unset = unsetData;
+    }
+
+    await db.collection('courses').updateOne({ slug }, finalUpdate);
 
     const updated = await db.collection('courses').findOne({ slug });
+
+    // Sync Live Rooms
+    if (updated && updated.units) {
+      try {
+        const { syncLiveRooms } = await import('@/lib/live-sync');
+        await syncLiveRooms(updated._id.toString(), updated.units);
+      } catch (err) {
+        console.error('Failed to sync live rooms', err);
+      }
+    }
 
     if (updated) {
       await recordContentVersion({

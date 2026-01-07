@@ -5,7 +5,7 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   hover?: boolean;
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
 export const Card: React.FC<CardProps> = ({ children, className = '', hover = false, onClick }) => {

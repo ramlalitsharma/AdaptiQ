@@ -12,8 +12,10 @@ import { CoursePreview } from '@/components/courses/CoursePreview';
 import { CourseCompletion } from '@/components/courses/CourseCompletion';
 import { CourseRecommendations } from '@/components/courses/CourseRecommendations';
 import { CourseContentAccordion } from '@/components/courses/CourseContentAccordion';
+import { EnrollButton } from '@/components/courses/EnrollButton';
 import { auth } from '@/lib/auth';
 import type { WithId } from 'mongodb';
+import { BreadcrumbsJsonLd } from '@/components/seo/BreadcrumbsJsonLd';
 
 function serializeDocument<T = any>(value: T): T {
   if (value === null || value === undefined) {
@@ -78,7 +80,7 @@ export async function generateMetadata(
 
     return {
       title: courseData.title || 'Course details',
-      description: courseData.summary || 'An adaptive course by AdaptIQ',
+      description: courseData.summary || ('An adaptive course by ' + (await import('@/lib/brand')).BRAND_NAME),
       alternates: { canonical: `${baseUrl}/courses/${slug}` },
     };
   } catch {
@@ -146,7 +148,14 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
   const courseData = serializeDocument(course);
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://adaptiq.com';
-  const totalLessons = (courseData.modules || []).reduce((n: number, m: any) => n + (m.lessons?.length || 0), 0);
+
+  // Support both legacy modules and new units
+  const units = courseData.units || courseData.modules || [];
+  const totalLessons = units.reduce((acc: number, unit: any) => {
+    const chapters = unit.chapters || [{ lessons: unit.lessons || [] }];
+    return acc + chapters.reduce((cAcc: number, chapter: any) => cAcc + (chapter.lessons?.length || 0), 0);
+  }, 0);
+
   const completedCount = userProgress.completedLessons?.size || 0;
   const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
@@ -176,6 +185,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       >
         {JSON.stringify(jsonLd)}
       </Script>
+      <BreadcrumbsJsonLd items={[
+        { name: 'Courses', url: `${baseUrl}/courses` },
+        { name: courseData.title, url: `${baseUrl}/courses/${courseData.slug}` },
+      ]} />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12">
@@ -260,10 +273,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
               <CardContent>
                 <div className="space-y-6">
                   <CourseContentAccordion
-                    modules={courseData.modules || []}
+                    units={units}
                     slug={slug}
                     userId={userId}
                     completedLessonIds={Array.from(userProgress.completedLessons || [])}
+                    isEnrolled={isEnrolled}
                   />
                 </div>
               </CardContent>
@@ -310,25 +324,16 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                     </div>
                   </div>
                   {!isEnrolled ? (
-                    <Button
-                      asChild
-                      className="w-full bg-teal-600 hover:bg-teal-700 font-bold"
-                      size="lg"
-                    >
-                      <Link href={
-                        !userId
-                          ? `/sign-in?redirect_url=${encodeURIComponent(`/courses/${slug}`)}`
-                          : (enrollmentStatus === 'pending' || enrollmentStatus === 'waitlisted')
-                            ? "#enrollment-section"
-                            : (courseData.price?.amount > 0)
-                              ? `/checkout?courseId=${courseData._id || courseData.slug}&amount=${courseData.price.amount}`
-                              : "#enrollment-section"
-                      }>
-                        {courseData.price?.amount > 0 ? `Enroll for ${courseData.price.currency === 'USD' ? '$' : courseData.price.currency}${courseData.price.amount}` : 'Enroll for Free'}
-                      </Link>
-                    </Button>
+                    <EnrollButton
+                      courseId={String(courseData._id)}
+                      slug={slug}
+                      price={courseData.price?.amount || 0}
+                      currency={courseData.price?.currency}
+                      userId={userId}
+                      isEnrolled={isEnrolled}
+                    />
                   ) : (
-                    <Link href={`/courses/${slug}/${courseData.modules?.[0]?.lessons?.[0]?.slug || ''}`}>
+                    <Link href={`/courses/${slug}/${units[0]?.chapters?.[0]?.lessons?.[0]?.slug || units[0]?.lessons?.[0]?.slug || ''}`}>
                       <Button className="w-full bg-teal-600 hover:bg-teal-700 font-bold" size="lg">
                         {isCompleted ? 'Review Course' : 'Continue Learning'}
                       </Button>

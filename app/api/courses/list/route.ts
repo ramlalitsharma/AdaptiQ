@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         const courses = await db
             .collection('courses')
             .find({})
-            .project({ title: 1, slug: 1, _id: 1 })
+            .project({ title: 1, slug: 1, _id: 1, units: 1, modules: 1 })
             .sort({ title: 1 })
             .toArray();
 
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
             id: c._id.toString(),
             title: c.title,
             slug: c.slug,
+            units: c.units || c.modules || [],
         }));
 
         return NextResponse.json({ courses: formattedCourses });

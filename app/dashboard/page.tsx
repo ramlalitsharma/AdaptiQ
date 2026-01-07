@@ -25,6 +25,7 @@ import { XPSystem } from '@/components/dashboard/XPSystem';
 import { DailyQuests } from '@/components/dashboard/DailyQuests';
 import { BadgeShowcase } from '@/components/dashboard/BadgeShowcase';
 import { TieredLeaderboard } from '@/components/dashboard/TieredLeaderboard';
+import { resolveBaseUrl } from '@/lib/brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export default async function DashboardPage() {
   // Fire-and-forget sync to avoid blocking render
   syncUserToDatabase().catch(console.error);
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = await resolveBaseUrl();
   const cookie = (await headers()).get('cookie') || '';
   const common = { cache: 'no-store' as const, headers: { cookie } };
 

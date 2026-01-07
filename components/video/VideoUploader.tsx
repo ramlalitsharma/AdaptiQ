@@ -10,6 +10,11 @@ interface VideoUploaderProps {
   onError?: (error: string) => void;
   maxSizeMB?: number;
   acceptedFormats?: string[];
+  metadata?: {
+    courseId?: string;
+    unitId?: string;
+    chapterId?: string;
+  };
 }
 
 export function VideoUploader({
@@ -17,6 +22,7 @@ export function VideoUploader({
   onError,
   maxSizeMB = 1000,
   acceptedFormats = ['video/mp4', 'video/webm', 'video/quicktime'],
+  metadata,
 }: VideoUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -80,6 +86,7 @@ export function VideoUploader({
           title: file.name,
           videoId,
           provider: 'self-hosted',
+          ...metadata,
         }),
       });
 
@@ -133,8 +140,8 @@ export function VideoUploader({
     <div className="space-y-4">
       <div
         className={`relative border-2 border-dashed rounded-[2.5rem] transition-all duration-300 ${dragActive
-            ? 'border-blue-500 bg-blue-50/50 scale-[1.01]'
-            : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/50'
+          ? 'border-blue-500 bg-blue-50/50 scale-[1.01]'
+          : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/50'
           } ${uploading ? 'pointer-events-none opacity-60' : ''}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -190,9 +197,7 @@ export function VideoUploader({
             </span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-3 rounded-full bg-slate-100 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
-          </Progress>
+          <Progress value={progress} className="h-3 rounded-full bg-slate-100 overflow-hidden" />
           <p className="text-xs text-slate-400 mt-4 text-center font-medium">
             Keep this window open until your asset is successfully registered.
           </p>

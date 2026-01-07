@@ -99,7 +99,7 @@ export function CourseEditForm({ course, onSave }: CourseEditFormProps) {
         <label className="block text-sm font-medium mb-2">Status</label>
         <select
           value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'published' })}
           className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="draft">Draft</option>

@@ -9,9 +9,21 @@ import { LiveClassRecording } from '@/lib/models/LiveRoom';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return createErrorResponse(new Error('Unauthorized'), 'Unauthorized', 401);
+    const headers = Object.fromEntries(req.headers);
+    const url = new URL(req.url);
+    const webhookTokenHeader = headers['x-webhook-token'] as string | undefined;
+    const webhookTokenQuery = url.searchParams.get('token') || undefined;
+    const isWebhook = Boolean(
+      (webhookTokenHeader && process.env.JIBRI_WEBHOOK_TOKEN && webhookTokenHeader === process.env.JIBRI_WEBHOOK_TOKEN) ||
+        (webhookTokenQuery && process.env.JIBRI_WEBHOOK_TOKEN && webhookTokenQuery === process.env.JIBRI_WEBHOOK_TOKEN)
+    );
+    let userId: string | null = null;
+    if (!isWebhook) {
+      const authRes = await auth();
+      userId = authRes.userId || null;
+      if (!userId) {
+        return createErrorResponse(new Error('Unauthorized'), 'Unauthorized', 401);
+      }
     }
 
     const body = await req.json();
@@ -23,6 +35,7 @@ export async function POST(req: NextRequest) {
       duration,
       fileSize,
       thumbnail,
+      status,
     } = body;
 
     if (!roomId || !recordingId) {
@@ -33,7 +46,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify user has permission (instructor or admin)
     const db = await getDatabase();
     const room = await db.collection('liveRooms').findOne({ roomId });
 
@@ -45,16 +57,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await db.collection('users').findOne({ clerkId: userId });
-    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-    const isInstructor = room.createdBy === userId;
-
-    if (!isAdmin && !isInstructor) {
-      return createErrorResponse(
-        new Error('Forbidden'),
-        'Only instructors can save recordings',
-        403
-      );
+    if (!isWebhook) {
+      const user = await db.collection('users').findOne({ clerkId: userId });
+      const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+      const isInstructor = room.createdBy === userId;
+      if (!isAdmin && !isInstructor) {
+        return createErrorResponse(new Error('Forbidden'), 'Only instructors can save recordings', 403);
+      }
     }
 
     const recording: LiveClassRecording = {
@@ -64,18 +73,16 @@ export async function POST(req: NextRequest) {
       recordingType: recordingType as 'local' | 'jibri',
       duration,
       fileSize,
-      status: 'processing',
+      status: (status as any) || (recordingUrl ? 'ready' : 'processing'),
       thumbnail,
       createdAt: new Date(),
     };
 
-    // Check if recording already exists
     const existing = await db
       .collection<LiveClassRecording>('liveClassRecordings')
       .findOne({ roomId, recordingId });
 
     if (existing) {
-      // Update existing recording
       await db.collection('liveClassRecordings').updateOne(
         { _id: existing._id },
         {
@@ -84,12 +91,30 @@ export async function POST(req: NextRequest) {
             duration,
             fileSize,
             thumbnail,
-            status: recordingUrl ? 'ready' : 'processing',
-            processedAt: recordingUrl ? new Date() : undefined,
+            status: (status as any) || (recordingUrl ? 'ready' : existing.status || 'processing'),
+            processedAt: recordingUrl || status === 'ready' ? new Date() : existing.processedAt,
             updatedAt: new Date(),
           },
         }
       );
+
+      if (recordingUrl || status === 'ready') {
+        const courseId = room.courseId;
+        if (courseId) {
+          await db.collection('courses').updateOne(
+            { _id: typeof courseId === 'string' ? new (await import('mongodb')).ObjectId(courseId) : courseId },
+            {
+              $set: {
+                "units.$[].chapters.$[].lessons.$[lesson].contentType": "video",
+                "units.$[].chapters.$[].lessons.$[lesson].videoUrl": recordingUrl
+              }
+            },
+            {
+              arrayFilters: [{ "lesson.liveRoomId": roomId }]
+            } as any
+          );
+        }
+      }
 
       return createSuccessResponse({
         recording: { ...recording, _id: existing._id },
@@ -97,16 +122,32 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create new recording
     const result = await db.collection('liveClassRecordings').insertOne(recording);
 
-    // Update room to mark as recorded
     await db.collection('liveRooms').updateOne(
       { roomId },
       {
         $set: { updatedAt: new Date() },
       }
     );
+
+    if (recordingUrl || status === 'ready') {
+      const courseId = room.courseId;
+      if (courseId) {
+        await db.collection('courses').updateOne(
+          { _id: typeof courseId === 'string' ? new (await import('mongodb')).ObjectId(courseId) : courseId },
+          {
+            $set: {
+              "units.$[].chapters.$[].lessons.$[lesson].contentType": "video",
+              "units.$[].chapters.$[].lessons.$[lesson].videoUrl": recordingUrl
+            }
+          },
+          {
+            arrayFilters: [{ "lesson.liveRoomId": roomId }]
+          } as any
+        );
+      }
+    }
 
     return createSuccessResponse({
       recording: { ...recording, _id: result.insertedId },

@@ -12,10 +12,14 @@ interface InstructorPanelProps {
 }
 
 export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
-  const [activeTab, setActiveTab] = useState<'participants' | 'qna' | 'polls'>('participants');
+  const [activeTab, setActiveTab] = useState<'participants' | 'qna' | 'polls' | 'chat' | 'breakouts'>('participants');
   const [qnaQueue, setQnaQueue] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
   const [newPoll, setNewPoll] = useState({ question: '', options: ['', ''], type: 'single' });
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatState, setChatState] = useState<{ locked: boolean; mutes: Array<{ userId: string; until?: string }> }>({ locked: false, mutes: [] });
+  const [breakoutRooms, setBreakoutRooms] = useState<Array<{ id: string; name: string }>>([]);
+  const [participants, setParticipants] = useState<Array<{ userId: string; userName: string }>>([]);
 
   useEffect(() => {
     if (activeTab === 'qna') {
@@ -25,6 +29,22 @@ export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
     } else if (activeTab === 'polls') {
       fetchPolls();
       const interval = setInterval(fetchPolls, 3000);
+      return () => clearInterval(interval);
+    } else if (activeTab === 'chat') {
+      fetch(`/api/live/chat?roomId=${roomId}`)
+        .then((res) => res.json())
+        .then((data) => setChatMessages(data.data?.messages || []))
+        .catch(() => {});
+      fetch(`/api/live/chat/moderate?roomId=${roomId}`)
+        .then((res) => res.json())
+        .then((data) => setChatState({ locked: Boolean(data.data?.locked), mutes: data.data?.mutes || [] }))
+        .catch(() => {});
+      const interval = setInterval(() => {
+        fetch(`/api/live/chat?roomId=${roomId}`)
+          .then((res) => res.json())
+          .then((data) => setChatMessages(data.data?.messages || []))
+          .catch(() => {});
+      }, 4000);
       return () => clearInterval(interval);
     }
   }, [activeTab, roomId]);
@@ -51,6 +71,49 @@ export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
     } catch (error) {
       console.error('Failed to fetch polls:', error);
     }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'breakouts') {
+      fetch(`/api/live/participants?roomId=${roomId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const list = (data.data?.participants || []).map((p: any) => ({ userId: p.userId, userName: p.userName }));
+          setParticipants(list);
+        })
+        .catch(() => {});
+    }
+  }, [activeTab, roomId]);
+
+  const handleCreateBreakoutRoom = () => {
+    const name = `Room ${breakoutRooms.length + 1}`;
+    const id = `br_${Date.now()}`;
+    setBreakoutRooms((prev) => [...prev, { id, name }]);
+    try {
+      jitsiApi?.executeCommand?.('createBreakoutRoom', { name });
+    } catch {}
+  };
+
+  const handleDeleteBreakoutRoom = (id: string) => {
+    setBreakoutRooms((prev) => prev.filter((r) => r.id !== id));
+    try {
+      jitsiApi?.executeCommand?.('closeBreakoutRoom', { breakoutRoomId: id });
+    } catch {}
+  };
+
+  const handleAssignParticipants = async (id: string) => {
+    const selected = participants.slice(0, Math.max(1, Math.floor(participants.length / Math.max(1, breakoutRooms.length))));
+    for (const p of selected) {
+      try {
+        jitsiApi?.executeCommand?.('sendParticipantToRoom', { participantId: p.userId, breakoutRoomId: id });
+      } catch {}
+    }
+  };
+
+  const handleCloseBreakoutRoom = (id: string) => {
+    try {
+      jitsiApi?.executeCommand?.('closeBreakoutRoom', { breakoutRoomId: id });
+    } catch {}
   };
 
   const handleAcknowledge = async (handRaiseId: string) => {
@@ -156,6 +219,20 @@ export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
             onClick={() => setActiveTab('polls')}
           >
             Polls
+          </Button>
+          <Button
+            variant={activeTab === 'chat' ? 'inverse' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('chat')}
+          >
+            Chat
+          </Button>
+          <Button
+            variant={activeTab === 'breakouts' ? 'inverse' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('breakouts')}
+          >
+            Breakout Rooms
           </Button>
         </div>
       </CardHeader>
@@ -286,6 +363,147 @@ export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
                 </p>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeTab === 'chat' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Button
+                variant={chatState.locked ? 'inverse' : 'outline'}
+                size="sm"
+                onClick={async () => {
+                  await fetch('/api/live/chat/moderate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId, action: chatState.locked ? 'unlockChat' : 'lockChat' }),
+                  });
+                  const res = await fetch(`/api/live/chat/moderate?roomId=${roomId}`).then((r) => r.json());
+                  setChatState({ locked: Boolean(res.data?.locked), mutes: res.data?.mutes || [] });
+                }}
+              >
+                {chatState.locked ? 'Unlock Chat' : 'Lock Chat'}
+              </Button>
+            </div>
+            <div className="text-sm text-slate-600">Muted users: {chatState.mutes.map((m) => m.userId).join(', ') || 'None'}</div>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {chatMessages.map((msg) => (
+                <div key={msg._id} className="p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-slate-900">{msg.userName}</div>
+                    <div className="text-xs text-slate-500">{new Date(msg.createdAt).toLocaleString()}</div>
+                  </div>
+                  {msg.isPinned && <p className="text-[10px] text-amber-600">Pinned</p>}
+                  <p className="text-sm text-slate-700 mt-1 break-words">{msg.content}</p>
+                  {msg.imageUrl && <img src={msg.imageUrl} className="mt-2 rounded-lg max-h-40 object-cover" />}
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={async () => {
+                        await fetch('/api/live/chat/moderate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ roomId, action: 'pinMessage', messageId: msg._id }),
+                        });
+                        setChatMessages((prev) => prev.map((m) => (String(m._id) === String(msg._id) ? { ...m, isPinned: true } : m)));
+                      }}
+                    >
+                      Pin
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={async () => {
+                        await fetch('/api/live/chat/moderate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ roomId, action: 'unpinMessage', messageId: msg._id }),
+                        });
+                        setChatMessages((prev) => prev.map((m) => (String(m._id) === String(msg._id) ? { ...m, isPinned: false } : m)));
+                      }}
+                    >
+                      Unpin
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="xs"
+                      onClick={async () => {
+                        await fetch('/api/live/chat/moderate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ roomId, action: 'deleteMessage', messageId: msg._id }),
+                        });
+                        setChatMessages((prev) => prev.filter((m) => String(m._id) !== String(msg._id)));
+                      }}
+                    >
+                      Delete
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={async () => {
+                        await fetch('/api/live/chat/moderate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ roomId, action: 'muteUser', targetUserId: msg.userId }),
+                        });
+                        const res = await fetch(`/api/live/chat/moderate?roomId=${roomId}`).then((r) => r.json());
+                        setChatState({ locked: Boolean(res.data?.locked), mutes: res.data?.mutes || [] });
+                      }}
+                    >
+                      Mute
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={async () => {
+                        await fetch('/api/live/chat/moderate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ roomId, action: 'unmuteUser', targetUserId: msg.userId }),
+                        });
+                        const res = await fetch(`/api/live/chat/moderate?roomId=${roomId}`).then((r) => r.json());
+                        setChatState({ locked: Boolean(res.data?.locked), mutes: res.data?.mutes || [] });
+                      }}
+                    >
+                      Unmute
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {chatMessages.length === 0 && (
+                <p className="text-sm text-slate-500 text-center py-4">No messages</p>
+              )}
+            </div>
+          </div>
+        )}
+        {activeTab === 'breakouts' && (
+          <div className="space-y-3">
+            <Button variant="inverse" size="sm" onClick={handleCreateBreakoutRoom}>
+              Create Breakout Room
+            </Button>
+            {breakoutRooms.map((room) => (
+              <div key={room.id} className="p-4 bg-slate-50 rounded-lg">
+                <div className="flex items-start justify-between mb-2">
+                  <p className="font-semibold text-slate-900">{room.name}</p>
+                  <Button variant="outline" size="sm" onClick={() => handleDeleteBreakoutRoom(room.id)}>
+                    Delete
+                  </Button>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <Button variant="inverse" size="sm" onClick={() => handleAssignParticipants(room.id)}>
+                    Assign Participants
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleCloseBreakoutRoom(room.id)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {breakoutRooms.length === 0 && (
+              <p className="text-sm text-slate-500 text-center py-4">No breakout rooms</p>
+            )}
           </div>
         )}
       </CardContent>

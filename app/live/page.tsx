@@ -15,74 +15,94 @@ interface LiveRoom {
   courseTitle?: string;
 }
 
+import { VaultBrowser } from '@/components/live/VaultBrowser';
+
 export const dynamic = 'force-dynamic';
 
 export default async function LiveClassesPage() {
   const db = await getDatabase();
-  const allContent = await db
-    .collection('liveRooms')
-    .find({ status: { $in: ['active', 'scheduled', 'ready'] } })
-    .sort({ contentType: 1, createdAt: -1 })
-    .limit(48)
-    .toArray()
-    .catch(() => []);
 
-  const liveContent = allContent
-    .filter((c: any) => c.contentType !== 'video')
-    .map((room: any) => ({
-      id: String(room._id),
-      roomId: room.roomId,
-      roomName: room.roomName || 'Live classroom',
-      roomUrl: room.roomUrl,
-      status: room.status || 'scheduled',
-      createdAt: room.createdAt instanceof Date ? room.createdAt.toISOString() : room.createdAt || new Date().toISOString(),
-      courseTitle: room.courseTitle || room.courseId,
-    }));
+  // Parallel fetch for optimal performance
+  const [categories, courses, liveRooms] = await Promise.all([
+    db.collection('categories').find({}).toArray(),
+    db.collection('courses').find({
+      status: 'published',
+      type: { $in: ['video-course', 'live-course'] }
+    }).sort({ updatedAt: -1 }).toArray(),
+    db.collection('liveRooms')
+      .find({ status: { $in: ['active', 'scheduled', 'ready'] }, contentType: { $ne: 'video' } })
+      .sort({ createdAt: -1 })
+      .limit(12)
+      .toArray()
+  ]).catch(() => [[], [], []]);
 
-  const videoClasses = allContent
-    .filter((c: any) => c.contentType === 'video')
-    .map((vid: any) => ({
-      id: String(vid._id),
-      title: vid.roomName,
-      playbackUrl: vid.playbackUrl || vid.roomUrl,
-      courseTitle: vid.courseTitle || vid.courseId,
-      createdAt: vid.createdAt instanceof Date ? vid.createdAt.toISOString() : vid.createdAt || new Date().toISOString(),
-      thumbnail: vid.thumbnail || '/images/video-placeholder.jpg',
-    }));
+  const serializedCourses = courses.map((course: any) => ({
+    ...course,
+    _id: course._id.toString(),
+    createdAt: course.createdAt ? new Date(course.createdAt).toISOString() : null,
+    updatedAt: course.updatedAt ? new Date(course.updatedAt).toISOString() : null,
+    authorId: course.authorId ? course.authorId.toString() : null,
+    categoryId: course.categoryId ? course.categoryId.toString() : null,
+  }));
+
+  const liveContent = liveRooms.map((room: any) => ({
+    id: String(room._id),
+    roomId: room.roomId,
+    roomName: room.roomName || 'Live classroom',
+    status: room.status || 'scheduled',
+    courseTitle: room.courseTitle || room.courseId || 'Open Session',
+    createdAt: room.createdAt instanceof Date ? room.createdAt.toISOString() : room.createdAt || new Date().toISOString(),
+    scheduledStartTime: room.scheduledStartTime instanceof Date ? room.scheduledStartTime.toISOString() : room.scheduledStartTime || null,
+  }));
+
+  // Organize courses by their category
+  const categorizedCourses = categories.map((cat: any) => ({
+    id: String(cat._id),
+    name: cat.name,
+    courses: serializedCourses.filter((c: any) => c.categoryId === String(cat._id))
+  })).filter(cat => cat.courses.length > 0);
+
+  // Courses without categories or with invalid ones
+  const uncategorizedCourses = serializedCourses.filter((c: any) =>
+    !c.categoryId || !categories.some(cat => String(cat._id) === c.categoryId)
+  );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-24">
-      {/* Cinematic Hero Section */}
-      <div className="min-h-[600px] lg:h-[700px] relative overflow-hidden bg-slate-900 group flex items-center">
-        <div className="absolute inset-0 z-0 scale-105 group-hover:scale-110 transition-transform duration-[10s] opacity-60">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-transparent to-teal-900 mix-blend-overlay"></div>
-          <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070')] bg-cover bg-center"></div>
+    <div className="min-h-screen bg-[#0a0c10] text-white">
+      {/* Cinematic Hero Section - ultra premium */}
+      <div className="relative min-h-[85vh] w-full overflow-hidden flex flex-col">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0a0c10] via-[#0a0c10]/40 to-transparent z-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-transparent to-transparent z-10"></div>
+          <img
+            src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070"
+            className="w-full h-full object-cover opacity-60 scale-105 animate-slow-zoom"
+            alt="Hero Background"
+          />
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-[#f8fafc] via-slate-900/40 to-transparent z-10"></div>
-
-        <div className="container mx-auto px-4 relative z-20 pt-32 pb-32">
-          <div className="max-w-4xl space-y-8">
-            <div className="flex items-center gap-3">
-              <span className="flex h-3 w-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]"></span>
-              <span className="text-sm font-black text-white/90 uppercase tracking-[0.3em]">Universal Live Hub</span>
+        <div className="container mx-auto px-6 relative z-20 flex-1 flex flex-col justify-center max-w-7xl py-20">
+          <div className="max-w-3xl space-y-8">
+            <div className="flex items-center gap-4">
+              <span className="flex h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)]"></span>
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-400">Proprietary Learning Ecosystem</span>
             </div>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-[0.85]">
-              Real-time Impact. <br />
-              <span className="text-blue-400">On-Demand Mastery.</span>
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9]">
+              Mastery <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">Level: Expert.</span>
             </h1>
-            <p className="text-xl text-white/70 font-medium max-w-2xl leading-relaxed">
-              Experience the next generation of digital learning. Join interactive live classrooms or explore our curated vault of world-class video masterclasses.
+            <p className="text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
+              Explore a 5-level architectural curriculum designed for cognitive impact. Join live sessions or descend into our archived masterclass vault.
             </p>
-            <div className="flex flex-wrap gap-5 pt-6">
-              <Link href="#live-now">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-8 rounded-2xl font-black text-lg shadow-2xl shadow-blue-500/20 transition-all hover:-translate-y-1">
-                  Go Live
+            <div className="flex flex-wrap gap-4 pt-4">
+              <Link href="#live-grid">
+                <Button className="bg-white text-black hover:bg-slate-200 px-10 py-7 rounded-full font-black text-sm uppercase tracking-widest transition-all">
+                  Join Live
                 </Button>
               </Link>
-              <Link href="#masterclasses">
-                <Button variant="outline" className="bg-white/10 backdrop-blur-md border-white/20 text-white px-10 py-8 rounded-2xl font-black text-lg hover:bg-white/20 transition-all">
-                  Watch Vault
+              <Link href="#vault">
+                <Button variant="outline" className="border-white/20 text-white bg-white/5 hover:bg-white/10 px-10 py-7 rounded-full font-black text-sm uppercase tracking-widest transition-all backdrop-blur-md">
+                  Video Courses
                 </Button>
               </Link>
             </div>
@@ -90,68 +110,60 @@ export default async function LiveClassesPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 -mt-20 relative z-30 space-y-24">
-        {/* Section 1: Live Experience */}
-        <section id="live-now" className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="container mx-auto px-6 max-w-7xl relative z-30 space-y-32 -mt-10 pb-32">
+
+        {/* Active Broadcasts Section */}
+        <section id="live-grid" className="space-y-12">
+          <div className="flex items-end justify-between border-b border-white/10 pb-8">
             <div className="space-y-2">
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Happening Now</h2>
-              <p className="text-slate-500 font-medium max-w-2xl">
-                Interactive rooms currently streaming. Join real instructors and engage with peers worldwide.
-              </p>
+              <h2 className="text-4xl font-black tracking-tight">Active Broadcasts</h2>
+              <p className="text-slate-500 font-medium">Real-time interactive environments synchronized globally.</p>
             </div>
-            <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-              <div className="px-4 py-2 bg-blue-50 rounded-xl text-blue-600 font-black text-xs uppercase">
-                {liveContent.length} Active Sessions
-              </div>
-            </div>
+            <Badge className="border border-blue-500/50 text-blue-400 bg-transparent px-4 py-1 font-bold">
+              {liveContent.length} BROADCASTS ONLINE
+            </Badge>
           </div>
 
           {liveContent.length === 0 ? (
-            <div className="py-24 rounded-[3rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="text-6xl grayscale opacity-20">📡</div>
-              <h3 className="text-2xl font-black text-slate-900">Broadcasts Resuming Shortly</h3>
-              <p className="text-slate-500 max-w-sm">No live sessions are active right now. Explore our recorded masterclasses below while you wait.</p>
+            <div className="py-32 rounded-[3rem] border border-white/10 bg-white/5 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-6">
+              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-4xl opacity-40">📡</div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black">Frequency Silent</h3>
+                <p className="text-slate-500 max-w-xs mx-auto">All active instructors are currently offline. Next scheduled broadcast in 14 minutes.</p>
+              </div>
             </div>
           ) : (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {liveContent.map((room) => (
-                <div key={room.id} className="group relative bg-white rounded-[2.5rem] p-4 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-200/40 transition-all duration-500 hover:-translate-y-2 border border-slate-100">
-                  <div className="aspect-[16/10] bg-slate-900 rounded-[2rem] relative overflow-hidden mb-6">
+                <div key={room.id} className="group bg-[#161b22] rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-blue-500/30 transition-all duration-500">
+                  <div className="aspect-video relative overflow-hidden">
                     <img
-                      src={`https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?q=80&w=1974`}
-                      className="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-700"
+                      src={`https://images.unsplash.com/photo-1577891729319-66381c6181b5?q=80&w=1470`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-60"
                       alt=""
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#161b22] to-transparent"></div>
                     <div className="absolute top-4 left-4">
-                      <Badge className="bg-red-500 text-white border-none px-3 py-1 font-black animate-pulse uppercase tracking-widest text-[10px]">
-                        Live Room
-                      </Badge>
-                    </div>
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <p className="text-xs font-black text-blue-400 uppercase tracking-widest mb-1">{room.courseTitle || 'Masterclass'}</p>
-                      <h3 className="text-2xl font-black text-white leading-tight">{room.roomName}</h3>
+                      <div className="flex items-center gap-2 bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse uppercase tracking-widest">
+                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        On Air
+                      </div>
                     </div>
                   </div>
-
-                  <div className="px-2 pb-2 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex -space-x-3">
-                        {[1, 2, 3].map(i => (
-                          <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
-                            <img src={`https://i.pravatar.cc/150?u=${room.id}${i}`} alt="" />
-                          </div>
-                        ))}
-                        <div className="h-8 px-2 flex items-center justify-center bg-slate-100 text-[10px] font-black rounded-full border-2 border-white">+12</div>
-                      </div>
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Powered by Jitsi</span>
+                  <div className="p-8 space-y-6">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">{room.courseTitle}</p>
+                      <h3 className="text-2xl font-black leading-tight group-hover:text-blue-400 transition-colors">{room.roomName}</h3>
+                      {room.scheduledStartTime && (
+                        <p className="text-sm text-slate-400 font-medium">
+                          Next class: {new Date(room.scheduledStartTime).toLocaleString()}
+                        </p>
+                      )}
                     </div>
-
-                    <Link href={`/live/${room.roomId}`} className="w-full">
-                      <button className="w-full py-5 bg-blue-600 hover:bg-black text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-200/50">
-                        Join Conversation
-                      </button>
+                    <Link href={`/live/${room.roomId}`} className="block">
+                      <Button className="w-full bg-white text-black hover:bg-blue-500 hover:text-white rounded-2xl py-7 font-black transition-all">
+                        ENTER STUDIO
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -160,68 +172,27 @@ export default async function LiveClassesPage() {
           )}
         </section>
 
-        {/* Section 2: Video Classes */}
-        <section id="masterclasses" className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-2">
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Masterclass Vault</h2>
-              <p className="text-slate-500 font-medium max-w-2xl">
-                On-demand video classes curated for deep learning. Pure cinematic quality, zero distractions.
-              </p>
-            </div>
-          </div>
-
-          {videoClasses.length === 0 ? (
-            <div className="py-24 rounded-[3rem] border-2 border-dashed border-slate-200 bg-white/50 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="text-6xl grayscale opacity-20">🎬</div>
-              <h3 className="text-2xl font-black text-slate-900">Archive Under Maintenance</h3>
-              <p className="text-slate-500 max-w-sm">We're indexing our latest video content. They will appear here shortly.</p>
-            </div>
-          ) : (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              {videoClasses.map((video) => (
-                <div key={video.id} className="group cursor-pointer" onClick={() => window.open(video.playbackUrl, '_blank')}>
-                  <div className="aspect-video bg-slate-200 rounded-[2rem] overflow-hidden relative mb-4 shadow-lg group-hover:shadow-2xl group-hover:-translate-y-1 transition-all duration-500">
-                    <img
-                      src={video.thumbnail || `https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=1932`}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      alt=""
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors"></div>
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-16 h-16 bg-white/30 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/40 scale-75 group-hover:scale-100 transition-transform">
-                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white">
-                      CLASS
-                    </div>
-                  </div>
-                  <div className="space-y-1 px-2">
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{video.courseTitle || 'Masterclass'}</p>
-                    <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">{video.title}</h4>
-                    <p className="text-xs text-slate-400 font-medium">Added {new Date(video.createdAt).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* Masterclass Vault - Hierarchical Categories */}
+        <section id="vault">
+          <VaultBrowser 
+            categories={categorizedCourses} 
+            uncategorizedCourses={uncategorizedCourses} 
+          />
         </section>
       </div>
 
-      {/* Admin Quick Action */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <Link href="/admin/live-classes">
-          <Button className="bg-slate-900 text-white rounded-2xl h-14 w-14 shadow-2xl hover:scale-110 transition-all flex items-center justify-center p-0">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-            </svg>
-          </Button>
-        </Link>
-      </div>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes slow-zoom {
+          from { transform: scale(1.05); }
+          to { transform: scale(1.15); }
+        }
+        .animate-slow-zoom {
+          animation: slow-zoom 20s ease-in-out infinite alternate;
+        }
+      `}} />
     </div>
   );
 }
+
 

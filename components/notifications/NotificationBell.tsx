@@ -2,8 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Notification } from '@/lib/models/Notification';
 import { useAuth } from '@clerk/nextjs';
+
+// Define client-side notification type to avoid importing server-only ObjectId
+interface Notification {
+  _id: string;
+  userId: string;
+  type: 'badge' | 'level_up' | 'quest' | 'streak' | 'rank' | 'achievement';
+  title: string;
+  message: string;
+  icon?: string;
+  priority: 'low' | 'medium' | 'high';
+  metadata?: any;
+  read: boolean;
+  dismissed: boolean;
+  createdAt: string | Date;
+}
 
 interface NotificationBellProps {
   // Can be placed in header/navbar
@@ -16,32 +30,19 @@ export function NotificationBell(_props: NotificationBellProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!isLoaded || !userId) return;
-
-    fetchNotifications();
-
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-
-    return () => clearInterval(interval);
-  }, [isLoaded, userId]);
-
   const fetchNotifications = async () => {
+    if (!userId) return;
+    
     try {
-      console.log('Fetching notifications...');
       const res = await fetch('/api/notifications?limit=10');
 
       if (res.status === 401) {
-        console.warn('Unauthorized notification request');
-        setLoading(false);
+        // Token might be expired or not ready
         return;
       }
 
       if (!res.ok) {
-        const errorText = await res.text().catch(() => 'No error text');
-        console.error(`Notification fetch error (${res.status}):`, errorText);
-        throw new Error(`Failed to fetch notifications: ${res.status}`);
+        throw new Error(`Failed to fetch: ${res.status}`);
       }
 
       const result = await res.json();
@@ -50,11 +51,20 @@ export function NotificationBell(_props: NotificationBellProps = {}) {
         setUnreadCount(result.data.unreadCount);
       }
     } catch (err) {
-      console.error('Browser error in fetchNotifications:', err);
+      console.error('Error fetching notifications:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isLoaded || !userId) return;
+
+    fetchNotifications();
+
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [isLoaded, userId]);
 
   const markAsRead = async (notificationId?: string) => {
     try {

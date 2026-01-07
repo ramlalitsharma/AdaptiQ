@@ -12,6 +12,7 @@ interface JitsiClassroomProps {
   roomName: string;
   isModerator?: boolean;
   onLeave?: () => void;
+  onEnd?: () => void;
   domain?: string;
 }
 
@@ -26,12 +27,15 @@ export function JitsiClassroom({
   roomName,
   isModerator = false,
   onLeave,
+  onEnd,
   domain = 'meet.jit.si',
 }: JitsiClassroomProps) {
   const [isJoined, setIsJoined] = useState(false);
   const [participants, setParticipants] = useState(0);
   const [connectionQuality, setConnectionQuality] = useState<'good' | 'medium' | 'poor'>('good');
   const [showSidebar, setShowSidebar] = useState(false);
+  const [perfMode, setPerfMode] = useState(false);
+  const [joinStalled, setJoinStalled] = useState(false);
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
 
@@ -46,19 +50,39 @@ export function JitsiClassroom({
           roomName,
           parentNode: jitsiContainerRef.current,
           configOverwrite: {
-            startWithAudioMuted: false,
-            startWithVideoMuted: false,
+            startWithAudioMuted: true,
+            startWithVideoMuted: true,
+            prejoinPageEnabled: false, // Disabling prejoin usually helps getting stuck
+            disableDeepLinking: true, // Prevents mobile app prompts
             enableWelcomePage: false,
             enableClosePage: false,
+            disableAudioLevels: true,
+            enableLayerSuspension: true,
+            channelLastN: 2,
+            disableThirdPartyRequests: true,
+            analytics: { disabled: true },
+            constraints: {
+              video: {
+                height: {
+                  ideal: 480,
+                  max: 480,
+                  min: 240,
+                },
+              },
+              audio: true,
+            },
+            p2p: {
+              enabled: false,
+            },
           },
           interfaceConfigOverwrite: {
+            // Note: Many of these are deprecated in newer Jitsi versions but keeping safe ones
             TOOLBAR_BUTTONS: [
               'microphone',
               'camera',
               'closedcaptions',
               'desktop',
               'fullscreen',
-              'fodeviceselection',
               'hangup',
               'chat',
               'recording',
@@ -69,18 +93,13 @@ export function JitsiClassroom({
               'raisehand',
               'videoquality',
               'filmstrip',
-              'invite',
-              'feedback',
-              'stats',
-              'shortcuts',
               'tileview',
               'videobackgroundblur',
               'download',
               'help',
               'mute-everyone',
-              'mute-video-everyone',
+              'participants-pane'
             ],
-            SETTINGS_SECTIONS: ['devices', 'language', 'moderator', 'profile'],
             SHOW_JITSI_WATERMARK: false,
             SHOW_WATERMARK_FOR_GUESTS: false,
           },
@@ -116,6 +135,7 @@ export function JitsiClassroom({
 
         apiRef.current.addEventListener('videoConferenceJoined', () => {
           setIsJoined(true);
+          setJoinStalled(false);
           // Track attendance - user joined
           fetch('/api/live/attendance', {
             method: 'POST',
@@ -137,6 +157,10 @@ export function JitsiClassroom({
     };
     document.body.appendChild(script);
 
+    const t = setTimeout(() => {
+      if (!isJoined) setJoinStalled(true);
+    }, 8000);
+
     return () => {
       if (apiRef.current) {
         apiRef.current.dispose();
@@ -144,6 +168,7 @@ export function JitsiClassroom({
       if (script.parentNode) {
         script.parentNode.removeChild(script);
       }
+      clearTimeout(t);
     };
   }, [roomName, domain, onLeave]);
 
@@ -170,6 +195,114 @@ export function JitsiClassroom({
       onLeave();
     }
   };
+  const togglePerformanceMode = () => {
+    setPerfMode((p) => !p);
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('setVideoQuality', perfMode ? 720 : 240);
+      }
+    } catch {}
+  };
+  const handleToggleAudio = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleAudio');
+      }
+    } catch {}
+  };
+  const handleToggleVideo = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleVideo');
+      }
+    } catch {}
+  };
+  const handleShareScreen = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleShareScreen');
+      }
+    } catch {}
+  };
+  const handleToggleChat = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleChat');
+      }
+    } catch {}
+  };
+  const handleToggleTileView = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleTileView');
+      }
+    } catch {}
+  };
+  const handleHangup = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('hangup');
+      }
+    } catch {}
+  };
+  const handleToggleParticipants = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleParticipantsPane');
+      }
+    } catch {}
+  };
+  const handleToggleRaiseHand = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleRaiseHand');
+      }
+    } catch {}
+  };
+  const handleOpenBreakouts = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleParticipantsPane');
+      }
+    } catch {}
+  };
+  const handleEnableLobby = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('toggleLobby', true);
+      }
+    } catch {}
+  };
+  const handleMuteAll = () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('muteEveryone', {});
+      }
+    } catch {}
+  };
+  const handleStartRecording = async () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('startRecording');
+        await fetch('/api/live/recordings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomId: roomName,
+            recordingId: `rec_${Date.now()}`,
+            recordingType: 'jibri',
+          }),
+        });
+      }
+    } catch {}
+  };
+  const handleStopRecording = async () => {
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand('stopRecording');
+      }
+    } catch {}
+  };
 
   return (
     <div className="flex gap-4 h-full">
@@ -179,6 +312,9 @@ export function JitsiClassroom({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <CardTitle>Live Classroom (Jitsi Meet)</CardTitle>
+                {isModerator && (
+                  <Badge className="bg-blue-600 text-white">Instructor</Badge>
+                )}
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-600">
                     {participants} {participants === 1 ? 'participant' : 'participants'}
@@ -188,8 +324,8 @@ export function JitsiClassroom({
                       connectionQuality === 'good'
                         ? 'success'
                         : connectionQuality === 'medium'
-                        ? 'warning'
-                        : 'error'
+                          ? 'warning'
+                          : 'error'
                     }
                     className="text-xs"
                   >
@@ -205,9 +341,47 @@ export function JitsiClassroom({
                 >
                   {showSidebar ? 'Hide' : 'Show'} Tools
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleLeave}>
-                  Leave Room
+                <Button
+                  variant={perfMode ? 'inverse' : 'outline'}
+                  size="sm"
+                  onClick={togglePerformanceMode}
+                >
+                  {perfMode ? 'Quality: High' : 'Quality: Low'}
                 </Button>
+
+                {isModerator ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to end this class for everyone? Recording will be saved.')) {
+                        // Close Jitsi
+                        if (apiRef.current) {
+                          apiRef.current.executeCommand('hangup');
+                          apiRef.current.dispose();
+                        }
+                        setIsJoined(false);
+                        // Trigger end callback
+                        if (onEnd) onEnd();
+                      }
+                    }}
+                  >
+                    End Class
+                  </Button>
+                ) : null}
+                {isModerator ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(roomUrl || `https://${domain}/${roomName}`, '_blank')}
+                  >
+                    Open Moderator View
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={handleLeave}>
+                    Leave Room
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -218,11 +392,24 @@ export function JitsiClassroom({
                 className="absolute top-0 left-0 w-full h-full border-0 rounded-lg"
                 style={{ minHeight: '500px' }}
               />
+              {isModerator && isJoined && (
+                <div className="absolute bottom-4 left-4 z-[1000]">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-semibold shadow-md">
+                    Instructor
+                  </span>
+                </div>
+              )}
               {!isJoined && (
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
                     <p className="text-slate-600">Joining classroom...</p>
+                    {joinStalled && (
+                      <div className="mt-3 flex items-center justify-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => apiRef.current && apiRef.current.executeCommand('hangup')}>Retry</Button>
+                        <Button size="sm" onClick={() => window.open(roomUrl || `https://${domain}/${roomName}`, '_blank')}>Open in new tab</Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -240,6 +427,35 @@ export function JitsiClassroom({
           )}
         </div>
       )}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1001]">
+        <div className="flex items-center gap-2 rounded-2xl bg-slate-900 text-white px-4 py-2 shadow-2xl border border-slate-800">
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleToggleAudio}>🎤</Button>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleToggleVideo}>📷</Button>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleShareScreen}>🖥️</Button>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleToggleChat}>💬</Button>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleToggleTileView}>🧩</Button>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleToggleParticipants}>👥</Button>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleToggleRaiseHand}>✋</Button>
+          {isModerator && (
+            <>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleMuteAll}>🔇 All</Button>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleStartRecording}>⏺ Start Rec</Button>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleStopRecording}>⏹ Stop Rec</Button>
+            </>
+          )}
+          {isModerator && (
+            <>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleOpenBreakouts}>🧭</Button>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={handleEnableLobby}>🔒</Button>
+            </>
+          )}
+          {isModerator ? (
+            <Button variant="destructive" size="sm" onClick={handleHangup}>End</Button>
+          ) : (
+            <Button variant="outline" size="sm" className="text-white border-red-500 hover:bg-red-600 hover:text-white" onClick={handleHangup}>Leave</Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
