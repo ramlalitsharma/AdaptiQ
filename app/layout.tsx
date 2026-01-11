@@ -140,10 +140,9 @@ export default function RootLayout({
               <ServiceWorkerRegistration />
             </ToastProvider>
           </ThemeProvider>
-        </ThemeProvider>
-        <Analytics />
-      </body>
-    </html>
+          <Analytics />
+        </body>
+      </html>
     </ClerkProvider >
   );
 }
