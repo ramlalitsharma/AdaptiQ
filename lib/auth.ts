@@ -40,4 +40,13 @@ export async function currentUser(): Promise<SessionUser | null> {
   return u;
 }
 
+export async function isAdmin() {
+  const user = await currentUser();
+  if (!user?.email) return false;
+  // Hardcoded admin for safety/fallback
+  const admins = ['ramlalitsharma01@gmail.com'];
+  // Also check if role is present in session if available in future
+  return admins.includes(user.email);
+}
+
 

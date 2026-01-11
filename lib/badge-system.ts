@@ -89,3 +89,9 @@ export function getBadgeProgress(badge: BadgeDefinition, stats: any): number {
 
     return Math.min(100, Math.max(0, progress));
 }
+export const getBadgeMasterList = getAllBadges;
+
+export async function getBadgeById(id: string): Promise<BadgeDefinition | undefined> {
+    const badges = await getAllBadges();
+    return badges.find(b => b.id === id);
+}

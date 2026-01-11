@@ -87,3 +87,4 @@ export async function checkQuestProgress(userId: string, actionType: string, val
 
     return newQuests.filter((q: any) => q.completed); // Return completed quests
 }
+export const updateQuestProgress = checkQuestProgress;

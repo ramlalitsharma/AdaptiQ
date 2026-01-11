@@ -17,10 +17,10 @@ interface RateLimitResult {
 
 export async function rateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
   const { windowMs, max, key, identifier } = options;
-  
+
   // Sanitize key to prevent injection
   const sanitizedKey = sanitizeString(key, 200);
-  
+
   const db = await getDatabase();
   const rateLimitCollection = db.collection('rateLimits');
 
@@ -29,7 +29,7 @@ export async function rateLimit(options: RateLimitOptions): Promise<RateLimitRes
 
   try {
     // Clean up old entries (async, don't wait)
-    rateLimitCollection.deleteMany({ expiresAt: { $lt: now } }).catch(() => {});
+    rateLimitCollection.deleteMany({ expiresAt: { $lt: now } }).catch(() => { });
 
     // Get current count with optimized query
     const count = await rateLimitCollection.countDocuments({
@@ -43,21 +43,21 @@ export async function rateLimit(options: RateLimitOptions): Promise<RateLimitRes
         { key: sanitizedKey, createdAt: { $gte: windowStart } },
         { sort: { createdAt: 1 }, projection: { createdAt: 1 } }
       );
-      
-      const resetTime = oldest 
-        ? new Date(oldest.createdAt.getTime() + windowMs) 
+
+      const resetTime = oldest
+        ? new Date(oldest.createdAt.getTime() + windowMs)
         : new Date(now.getTime() + windowMs);
-      
+
       const retryAfter = Math.ceil((resetTime.getTime() - now.getTime()) / 1000);
-      
+
       // Log rate limit hit (optional)
       if (identifier) {
         console.warn(`Rate limit exceeded for ${identifier} (key: ${sanitizedKey.substring(0, 20)}...)`);
       }
 
-      return { 
-        allowed: false, 
-        remaining: 0, 
+      return {
+        allowed: false,
+        remaining: 0,
         resetTime,
         retryAfter: Math.max(1, retryAfter)
       };
@@ -73,15 +73,15 @@ export async function rateLimit(options: RateLimitOptions): Promise<RateLimitRes
 
     // Ensure TTL index exists (async, don't wait)
     rateLimitCollection.createIndex(
-      { expiresAt: 1 }, 
+      { expiresAt: 1 },
       { expireAfterSeconds: 0, background: true }
-    ).catch(() => {});
+    ).catch(() => { });
 
     // Also create index on key and createdAt for faster queries
     rateLimitCollection.createIndex(
       { key: 1, createdAt: -1 },
       { background: true }
-    ).catch(() => {});
+    ).catch(() => { });
 
     return {
       allowed: true,
@@ -162,3 +162,7 @@ class InMemoryRateLimiter {
 // Global in-memory rate limiter instance
 export const inMemoryRateLimiter = new InMemoryRateLimiter();
 
+export function generateRateLimitKey(req: any, prefix: string = 'global'): string {
+  const ip = req.headers.get('x-forwarded-for') || 'unknown';
+  return `${prefix}:${ip}`;
+}
