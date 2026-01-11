@@ -143,6 +143,12 @@ export default function RootLayout({
             </ToastProvider>
           </ThemeProvider>
           <Analytics />
+          <Script
+            async
+            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8149507764464883"
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
         </body>
       </html>
     </ClerkProvider >
