@@ -97,7 +97,7 @@ export function CategorySearch({ categories, subjects, onSearch }: CategorySearc
     if (onSearch) {
       onSearch(searchQuery, selectedCategory, selectedSubject);
     } else {
-      // Default behavior: navigate to search page
+      // Navigate to the new high-fidelity search page
       const params = new URLSearchParams();
       if (searchQuery) params.set('q', searchQuery);
       if (selectedCategory) params.set('category', selectedCategory);

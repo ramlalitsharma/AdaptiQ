@@ -62,7 +62,7 @@ export function XPSystem({ currentXP: propXP, currentLevel: propLevel }: XPSyste
     useEffect(() => {
         // If props provided (for testing/fallback), use them
         if (propXP !== undefined && propLevel !== undefined) {
-            setLoading(false);
+            setTimeout(() => setLoading(false), 0);
             return;
         }
 

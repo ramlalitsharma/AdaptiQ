@@ -1,7 +1,8 @@
 'use client';
 
- 
-import { MuxVideoPlayer } from '@/components/video/MuxVideoPlayer';
+
+import { forwardRef } from 'react';
+import { EnhancedVideoPlayer } from '@/components/video/EnhancedVideoPlayer';
 
 interface VideoPlayerProps {
   videoUrl?: string;
@@ -10,9 +11,10 @@ interface VideoPlayerProps {
   provider?: 'youtube' | 'vimeo' | 'direct' | 'self-hosted' | 'hls';
   playbackId?: string; // For self-hosted HLS videos
   onEnded?: () => void;
+  chapters?: Array<{ title: string; time: number }>;
 }
 
-export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', playbackId, onEnded }: VideoPlayerProps) {
+export const VideoPlayer = forwardRef(({ videoUrl, videoId, title, provider = 'youtube', playbackId, onEnded, chapters }: VideoPlayerProps, ref) => {
 
   if (!videoUrl && !videoId) {
     return (
@@ -34,7 +36,7 @@ export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', pl
           className="w-full h-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          onError={() => {}}
+          onError={() => { }}
         />
       </div>
     );
@@ -49,7 +51,7 @@ export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', pl
           className="w-full h-full"
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen
-          onError={() => {}}
+          onError={() => { }}
         />
       </div>
     );
@@ -58,31 +60,28 @@ export function VideoPlayer({ videoUrl, videoId, title, provider = 'youtube', pl
   // Self-hosted HLS video
   if (provider === 'self-hosted' || provider === 'hls') {
     return (
-      <MuxVideoPlayer
+      <EnhancedVideoPlayer
+        ref={ref}
         playbackId={playbackId || videoId || ''}
         title={title}
-        provider="self-hosted"
-        baseUrl={process.env.NEXT_PUBLIC_VIDEO_BASE_URL}
         onEnded={onEnded}
+        chapters={chapters}
       />
     );
   }
 
   if (videoUrl) {
     return (
-      <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
-        <video
-          src={videoUrl}
-          controls
-          className="w-full h-full"
-          onError={() => {}}
-          onEnded={onEnded}
-        >
-          Your browser does not support the video tag.
-        </video>
-      </div>
+      <EnhancedVideoPlayer
+        ref={ref}
+        playbackId={videoUrl}
+        title={title}
+        onEnded={onEnded}
+        chapters={chapters}
+      />
     );
   }
-
   return null;
-}
+});
+
+VideoPlayer.displayName = 'VideoPlayer';

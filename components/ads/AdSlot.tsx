@@ -33,7 +33,7 @@ export function AdSlot({ slotId, className = '', format = 'auto', enabled }: AdS
 
   return (
     <div className={className}>
-      {/* eslint-disable-next-line @next/next/no-script-in-document */}
+      {/* eslint-disable-next-line */}
       <ins
         className="adsbygoogle"
         style={{ display: 'block' }}

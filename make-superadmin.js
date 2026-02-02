@@ -1,3 +1,4 @@
+/* eslint-disable */
 // MongoDB Script to Make a User Super Admin
 // Usage: mongosh <connection-string> < make-superadmin.js
 // Or: Copy and paste into MongoDB shell

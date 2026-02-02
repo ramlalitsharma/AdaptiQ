@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { TipTapEditor } from '@/components/editor/TipTapEditor';
 import Link from 'next/link';
 
 interface DiscussionPost {
@@ -132,7 +132,7 @@ export function DiscussionForum({ courseId, lessonId, subjectId, initialPosts = 
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Content *
               </label>
-              <MarkdownEditor
+              <TipTapEditor
                 value={newPost.content}
                 onChange={(value) => setNewPost({ ...newPost, content: value })}
                 placeholder="Describe your question or topic in detail..."

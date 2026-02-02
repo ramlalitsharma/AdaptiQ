@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { TipTapEditor } from '@/components/editor/TipTapEditor';
 
 interface DiscussionReply {
   id: string;
@@ -141,7 +141,7 @@ export function DiscussionDetail({ post: initialPost, currentUserId }: Discussio
             <CardTitle>Post a Reply</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <MarkdownEditor
+            <TipTapEditor
               value={replyContent}
               onChange={setReplyContent}
               placeholder="Write your reply..."

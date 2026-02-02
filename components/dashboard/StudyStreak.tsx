@@ -26,12 +26,14 @@ export function StudyStreak(props: StudyStreakProps = {}) {
     useEffect(() => {
         // If props provided, use them
         if (props.currentStreak !== undefined) {
-            setData({
-                currentStreak: props.currentStreak,
-                longestStreak: props.longestStreak || 0,
-                lastStudyDate: props.lastStudyDate || '',
-            });
-            setLoading(false);
+            setTimeout(() => {
+                setData({
+                    currentStreak: props.currentStreak!,
+                    longestStreak: props.longestStreak || 0,
+                    lastStudyDate: props.lastStudyDate || '',
+                });
+                setLoading(false);
+            }, 0);
             return;
         }
 
@@ -65,7 +67,7 @@ export function StudyStreak(props: StudyStreakProps = {}) {
     useEffect(() => {
         // Celebrate milestones
         if (currentStreak > 0 && currentStreak % 7 === 0 && !showConfetti) {
-            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(true), 0);
             confetti({
                 particleCount: 100,
                 spread: 70,

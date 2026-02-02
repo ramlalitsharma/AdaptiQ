@@ -121,17 +121,20 @@ async function syncUserWithClerk(userId: string) {
     const clerkUser = await client.users.getUser(userId);
     if (!clerkUser) return null;
 
-    const email = clerkUser.emailAddresses[0]?.emailAddress;
+    const email = (clerkUser.emailAddresses[0]?.emailAddress || "").toLowerCase();
     const firstName = clerkUser.firstName || "";
     const lastName = clerkUser.lastName || "";
     const name = `${firstName} ${lastName}`.trim() || email;
 
-    const role = (clerkUser.publicMetadata.role as any) || "user";
-    const isSuperAdmin = clerkUser.publicMetadata.isSuperAdmin === true || role === "superadmin";
+    const db = await getDatabase();
+
+    // Check database manifest for superadmin override (The "Truth" by email)
+    const manifestSuperadmin = await db.collection("superadmin_manifest").findOne({ email });
+
+    const role = manifestSuperadmin ? "superadmin" : ((clerkUser.publicMetadata.role as any) || "user");
+    const isSuperAdmin = !!manifestSuperadmin || clerkUser.publicMetadata.isSuperAdmin === true || role === "superadmin";
     const isAdmin = clerkUser.publicMetadata.isAdmin === true || role === "admin" || isSuperAdmin;
     const isTeacher = clerkUser.publicMetadata.isTeacher === true || role === "teacher" || isAdmin;
-
-    const db = await getDatabase();
     await db.collection("users").updateOne(
       { clerkId: userId },
       {
@@ -169,7 +172,7 @@ async function syncUserWithClerk(userId: string) {
 }
 
 export async function getUserRole(): Promise<
-  "superadmin" | "admin" | "teacher" | "student" | "user" | null
+  "superadmin" | "admin" | "teacher" | "content_writer" | "student" | "user" | null
 > {
   try {
     const { userId } = await auth();
@@ -189,21 +192,37 @@ export async function getUserRole(): Promise<
       }
     }
 
-    let derivedRole: "superadmin" | "admin" | "teacher" | null = null;
+    let derivedRole: "superadmin" | "admin" | "teacher" | "content_writer" | "student" | "user" | null = null;
 
     if (user) {
-      if (
-        user.role === "superadmin" ||
-        user.role === "admin" ||
-        user.role === "teacher"
-      ) {
-        derivedRole = user.role;
-      } else if (user.isSuperAdmin === true) {
-        derivedRole = "superadmin";
-      } else if (user.isAdmin === true) {
-        derivedRole = "admin";
-      } else if (user.isTeacher === true) {
-        derivedRole = "teacher";
+      // 1. Authoritative check: Is this email in the superadmin manifest?
+      if (user.email) {
+        const db = await getDatabase();
+        const manifestSuperadmin = await db.collection("superadmin_manifest").findOne({
+          email: user.email.toLowerCase()
+        });
+        if (manifestSuperadmin) {
+          derivedRole = "superadmin";
+        }
+      }
+
+      // 2. Fallback to database record values if manifest didn't match
+      if (!derivedRole) {
+        if (
+          user.role === "superadmin" ||
+          user.role === "admin" ||
+          user.role === "teacher"
+        ) {
+          derivedRole = user.role;
+        } else if (user.isSuperAdmin === true) {
+          derivedRole = "superadmin";
+        } else if (user.isAdmin === true) {
+          derivedRole = "admin";
+        } else if (user.isTeacher === true) {
+          derivedRole = "teacher";
+        } else if (user.role === 'content_writer') {
+          derivedRole = "content_writer";
+        }
       }
     }
 
@@ -321,6 +340,19 @@ export async function requireTeacher() {
   const teacher = await isTeacher();
   if (!teacher) {
     throw new Error("Teacher access required");
+  }
+  return true;
+}
+
+export async function isContentWriter(): Promise<boolean> {
+  const role = await getUserRole();
+  return role === "superadmin" || role === "admin" || role === "content_writer";
+}
+
+export async function requireContentWriter() {
+  const writer = await isContentWriter();
+  if (!writer) {
+    throw new Error("Content Writer permissions required");
   }
   return true;
 }

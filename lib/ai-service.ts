@@ -1,4 +1,4 @@
-import { OpenAI } from 'openai';
+import { LangChainService } from './langchain-service';
 
 // Define the structure we want back from the AI
 export interface GeneratedQuestion {
@@ -49,89 +49,91 @@ const mockQuestions: GeneratedQuestion[] = [
 
 export const AIService = {
     /**
-     * Generates a quiz based on a topic using OpenAI or Mock data
+     * Generates a quiz based on a topic using LangChain
      */
     generateQuiz: async (topic: string, difficulty: string = 'medium'): Promise<QuizGenerationResult> => {
-        const apiKey = process.env.OPENAI_API_KEY;
-
-        // FALLBACK: If no key, return mock data (simulated delay for realism)
-        if (!apiKey) {
+        if (!process.env.OPENAI_API_KEY) {
             console.log('⚠️ No OPENAI_API_KEY found. using Mock AI Service.');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            return {
-                topic,
-                questions: mockQuestions,
-                source: 'mock'
-            };
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return { topic, questions: mockQuestions, source: 'mock' };
         }
 
         try {
-            const openai = new OpenAI({ apiKey });
+            const systemPrompt = "You are a helpful educational AI that outputs strict JSON. You must return exactly 5 questions.";
+            const userPrompt = `Create a ${difficulty} difficulty quiz about "${topic}". 
+            Output ONLY a valid JSON object with a "questions" array. 
+            Each question object must have: "question", "options" (4 strings), "correctAnswer" (0-3), and "explanation".`;
 
-            const prompt = `
-        Create a ${difficulty} difficulty quiz about "${topic}".
-        Output ONLY a valid JSON object with a "questions" array.
-        Each question object must have:
-        - "question" (string)
-        - "options" (array of 4 strings)
-        - "correctAnswer" (number logic 0-3)
-        - "explanation" (string)
-        Generate exactly 5 questions.
-      `;
-
-            const completion = await openai.chat.completions.create({
-                messages: [
-                    { role: "system", content: "You are a helpful educational AI that outputs strict JSON." },
-                    { role: "user", content: prompt }
-                ],
-                model: "gpt-3.5-turbo",
-                response_format: { type: "json_object" },
+            const parsed = await LangChainService.generateStructuredJSON(systemPrompt, userPrompt, {
+                provider: 'openai',
+                modelName: 'gpt-4o-mini',
+                temperature: 0.2
             });
-
-            const content = completion.choices[0].message.content;
-            if (!content) throw new Error("Empty response from AI");
-
-            const parsed = JSON.parse(content);
 
             return {
                 topic,
                 questions: parsed.questions || [],
                 source: 'ai'
             };
-
         } catch (error) {
-            console.error('AI Generation Error:', error);
-            // Fallback on error too, or rethrow? Let's rethrow to inform admin.
-            throw new Error("Failed to generate quiz via AI. Please try again.");
+            console.error('Quiz AI Error:', error);
+            throw new Error("Failed to generate quiz. Power is out at the AI datacenter.");
         }
     },
 
     /**
-     * General Chat completion for AI Tutor
+     * General Chat completion for AI Tutor using LangChain
      */
     chat: async (message: string, history: Array<{ role: 'user' | 'assistant' | 'system', content: string }>): Promise<string> => {
-        const apiKey = process.env.OPENAI_API_KEY;
-
-        if (!apiKey) {
-            return "I am currently in Offline/Mock mode. Please configure my API key to enable real chat capabilities!";
+        if (!process.env.OPENAI_API_KEY) {
+            return "Offline mode enabled. Configure API keys to unlock my full brain power!";
         }
 
         try {
-            const openai = new OpenAI({ apiKey });
+            // Simplified for now, in a real scenario we'd use LangChain's memory or message history
+            const context = history.map(h => `${h.role}: ${h.content}`).join('\n');
+            const prompt = `System: You are Prof. AI, an encouraging virtual tutor.\n${context}\nUser: ${message}`;
 
-            const completion = await openai.chat.completions.create({
-                messages: [
-                    { role: "system", content: "You are 'Prof. AI', a helpful, encouraging, and knowledgeable virtual tutor. Keep answers concise and educational." },
-                    ...history,
-                    { role: "user", content: message }
-                ],
-                model: "gpt-4o-mini", // Better for chat than 3.5
+            return await LangChainService.generateCompletion(prompt, {
+                provider: 'openai',
+                modelName: 'gpt-4o-mini'
             });
-
-            return completion.choices[0].message.content || "I'm not sure what to say.";
         } catch (error) {
-            console.error('AI Chat Error:', error);
-            throw new Error("Failed to get response from AI.");
+            console.error('Chat AI Error:', error);
+            return "I apologize, but I'm having trouble connecting to my central knowledge hub right now.";
+        }
+    },
+
+    /**
+     * Specialized generator for Learning Paths via LangChain
+     */
+    generateLearningPathContent: async (goal: string, availableCourses: any[]): Promise<any> => {
+        if (!process.env.OPENAI_API_KEY) {
+            return {
+                title: `Mastering ${goal} (Draft)`,
+                description: `A mock learning journey for ${goal}.`,
+                difficulty: 'intermediate',
+                steps: availableCourses.slice(0, 3).map(c => ({ courseId: c.id || c._id, title: c.title })),
+                tags: ['draft']
+            };
+        }
+
+        try {
+            const systemPrompt = "You are an expert curriculum designer. Output ONLY valid JSON.";
+            const userPrompt = `
+                Goal: "${goal}"
+                Available Courses: ${JSON.stringify(availableCourses, null, 2)}
+                Design a curated path using these courses. Priority to internal courses.
+                Output JSON: { "title", "description", "difficulty", "steps": [{ "courseId", "reason" }], "tags" }
+            `;
+
+            return await LangChainService.generateStructuredJSON(systemPrompt, userPrompt, {
+                provider: 'openai',
+                modelName: 'gpt-4o'
+            });
+        } catch (error) {
+            console.error('Path AI Error:', error);
+            throw new Error("Failed to design path via AI.");
         }
     }
 };

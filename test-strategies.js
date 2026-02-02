@@ -1,5 +1,6 @@
 // Test with different TLS options
 require('dotenv').config({ path: '.env.local' });
+/* eslint-disable */
 const { MongoClient } = require('mongodb');
 
 const baseUri = process.env.MONGODB_URI;

@@ -3,14 +3,15 @@
  * Superadmin > Admin > Teacher > Student
  */
 
-export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'user';
+export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'content_writer' | 'student' | 'user';
 
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
-  superadmin: 5,
-  admin: 4,
+  superadmin: 6,
+  admin: 5,
   teacher: 3,
-  student: 2,
-  user: 1,
+  content_writer: 2, // Technically below admin, different track
+  student: 1,
+  user: 0,
 };
 
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
@@ -33,6 +34,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'notifications:manage',
     'schemas:manage',
     'videos:manage',
+    'news:write',
   ],
   admin: [
     'admin:access',
@@ -45,11 +47,18 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'finance:view',
     'notifications:manage',
     'videos:manage',
+    'news:write',
   ],
   teacher: [
     'teacher:access',
     'content:create',
     'content:publish',
+    'blog:write',
+  ],
+  content_writer: [
+    'content:create',
+    'content:publish',
+    'news:write',
     'blog:write',
   ],
   student: [

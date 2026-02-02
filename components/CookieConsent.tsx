@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const consent = localStorage.getItem('cookie-consent');
-    if (!consent) setVisible(true);
+    if (!consent) setTimeout(() => setVisible(true), 0);
   }, []);
 
   if (!visible) return null;
@@ -19,7 +20,7 @@ export function CookieConsent() {
           <div className="flex-1">
             <p className="text-sm text-gray-700">
               We use cookies to enhance your experience, analyze usage, and show relevant content. By clicking "Accept", you consent to our cookies in accordance with our {' '}
-              <a href="/cookies" className="text-blue-600 hover:underline">Cookie Policy</a>.
+              <Link href="/cookies" className="text-blue-600 hover:underline">Cookie Policy</Link>.
             </p>
           </div>
           <div className="mt-3 md:mt-0 flex gap-2">

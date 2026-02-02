@@ -19,7 +19,7 @@ export function MarkdownEditor({
   value,
   onChange,
   placeholder,
-  height = 240,
+  height = 600,
   disabled = false,
 }: MarkdownEditorProps) {
   const editorValue = useMemo(() => value || '', [value]);
@@ -28,8 +28,8 @@ export function MarkdownEditor({
     <div data-color-mode="light">
       <MDEditor
         value={editorValue}
-        preview={disabled ? 'preview' : 'edit'}
-        visibleDragbar={false}
+        preview={disabled ? 'preview' : 'live'}
+        visibleDragbar={true}
         height={height}
         textareaProps={{ placeholder, readOnly: disabled }}
         onChange={(next) => onChange(next || '')}

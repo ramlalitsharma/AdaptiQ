@@ -1,0 +1,26 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Ebook {
+  id                String    @id @default(uuid())
+  authorId          String
+  title             String
+  audience          String?
+  tone              String?
+  focus             String?
+  chapters          Json
+  requestedChapters Int?
+  tags              String[]
+  releaseAt         DateTime?
+  seo               Json?
+  coverImageUrl     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}

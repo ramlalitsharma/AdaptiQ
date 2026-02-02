@@ -18,6 +18,7 @@ interface ChapterOutline {
   summary: string;
   keyTakeaways: string;
   resources: string;
+  content?: string;
 }
 
 export function EbookStudio({ recentEbooks }: EbookStudioProps) {
@@ -37,6 +38,7 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [seo, setSeo] = useState<any>(null);
 
   const canSubmit = useMemo(() => form.title.trim().length > 0 && chapters.every((chapter) => chapter.title.trim()), [form.title, chapters]);
 
@@ -58,6 +60,46 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
 
   const removeChapter = (index: number) => setChapters((prev) => prev.filter((_, i) => i !== index));
 
+  const regenerateChapter = async (index: number) => {
+    setPreviewing(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/ebooks/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          audience: form.audience,
+          tone: form.tone,
+          focus: form.focus,
+          chapterIndex: index,
+          mode: 'chapter',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to regenerate chapter');
+      const chapter = (data.outline.chapters || [])[0];
+      if (chapter) {
+        setChapters((prev) =>
+          prev.map((c, i) =>
+            i === index
+              ? {
+                  title: chapter.title || c.title,
+                  summary: chapter.summary || c.summary,
+                  keyTakeaways: (chapter.keyTakeaways || []).map((item: string) => `• ${item}`).join('\n'),
+                  resources: (chapter.resources || []).join('\n'),
+                  content: typeof chapter.content === 'string' ? chapter.content : c.content || '',
+                }
+              : c
+          )
+        );
+      }
+    } catch (err: any) {
+      setError(err.message || 'Unable to regenerate chapter');
+    } finally {
+      setPreviewing(false);
+    }
+  };
   const handleGenerateOutline = async () => {
     setPreviewing(true);
     setError(null);
@@ -71,6 +113,7 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
           tone: form.tone,
           chapters: form.chapters,
           focus: form.focus,
+          mode: 'outline',
         }),
       });
       const data = await res.json();
@@ -89,37 +132,99 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
     }
   };
 
+  const handleGenerateFull = async () => {
+    setPreviewing(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/ebooks/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          audience: form.audience,
+          tone: form.tone,
+          chapters: form.chapters,
+          focus: form.focus,
+          mode: 'full',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate draft');
+      const generated = (data.outline.chapters || []).map((chapter: any) => ({
+        title: chapter.title,
+        summary: chapter.summary,
+        keyTakeaways: (chapter.keyTakeaways || []).map((item: string) => `• ${item}`).join('\n'),
+        resources: (chapter.resources || []).join('\n'),
+        content: typeof chapter.content === 'string' ? chapter.content : '',
+      }));
+      if (generated.length) setChapters(generated);
+      if (data.seo) setSeo(data.seo);
+    } catch (err: any) {
+      setError(err.message || 'Unable to generate draft');
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
+  const handleGenerateSEO = async () => {
+    setPreviewing(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/ebooks/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          audience: form.audience,
+          tone: form.tone,
+          focus: form.focus,
+          tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+          mode: 'seo',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate SEO');
+      setSeo(data.seo);
+    } catch (err: any) {
+      setError(err.message || 'Unable to generate SEO');
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSaving(true);
     setError(null);
-    try {
-      const payload = {
-        title: form.title.trim(),
-        audience: form.audience.trim() || undefined,
-        tone: form.tone.trim() || undefined,
-        focus: form.focus.trim() || undefined,
-        chapters: form.chapters ? Number(form.chapters) : undefined,
-        outline: {
-          chapters: chapters.map((chapter) => ({
-            title: chapter.title,
-            summary: chapter.summary,
-            keyTakeaways: chapter.keyTakeaways
-              .split('\n')
-              .map((line) => line.replace(/^•\s?/, '').trim())
-              .filter(Boolean),
-            resources: chapter.resources
-              .split('\n')
-              .map((line) => line.trim())
-              .filter(Boolean),
-          })),
-        },
-        releaseAt: form.releaseAt || undefined,
-        tags: form.tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-      };
+      try {
+        const payload = {
+          title: form.title.trim(),
+          audience: form.audience.trim() || undefined,
+          tone: form.tone.trim() || undefined,
+          focus: form.focus.trim() || undefined,
+          chapters: form.chapters ? Number(form.chapters) : undefined,
+          outline: {
+            chapters: chapters.map((chapter) => ({
+              title: chapter.title,
+              summary: chapter.summary,
+              keyTakeaways: chapter.keyTakeaways
+                .split('\n')
+                .map((line) => line.replace(/^•\s?/, '').trim())
+                .filter(Boolean),
+              resources: chapter.resources
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean),
+              content: chapter.content || '',
+            })),
+          },
+          releaseAt: form.releaseAt || undefined,
+          tags: form.tags
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+          seo: seo || undefined,
+        };
 
       const res = await fetch('/api/admin/ebooks', {
         method: 'POST',
@@ -139,15 +244,23 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Ebook & Notes Studio</h2>
-            <p className="text-sm text-slate-500">Generate chapter-wise ebooks, study guides, and downloadable notes.</p>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Ebook & Notes Studio</h2>
+              <p className="text-sm text-slate-500">Generate chapter-wise ebooks, study guides, and downloadable notes.</p>
+            </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleGenerateOutline} disabled={previewing || !form.title}>
+              {previewing ? 'Generating…' : 'AI Outline'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleGenerateFull} disabled={previewing || !form.title}>
+              {previewing ? 'Generating…' : 'AI Full Draft'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleGenerateSEO} disabled={previewing || !form.title}>
+              {previewing ? 'Generating…' : 'AI SEO'}
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleGenerateOutline} disabled={previewing || !form.title}>
-            {previewing ? 'Generating…' : 'AI Outline'}
-          </Button>
-        </div>
+          </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr),minmax(0,1.2fr),minmax(0,0.9fr)]">
           <section className="space-y-4">
@@ -240,6 +353,9 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
                         Remove
                       </Button>
                     )}
+                    <Button variant="outline" size="sm" onClick={() => regenerateChapter(index)} disabled={previewing || !form.title}>
+                      Regenerate
+                    </Button>
                   </div>
                   <label className="mt-3 block text-sm text-slate-600">
                     Summary
@@ -259,18 +375,27 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
                     />
                   </label>
-                  <label className="mt-3 block text-sm text-slate-600">
-                    Resources / references
-                    <textarea
-                      value={chapter.resources}
-                      onChange={(e) => updateChapter(index, 'resources', e.target.value)}
-                      rows={2}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                </div>
-              ))}
-            </div>
+                <label className="mt-3 block text-sm text-slate-600">
+                  Resources / references
+                  <textarea
+                    value={chapter.resources}
+                    onChange={(e) => updateChapter(index, 'resources', e.target.value)}
+                    rows={2}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  />
+                </label>
+                <label className="mt-3 block text-sm text-slate-600">
+                  Chapter content
+                  <textarea
+                    value={chapter.content || ''}
+                    onChange={(e) => updateChapter(index, 'content', e.target.value)}
+                    rows={6}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
 
             {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
             <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
@@ -311,6 +436,25 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">SEO Preview</h3>
+              {!seo ? (
+                <p className="mt-3 text-xs text-slate-500">Use AI SEO to generate metadata.</p>
+              ) : (
+                <div className="mt-3 space-y-2 text-xs text-slate-700">
+                  <div><span className="font-semibold">Title:</span> {seo.seoTitle}</div>
+                  <div><span className="font-semibold">Description:</span> {seo.metaDescription}</div>
+                  <div><span className="font-semibold">Keywords:</span> {(seo.keywords || []).join(', ')}</div>
+                  <div><span className="font-semibold">Slug:</span> {seo.slug}</div>
+                  <div><span className="font-semibold">Canonical:</span> {seo.canonicalPath}</div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 mt-2">
+                    <div className="font-semibold">Structured Data</div>
+                    <pre className="mt-1 whitespace-pre-wrap break-words text-[10px]">{JSON.stringify(seo.schemaOrg, null, 2)}</pre>
+                  </div>
                 </div>
               )}
             </div>

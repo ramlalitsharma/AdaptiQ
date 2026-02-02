@@ -91,14 +91,14 @@ export function MuxVideoPlayer({
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support (Safari)
       video.src = hlsUrl;
-      setIsLoading(false);
+      video.addEventListener('canplay', () => setIsLoading(false));
       if (autoplay) {
         video.play().catch((e) => console.error('Autoplay failed:', e));
       }
     } else {
-      setError('HLS is not supported in this browser');
+      setTimeout(() => setError('HLS is not supported in this browser'), 0);
     }
-  }, [playbackId, autoplay, onProgress, onEnded]);
+  }, [playbackId, autoplay, onProgress, onEnded, baseUrl, provider]);
 
   if (error) {
     return (

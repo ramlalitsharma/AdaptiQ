@@ -1,5 +1,5 @@
 export const EmailTemplates = {
-    welcome: (name: string) => `
+  welcome: (name: string) => `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
       <div style="text-align: center; margin-bottom: 20px;">
         <h1 style="color: #4F46E5;">Welcome to AdaptiQ! 🚀</h1>
@@ -19,7 +19,7 @@ export const EmailTemplates = {
     </div>
   `,
 
-    levelUp: (name: string, level: number) => `
+  levelUp: (name: string, level: number) => `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; border-top: 4px solid #F59E0B;">
       <div style="text-align: center; margin-bottom: 20px;">
         <h1 style="color: #F59E0B;">Level Up! 🎉</h1>
@@ -33,7 +33,7 @@ export const EmailTemplates = {
     </div>
   `,
 
-    weeklyReport: (name: string, xp: number, quizzes: number) => `
+  weeklyReport: (name: string, xp: number, quizzes: number) => `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
       <h2 style="color: #111827;">Weekly Summary for ${name} 📊</h2>
       <p>Here is how you performed this week:</p>
@@ -49,5 +49,42 @@ export const EmailTemplates = {
       </table>
       <p>You are doing great! See you on the leaderboard.</p>
     </div>
-  `
+  `,
+
+  referralSuccess: (name: string, friendName: string) => `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; border-left: 4px solid #10B981;">
+      <h2 style="color: #10B981;">Referral Success! 🤝</h2>
+      <p>Hi ${name},</p>
+      <p>Great news! Your friend <strong>${friendName}</strong> just joined AdaptiQ using your referral link.</p>
+      <p>We've added <strong>100 Bonus XP</strong> to your account as a thank you.</p>
+      <div style="text-align: center; margin-top: 20px;">
+         <a href="http://localhost:3000/dashboard" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Check Your Progress</a>
+      </div>
+    </div>
+    `,
+
+  marketingSequence: (name: string, step: number) => {
+    const content = [
+      {
+        title: "Ready to accelerate your learning? ⚡",
+        body: "AdaptiQ uses spaced-repetition and AI to help you learn 2x faster. Have you taken your first diagnostic quiz yet?"
+      },
+      {
+        title: "Deep Dive: Mastering complex topics 🧠",
+        body: "Did you know you can chat with Prof. AI anytime? Try asking about a difficult concept in your latest course."
+      }
+    ][step - 1] || { title: "Level Up with AdaptiQ", body: "Keep learning and reaching new heights!" };
+
+    return `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <h2 style="color: #111827;">${content.title}</h2>
+          <p>Hi ${name},</p>
+          <p>${content.body}</p>
+          <div style="background-color: #F9FAFB; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; color: #4B5563;">"Education is the most powerful weapon which you can use to change the world."</p>
+          </div>
+          <p>Best,<br/>The AdaptiQ Team</p>
+        </div>
+        `;
+  }
 };

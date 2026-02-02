@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import WhiteboardView from './WhiteboardView';
+import Image from 'next/image';
 
 interface StudentSidebarProps {
   roomId: string;
   isInstructor: boolean;
 }
 
-export function StudentSidebar({ roomId, isInstructor }: StudentSidebarProps) {
+export function StudentSidebar({ roomId }: StudentSidebarProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'notes' | 'qna' | 'polls' | 'resources' | 'whiteboard'>('chat');
   const [notes, setNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState('');
@@ -288,9 +289,12 @@ export function StudentSidebar({ roomId, isInstructor }: StudentSidebarProps) {
                     </a>
                   )}
                   {msg.imageUrl && (
-                    <img
+                    <Image
                       src={msg.imageUrl}
-                      alt="attachment"
+                      alt=""
+                      width={640}
+                      height={360}
+                      unoptimized
                       className="mt-2 rounded-lg max-h-48 object-cover"
                     />
                   )}
@@ -316,9 +320,12 @@ export function StudentSidebar({ roomId, isInstructor }: StudentSidebarProps) {
                 placeholder="Type a message..."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 min-h-[60px]"
               />
-              <Button onClick={handleSendChat} variant="inverse" size="sm" className="mt-2">
+              <Button onClick={handleSendChat} variant="inverse" size="sm" className="mt-2" disabled={chatLocked}>
                 Send
               </Button>
+              {chatLocked && (
+                <div className="text-xs text-amber-600 mt-2">Chat is locked by instructor</div>
+              )}
             </div>
           </div>
         )}

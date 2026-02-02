@@ -5,7 +5,11 @@ import { useToast } from '@/components/ui/ToastManager';
 
 export function usePolling(intervalMs: number = 30000) {
     const { addToast } = useToast();
-    const lastCheckRef = useRef<number>(Date.now());
+    const lastCheckRef = useRef<number>(0);
+    
+    useEffect(() => {
+        lastCheckRef.current = Date.now();
+    }, []);
 
     useEffect(() => {
         const poll = async () => {

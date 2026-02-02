@@ -50,6 +50,7 @@
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
@@ -57,13 +58,11 @@
 
 .animate-shimmer {
   animation: shimmer 2s infinite linear;
-  background: linear-gradient(
-    to right,
-    #f1f5f9 0%,
-    #e2e8f0 20%,
-    #f1f5f9 40%,
-    #f1f5f9 100%
-  );
+  background: linear-gradient(to right,
+      #f1f5f9 0%,
+      #e2e8f0 20%,
+      #f1f5f9 40%,
+      #f1f5f9 100%);
   background-size: 1000px 100%;
 }
 
@@ -143,6 +142,7 @@ body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   line-height: 1.6;
 }
+
 /* Glassmorphism Utilities */
 .glass-effect {
   background: rgba(255, 255, 255, 0.7);
@@ -194,7 +194,7 @@ body {
 /* UltraHD Background Patterns */
 .bg-mesh {
   background-color: hsla(0, 0%, 100%, 1);
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, hsla(186, 100%, 39%, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 0%, hsla(242, 100%, 70%, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 100%, hsla(202, 100%, 50%, 0.15) 0px, transparent 50%),
@@ -203,7 +203,7 @@ body {
 
 .dark .bg-mesh {
   background-color: hsla(240, 10%, 4%, 1);
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, hsla(186, 100%, 39%, 0.12) 0px, transparent 50%),
     radial-gradient(at 100% 0%, hsla(242, 100%, 70%, 0.12) 0px, transparent 50%),
     radial-gradient(at 100% 100%, hsla(202, 100%, 50%, 0.12) 0px, transparent 50%),
@@ -237,6 +237,7 @@ body {
 .noise-texture {
   position: relative;
 }
+
 .noise-texture::after {
   content: "";
   position: absolute;
@@ -248,4 +249,74 @@ body {
 
 .dark .noise-texture::after {
   opacity: 0.05;
+}
+
+/* Intelligence Studio: Morning Paper Theme */
+.news-paper-theme {
+  --background: #fdfdfc;
+  --foreground: #0f172a;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.news-paper-theme .font-serif {
+  font-family: var(--font-lora), serif;
+}
+
+.news-paper-theme input,
+.news-paper-theme textarea,
+.news-paper-theme select {
+  font-family: var(--font-lora), serif;
+}
+
+.news-paper-theme .pb-20 {
+  background-image:
+    radial-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* AI Feedback States: Paper Grain Overlay */
+.paper-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 10;
+}
+
+.intelligence-hub-active {
+  box-shadow: -20px 0 60px -15px rgba(0, 0, 0, 0.03);
+}
+
+/* Blog content view */
+.blog-content-view h1,
+.blog-content-view h2,
+.blog-content-view h3 {
+  color: white;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: 2.5rem !important;
+  margin-bottom: 1.25rem !important;
+}
+.blog-content-view h2 { font-size: 2.25rem; }
+.blog-content-view h3 { font-size: 1.75rem; }
+.blog-content-view p {
+  color: #94a3b8;
+  line-height: 1.8;
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.blog-content-view ul {
+  margin-bottom: 2rem;
+  padding-left: 1.5rem;
+}
+.blog-content-view li {
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+}
+.blog-content-view strong {
+  color: white;
 }

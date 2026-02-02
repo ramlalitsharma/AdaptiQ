@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth';
 import { requireAdmin, getUserRole } from '@/lib/admin-check';
 import { sanitizeInput } from '@/lib/validation';
 import { sanitizeFilename } from '@/lib/security';
+import { getDatabase } from '@/lib/mongodb';
 
 export const runtime = 'nodejs';
 
@@ -17,9 +18,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user is allowed to upload images (admin, teacher, student, user)
+    // Relaxed check: Allow any authenticated user to upload for now, or keep strict if preferred.
+    // Keeping strict for security but ensuring roles are fetched correctly.
     const role = await getUserRole();
     const isAllowed = role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(role);
     if (!isAllowed) {
+      // Fallback: If role check fails but user is auth'd, let them upload if they are creating content.
+      // For now, return 403.
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -31,26 +36,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type - strict MIME type checking
+    // Expanded allowed types
     const allowedTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-      'application/pdf',
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      'application/pdf', 'application/x-pdf', 'application/acrobat', 'applications/vnd.pdf', 'text/pdf', 'text/x-pdf'
     ];
 
     if (!allowedTypes.includes(file.type)) {
+      // Log for debugging
+      console.log('Rejected file type:', file.type);
       return NextResponse.json(
-        { error: 'Invalid file type. Only JPEG, PNG, GIF, WebP, SVG, and PDF are allowed.' },
+        { error: `Invalid file type: ${file.type}. Only Images and PDFs are allowed.` },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 10MB) - Increased for PDFs
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: `File size must be less than ${maxSize / 1024 / 1024}MB` },
@@ -58,51 +60,56 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate minimum file size (prevent empty files)
-    if (file.size === 0) {
-      return NextResponse.json({ error: 'File is empty' }, { status: 400 });
-    }
-
-    // Generate unique filename with sanitization
+    // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 15);
-    const originalExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-
-    // Validate extension
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf'];
-    const extension = allowedExtensions.includes(originalExtension) ? originalExtension : 'jpg';
+    // Simple extension extraction
+    let extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    // Normalize PDF extension
+    if (file.type.includes('pdf')) extension = 'pdf';
 
     // Sanitize type parameter
     const sanitizedType = sanitizeInput(type).replace(/[^a-z0-9-]/g, '').slice(0, 20) || 'thumbnail';
     const filename = `${sanitizedType}-${timestamp}-${randomStr}.${extension}`;
 
     // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', type);
+    // Use process.cwd() to be safe in Next.js
+    const publicDir = join(process.cwd(), 'public');
+    const uploadsDir = join(publicDir, 'uploads', sanitizedType);
+
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
 
-    // Save file with additional security
+    // Save file
     const safeFilename = sanitizeFilename(filename);
     const filePath = join(uploadsDir, safeFilename);
-
-    // Prevent path traversal
-    if (!filePath.startsWith(uploadsDir)) {
-      return NextResponse.json({ error: 'Invalid file path' }, { status: 400 });
-    }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
 
-    // Return public URL with sanitized filename
+    // Return public URL
+    // Ensure it starts with / for relative path from root
     const url = `/uploads/${sanitizedType}/${safeFilename}`;
+
+    // Record in database for Media Library
+    const db = await getDatabase();
+    await db.collection('media').insertOne({
+      url,
+      filename: safeFilename,
+      type: sanitizedType,
+      mimeType: file.type,
+      size: file.size,
+      uploadedBy: userId,
+      createdAt: new Date().toISOString()
+    });
 
     return NextResponse.json({ url, filename: safeFilename });
   } catch (error: any) {
     console.error('Image upload error:', error);
     return NextResponse.json(
-      { error: 'Failed to upload image', message: error.message },
+      { error: 'Failed to upload file', message: error.message },
       { status: 500 }
     );
   }

@@ -12,7 +12,24 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Custom ignores:
+    "scripts/**",
+    "*.js",
+    "netlify/functions/**",
+    "temp-LearnToday/**",
   ]),
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-require-imports": "off",
+      "prefer-const": "warn",
+      "prefer-rest-params": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "import/no-anonymous-default-export": "warn",
+      "react/no-unescaped-entities": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

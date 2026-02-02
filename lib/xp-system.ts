@@ -158,5 +158,17 @@ export async function awardXP(userId: string, amount: number, action?: string): 
         }
     );
 
+    // Track Seasonal Progress if applicable
+    if (action) {
+        // Lazy import to avoid circular dependency
+        const { SeasonalService } = await import('./seasonal-service');
+        await SeasonalService.trackProgress(userId, action, amount);
+
+        // Specifically track count-based metrics
+        if (action === 'complete_quiz') {
+            await SeasonalService.trackProgress(userId, 'quizzes_completed', 1);
+        }
+    }
+
     return newLevel;
 }

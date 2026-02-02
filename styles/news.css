@@ -1,0 +1,71 @@
+@layer base {
+  .news-paper-theme {
+    --news-bg: #fdfdfc;
+    --news-text: #1f2933;
+    --news-accent: #b11226;
+    --news-border: #e5e7eb;
+    --news-muted: #64748b;
+  }
+}
+
+.news-paper-theme {
+  background-color: var(--news-bg);
+  color: var(--news-text);
+  min-height: 100vh;
+}
+
+.news-paper-theme .paper-border {
+  border-color: var(--news-border);
+}
+
+.news-paper-theme h1, 
+.news-paper-theme h2, 
+.news-paper-theme h3, 
+.news-paper-theme h4 {
+  color: var(--news-text);
+  letter-spacing: -0.02em;
+}
+
+.news-paper-theme a {
+  transition: color 0.2s ease;
+}
+
+.news-paper-theme a:hover {
+  color: var(--news-accent);
+}
+
+.news-paper-theme .text-news-accent {
+  color: var(--news-accent);
+}
+
+.news-paper-theme .bg-news-accent {
+  background-color: var(--news-accent);
+}
+
+.news-paper-theme .prose {
+  color: var(--news-text);
+  max-width: 720px;
+}
+
+.news-paper-theme .prose p {
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+}
+
+.news-paper-theme .prose h2,
+.news-paper-theme .prose h3 {
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.news-paper-theme .drop-cap::first-letter {
+  float: left;
+  font-size: 5rem;
+  line-height: 0.8;
+  padding-top: 4px;
+  padding-right: 12px;
+  padding-left: 3px;
+  font-weight: 900;
+  color: var(--news-accent);
+  font-family: var(--font-lora);
+}

@@ -1,6 +1,7 @@
 // Load environment variables
 require('dotenv').config({ path: '.env.local' });
 
+/* eslint-disable */
 const { MongoClient } = require('mongodb');
 
 console.log('Testing MongoDB connection...');

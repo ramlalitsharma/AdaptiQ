@@ -3,7 +3,7 @@
  * Defines navigation links and features for each user role
  */
 
-export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'user';
+export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'content_writer' | 'student' | 'user';
 
 export interface NavLink {
   href: string;
@@ -43,6 +43,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
           { href: '/courses', label: 'All Courses', icon: '📚' },
           { href: '/courses?type=video', label: 'Video Classes', icon: '🎞️' },
           { href: '/courses?type=text', label: 'Text Classes', icon: '📄' },
+          { href: '/ebooks', label: 'Ebooks Library', icon: '📘' },
         ],
       },
       { href: '/live', label: 'Live Classes', icon: '🎥' },
@@ -80,6 +81,9 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
           { href: '/admin', label: 'Admin Panel', icon: '👨‍💼' },
           { href: '/admin/users', label: 'Users', icon: '👥' },
           { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
+          { href: '/admin/logs', label: 'Audit Logs', icon: '🛡️' },
+          { href: '/admin/compliance', label: 'Compliance', icon: '⚖️' },
+          { href: '/admin/proctoring', label: 'Proctoring Center', icon: '🛡️' },
           { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
         ],
       },
@@ -98,6 +102,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
           { href: '/courses', label: 'All Courses', icon: '📚' },
           { href: '/courses?type=video', label: 'Video Classes', icon: '🎞️' },
           { href: '/courses?type=text', label: 'Text Classes', icon: '📄' },
+          { href: '/ebooks', label: 'Ebooks Library', icon: '📘' },
         ],
       },
       { href: '/live', label: 'Live Classes', icon: '🎥' },
@@ -135,6 +140,9 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
           { href: '/admin/users', label: 'Users', icon: '👥' },
           { href: '/admin/courses', label: 'Manage Courses', icon: '📚' },
           { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
+          { href: '/admin/logs', label: 'Audit Logs', icon: '🛡️' },
+          { href: '/admin/compliance', label: 'Compliance', icon: '⚖️' },
+          { href: '/admin/proctoring', label: 'Proctoring Center', icon: '🛡️' },
           { href: '/admin/videos', label: 'Videos', icon: '🎥' },
         ],
       },
@@ -151,8 +159,9 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
         icon: '📚',
         items: [
           { href: '/courses', label: 'All Courses', icon: '📚' },
-          { href: '/courses?type=video', label: 'Video Classes', icon: '🎞️' },
-          { href: '/courses?type=text', label: 'Text Classes', icon: '📄' },
+          { href: '/courses?type=video', label: 'Video Courses', icon: '🎞️' },
+          { href: '/courses?type=text', label: 'Courses Classes', icon: '📄' },
+          { href: '/ebooks', label: 'Ebooks Library', icon: '📘' },
         ],
       },
       { href: '/live', label: 'Live Classes', icon: '🎥' },
@@ -198,6 +207,29 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
     showAdminBadge: false,
     showViewAs: false,
   },
+  content_writer: {
+    primaryLinks: [
+      {
+        label: 'Studio',
+        icon: '🎙️',
+        items: [
+          { href: '/admin/studio/news', label: 'News Studio', icon: '📰' },
+          { href: '/admin/studio/blogs', label: 'Blog Studio', icon: '✍️' },
+        ],
+      },
+      {
+        label: 'Updates',
+        icon: '🔔',
+        items: [
+          { href: '/blog', label: 'Blog', icon: '✍️' },
+          { href: '/news', label: 'News', icon: '📰' },
+        ],
+      },
+    ],
+    dashboardLink: { href: '/admin/studio/news', label: 'News Studio' },
+    showAdminBadge: true,
+    showViewAs: false,
+  },
   student: {
     primaryLinks: [
       {
@@ -207,6 +239,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
           { href: '/courses', label: 'All Courses', icon: '📚' },
           { href: '/courses?type=video', label: 'Video Classes', icon: '🎞️' },
           { href: '/courses?type=text', label: 'Text Classes', icon: '📄' },
+          { href: '/ebooks', label: 'Ebooks Library', icon: '📘' },
         ],
       },
       { href: '/live', label: 'Live Classes', icon: '🎥' },
@@ -259,6 +292,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
           { href: '/courses', label: 'All Courses', icon: '📚' },
           { href: '/courses?type=video', label: 'Video Classes', icon: '🎞️' },
           { href: '/courses?type=text', label: 'Text Classes', icon: '📄' },
+          { href: '/ebooks', label: 'Ebooks Library', icon: '📘' },
         ],
       },
       { href: '/live', label: 'Live Classes', icon: '🎥' },

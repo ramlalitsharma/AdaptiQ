@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { WorkflowControls } from '@/components/admin/WorkflowControls';
-import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { TipTapEditor } from '@/components/editor/TipTapEditor';
 import { VideoUploader } from '@/components/video/VideoUploader';
 import { ManualEnrollment } from '@/components/admin/ManualEnrollment';
 import { ImageUploader } from '@/components/admin/ImageUploader';
@@ -542,7 +542,7 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
               </label>
               <div className="space-y-1 text-sm text-slate-600">
                 Executive summary
-                <MarkdownEditor
+                <TipTapEditor
                   value={form.summary}
                   onChange={(next) => setForm((prev) => ({ ...prev, summary: next }))}
                   placeholder="3-week accelerator to master adaptive testing."

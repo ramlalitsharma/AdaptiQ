@@ -20,10 +20,10 @@ interface Notification {
 }
 
 interface NotificationBellProps {
-  // Can be placed in header/navbar
+  className?: string;
 }
 
-export function NotificationBell(_props: NotificationBellProps = {}) {
+export function NotificationBell({ className }: NotificationBellProps = {}) {
   const { userId, getToken, isLoaded } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);

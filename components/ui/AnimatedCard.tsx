@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './Card';
 import { cn } from '@/lib/utils';
 
 interface AnimatedCardProps {

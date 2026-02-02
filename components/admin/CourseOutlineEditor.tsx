@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/Button';
-import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { TipTapEditor } from '@/components/editor/TipTapEditor';
 import { LiveRoomCreator } from './LiveRoomCreator'; // Added import
 
 // --- Types ---
@@ -151,8 +151,8 @@ function SortableUnitItem({
               readOnly={readOnly}
               mode={mode}
               courseTitle={courseTitle}
-               defaultLiveRoomId={defaultLiveRoomId}
-               courseId={courseId}
+              defaultLiveRoomId={defaultLiveRoomId}
+              courseId={courseId}
             />
           ))}
         </SortableContext>
@@ -446,7 +446,7 @@ function LessonItem({
         </div>
 
         {lesson.contentType === 'text' && (
-          <MarkdownEditor
+          <TipTapEditor
             value={lesson.content || ''}
             onChange={(next) => onUpdate('content', next)}
             height={120}
@@ -647,11 +647,12 @@ function LessonItem({
                       ✨ Write with AI
                     </Button>
                   </div>
-                  <MarkdownEditor
+                  <TipTapEditor
                     value={lesson.content || ''}
                     onChange={(next) => onUpdate('content', next)}
                     height={300}
-                    placeholder="Write your lesson content here... (Markdown supported)"
+                    placeholder="Write your lesson content here..."
+                    disabled={readOnly}
                   />
                 </div>
               )}
@@ -724,11 +725,12 @@ function LessonItem({
                             ✨ Generate Agenda
                           </Button>
                         </div>
-                        <MarkdownEditor
+                        <TipTapEditor
                           value={lesson.content || ''}
                           onChange={(next) => onUpdate('content', next)}
                           height={200}
                           placeholder="Minute-by-minute plan for the live session..."
+                          disabled={readOnly}
                         />
                       </div>
 

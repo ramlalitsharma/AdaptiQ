@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { usePathname as useNextPathname, useSearchParams, useRouter as useNextRouter } from "next/navigation";
+import { Link, useRouter, usePathname } from "@/lib/navigation";
+import { useTranslations } from "next-intl";
 import { SignedIn, SignedOut, UserButton, SignInButton } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { SiteBrand } from "./SiteBrand";
@@ -10,9 +11,11 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ViewAsSwitcher } from "@/components/admin/ViewAsSwitcher";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { getNavigationForRole, type UserRole } from "@/lib/navigation-config";
 
 export function Navbar() {
+  const t = useTranslations('Common');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -93,11 +96,11 @@ export function Navbar() {
   const isViewingAs = viewAsRole && viewAsRole !== userRole;
 
   useEffect(() => {
-    setMounted(true);
+    setTimeout(() => setMounted(true), 0);
   }, []);
 
   return (
-    <header className="sticky top-0 z-[1000] glass-card text-slate-950 dark:text-white shadow-sm overflow-visible border-none">
+    <header className="sticky top-0 z-[1000] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm transition-all duration-300">
       {!isOnline && (
         <div className="bg-red-500 text-white text-xs font-medium py-1.5 px-4 text-center">
           ⚠️ You appear to be offline.
@@ -207,33 +210,40 @@ export function Navbar() {
             </button>
 
             {showViewAs && (
-              <ViewAsSwitcher
-                currentRole={userRole || 'student'}
-                isSuperAdmin={isSuperAdmin}
-              />
-            )}
-            {navConfig.showAdminBadge && (
-              <span className={`hidden xl:inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider border ${effectiveRole === 'superadmin' ? 'bg-purple-100/10 text-purple-200 border-purple-400/30' :
-                effectiveRole === 'admin' ? 'bg-blue-100/10 text-blue-200 border-blue-400/30' :
-                  effectiveRole === 'teacher' ? 'bg-emerald-100/10 text-emerald-200 border-emerald-400/30' :
-                    'bg-white/20 text-white border-white/30'
-                }`}>
-                {effectiveRole === 'superadmin' ? "🛡️ Super" : effectiveRole === 'admin' ? "🛡️ Admin" : effectiveRole === 'teacher' ? "👨‍🏫 Teacher" : effectiveRole}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <ViewAsSwitcher
+                  currentRole={userRole || 'student'}
+                  isSuperAdmin={isSuperAdmin}
+                />
+
+                {navConfig.showAdminBadge && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-tighter border ${effectiveRole === 'superadmin' ? 'bg-purple-100/20 text-purple-600 dark:text-purple-400 border-purple-400/30 shadow-sm' :
+                    effectiveRole === 'admin' ? 'bg-blue-100/20 text-blue-600 dark:text-blue-400 border-blue-400/30' :
+                      effectiveRole === 'teacher' ? 'bg-emerald-100/20 text-emerald-600 dark:text-emerald-400 border-emerald-400/30' :
+                        'bg-slate-100/20 text-slate-600 dark:text-slate-400 border-slate-400/30'
+                    }`}>
+                    {effectiveRole === 'superadmin' ? "🛡️ SUPER" : effectiveRole === 'admin' ? "🛡️ ADMIN" : effectiveRole === 'teacher' ? "👨‍🏫 TEACH" : effectiveRole}
+                  </span>
+                )}
+              </div>
             )}
 
-            {/* Actions Menu - Consolidated */}
+            {/* Refectl Hub - Unified Dropdown */}
             <div className="relative hidden lg:block z-[1002]">
               <button
                 onClick={() => setActionsOpen((v) => !v)}
-                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-slate-600 dark:text-white"
-                aria-label="Actions"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 transition-all duration-300 text-slate-700 dark:text-white border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:shadow-lg hover:shadow-purple-500/10 active:scale-95"
+                aria-label="Refectl Hub"
+                title="Refectl Hub"
               >
                 <span className="text-lg">⚡</span>
+                <span className="text-sm font-bold tracking-tight">Hub</span>
+                <span className={`text-[10px] transition-transform duration-300 ${actionsOpen ? 'rotate-180' : ''}`}>▼</span>
               </button>
+
               {actionsOpen && (
                 <div
-                  className="fixed mt-12 w-64 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl border border-slate-200 dark:border-slate-700 z-[9999] overflow-y-auto max-h-[85vh] custom-scrollbar animate-in fade-in zoom-in-95 duration-200"
+                  className="fixed mt-4 w-80 rounded-3xl bg-white/90 dark:bg-slate-900/90 text-slate-800 dark:text-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200/50 dark:border-slate-700/50 z-[9999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-2xl ring-1 ring-slate-900/5"
                   style={{
                     right: 'max(1rem, calc((100vw - 1280px) / 2 + 1rem))',
                     top: '3.5rem'
@@ -242,55 +252,104 @@ export function Navbar() {
                   {!userRole ? (
                     <div className="px-4 py-8 text-center">
                       <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                      <p className="text-xs text-slate-500 font-medium">Loading your tools...</p>
+                      <p className="text-xs text-slate-500 font-medium">Loading your Hub...</p>
                     </div>
                   ) : (
                     <div className="flex flex-col">
-                      {/* Admin/Superadmin Specific */}
-                      {(effectiveRole === 'superadmin' || effectiveRole === 'admin') && (
-                        <div className="p-2 border-b dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
-                          <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Administration</div>
-                          <Link href="/admin/users" className="block px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all mb-1" onClick={() => setActionsOpen(false)}>👥 User Control</Link>
-                          <Link href="/admin/enrollments" className="block px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all" onClick={() => setActionsOpen(false)}>💳 Enrollment Ops</Link>
+                      {/* 🚀 Creation Studio Section */}
+                      <div className="p-3 border-b dark:border-slate-800 bg-slate-50/50 dark:bg-white/5">
+                        <div className="flex items-center justify-between px-2 mb-2">
+                          <span className="text-[10px] uppercase font-black text-slate-400 tracking-[0.1em]">Creation Studio</span>
                         </div>
-                      )}
-
-                      {/* Content Creation tools - Available to Students (Blogs/Practice), Teacher, Admin */}
-                      <div className="p-2 border-b dark:border-slate-700">
-                        <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Creation Studio</div>
-
-                        {/* Higher roles can create courses */}
-                        {(effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
-                          <Link href="/admin/studio/courses" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>📚 Create Course</Link>
-                        )}
-
-                        {/* Blogs are for everyone, Practice Quizzes are for students only */}
-                        {(effectiveRole === 'student' || effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin' || effectiveRole === 'user') && (
-                          <Link href="/admin/studio/blogs" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>📝 Write Blog</Link>
-                        )}
-
-                        {effectiveRole === 'student' && (
-                          <Link href="/admin/studio/practice" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>🎯 Self Practice Quiz</Link>
-                        )}
-
-                        {(effectiveRole !== 'user' && effectiveRole !== 'student') && (
-                          <Link href="/admin/studio/questions?mode=quiz" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" onClick={() => setActionsOpen(false)}>❓ Create Quiz Instance</Link>
-                        )}
+                        <div className="grid gap-1">
+                          {(effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
+                            <Link href="/admin/studio/courses" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all" onClick={() => setActionsOpen(false)}>
+                              <span className="text-lg">📚</span>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold">Course Architect</span>
+                                <span className="text-[9px] text-slate-400">Design new curricula</span>
+                              </div>
+                            </Link>
+                          )}
+                          {(effectiveRole === 'content_writer' || effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
+                            <Link href="/admin/studio/news" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all" onClick={() => setActionsOpen(false)}>
+                              <span className="text-lg">🎙️</span>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold"><span className="text-red-700">Terai Times</span> Studio</span>
+                                <span className="text-[9px] text-slate-400">Global newsroom desk</span>
+                              </div>
+                            </Link>
+                          )}
+                          <Link href="/admin/studio/blogs" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all" onClick={() => setActionsOpen(false)}>
+                            <span className="text-lg">📝</span>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold">Blog Studio</span>
+                              <span className="text-[9px] text-slate-400">Share your thoughts</span>
+                            </div>
+                          </Link>
+                          {(effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin' || effectiveRole === 'content_writer') && (
+                            <Link href="/admin/studio/ebooks" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-slate-800 shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all" onClick={() => setActionsOpen(false)}>
+                              <span className="text-lg">📘</span>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold">Ebook Studio</span>
+                                <span className="text-[9px] text-slate-400">Create rich, page-by-page ebooks</span>
+                              </div>
+                            </Link>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Quick Navigation / Dashboards */}
-                      <div className="p-2 bg-slate-50/30 dark:bg-slate-900/10">
-                        <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Personal Dashboard</div>
-                        {effectiveRole === 'superadmin' && (
-                          <Link href="/admin/super" className="block px-3 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 shadow-sm transition-all mb-2 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>🛡️ SUPER ADMIN CONSOLE</Link>
-                        )}
-                        {(effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
-                          <Link href="/admin/dashboard" className="block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all mb-1 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>📊 ADMIN DASHBOARD</Link>
-                        )}
-                        {effectiveRole === 'teacher' && (
-                          <Link href="/teacher/dashboard" className="block px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all mb-1 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>👨‍🏫 TEACHER DASHBOARD</Link>
-                        )}
-                        <Link href="/dashboard" className="block px-3 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-all text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>📊 MY DASHBOARD</Link>
+                      {/* ⚙️ Preferences Section */}
+                      <div className="p-3 border-b dark:border-slate-800">
+                        <div className="px-2 mb-2 text-[10px] uppercase font-black text-slate-400 tracking-[0.1em]">Preferences</div>
+                        <div className="flex items-center justify-between gap-2 px-2">
+                          <div className="flex-1">
+                            <LanguageSwitcher />
+                          </div>
+                          <div className="flex-shrink-0">
+                            <ThemeToggle />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 🔔 Notifications Section */}
+                      <div className="p-3 border-b dark:border-slate-800 bg-slate-50/30 dark:bg-white/5">
+                        <div className="px-2 mb-2 flex items-center justify-between">
+                          <span className="text-[10px] uppercase font-black text-slate-400 tracking-[0.1em]">Intelligence Alerts</span>
+                          <NotificationBell />
+                        </div>
+                      </div>
+
+                      {/* 👤 My Account Section */}
+                      <div className="p-3">
+                        <div className="px-2 mb-2 text-[10px] uppercase font-black text-slate-400 tracking-[0.1em]">My Account</div>
+                        <div className="grid gap-1">
+                          {effectiveRole === 'superadmin' && (
+                            <Link href="/admin/super" className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-all text-xs font-black shadow-lg shadow-purple-500/20 mb-1" onClick={() => setActionsOpen(false)}>
+                              🛡️ SUPER ADMIN CONSOLE
+                            </Link>
+                          )}
+                          <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" onClick={() => setActionsOpen(false)}>
+                            <span className="text-lg">📊</span>
+                            <span className="text-xs font-bold">Personal Dashboard</span>
+                          </Link>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                          <div className="flex items-center gap-2">
+                            <UserButton afterSignOutUrl="/" />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold">Session Profile</span>
+                              <span className="text-[8px] text-slate-400 uppercase tracking-tighter">{effectiveRole}</span>
+                            </div>
+                          </div>
+                          {!isPro && !isSuperAdmin && (
+                            <Link href="/pricing" onClick={() => setActionsOpen(false)}>
+                              <button className="text-[10px] font-black text-amber-600 bg-amber-100 dark:bg-amber-900/40 px-2 py-1 rounded-lg hover:scale-105 transition-transform">
+                                PRO 👑
+                              </button>
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -298,8 +357,8 @@ export function Navbar() {
               )}
             </div>
 
-            <div className="hidden xl:block">
-              <ThemeToggle />
+            <div className="hidden xl:flex items-center gap-2">
+              {/* Individual items removed as they are now in the Hub */}
             </div>
             {mounted && (
               <SignedIn>
@@ -313,10 +372,7 @@ export function Navbar() {
                     </Button>
                   </Link>
                 )}
-                <div className="flex items-center gap-2" suppressHydrationWarning={true}>
-                  <NotificationBell />
-                  <UserButton afterSignOutUrl="/" />
-                </div>
+                {/* Individual notification bell removed as it's in the Hub */}
               </SignedIn>
             )}
             <SignedOut>
@@ -326,12 +382,12 @@ export function Navbar() {
                   size="sm"
                   className="border-slate-200 dark:border-white text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10"
                 >
-                  Sign In
+                  {t('login')}
                 </Button>
               </SignInButton>
               <SignInButton mode="modal">
                 <Button variant="inverse" size="sm">
-                  Get Started
+                  {t('signup')}
                 </Button>
               </SignInButton>
             </SignedOut>
@@ -392,12 +448,15 @@ export function Navbar() {
                   );
                 })}
               </div>
-              {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher' || effectiveRole === 'student') && (
+              {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher' || effectiveRole === 'student' || effectiveRole === 'content_writer') && (
                 <div className="mt-2 border-t pt-2">
                   <div className="text-xs font-semibold text-slate-500 mb-2">Actions</div>
                   <div className="flex flex-col gap-2">
                     {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher') && (
                       <Link href="/admin/studio/courses" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>📚 Create Course</Link>
+                    )}
+                    {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'content_writer') && (
+                      <Link href="/admin/studio/news" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>🎙️ <span className="text-red-700">Terai Times</span> Studio</Link>
                     )}
                     <Link href="/admin/studio/blogs" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>📝 Write Blog</Link>
                     {effectiveRole === 'student' && (

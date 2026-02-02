@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { EngagementAnalytics } from './EngagementAnalytics';
+import { TrendingUp } from 'lucide-react';
 
 interface LiveClass {
     _id: string;
@@ -128,6 +130,15 @@ export function InstructorDashboard() {
                     </div>
                 </div>
             )}
+
+            {/* Engagement Analytics */}
+            <div>
+                <h2 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    Student Engagement
+                </h2>
+                <EngagementAnalytics />
+            </div>
 
             {/* Upcoming Classes */}
             <div>

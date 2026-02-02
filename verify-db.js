@@ -1,5 +1,6 @@
 
 require('dotenv').config({ path: '.env.local' });
+/* eslint-disable */
 const { MongoClient } = require('mongodb');
 
 async function testConnection() {

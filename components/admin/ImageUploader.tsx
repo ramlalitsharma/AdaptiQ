@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { MediaLibrary } from './MediaLibrary';
 
 interface ImageUploaderProps {
   value?: string;
@@ -13,6 +14,7 @@ interface ImageUploaderProps {
 export function ImageUploader({ value, onChange, label = 'Upload Image', accept = 'image/*' }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLibrary, setShowLibrary] = useState(false);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,7 +61,7 @@ export function ImageUploader({ value, onChange, label = 'Upload Image', accept 
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-slate-700">{label}</label>
-      
+
       {value && (
         <div className="relative w-full h-48 rounded-lg overflow-hidden border border-slate-200 mb-2">
           <img
@@ -99,6 +101,17 @@ export function ImageUploader({ value, onChange, label = 'Upload Image', accept 
             <span>{uploading ? 'Uploading...' : value ? 'Change Image' : 'Upload Image'}</span>
           </Button>
         </label>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowLibrary(true)}
+          className="gap-2"
+        >
+          📂 Library
+        </Button>
+
         {value && (
           <input
             type="text"
@@ -109,6 +122,30 @@ export function ImageUploader({ value, onChange, label = 'Upload Image', accept 
           />
         )}
       </div>
+
+      {/* Media Library Modal */}
+      {showLibrary && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Select Media</h3>
+                <p className="text-sm text-slate-500">Pick an existing asset or upload a new one.</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowLibrary(false)}>✕ Close</Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+              <MediaLibrary
+                allowSelection
+                onSelect={(url) => {
+                  onChange(url);
+                  setShowLibrary(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <p className="text-sm text-red-600">{error}</p>

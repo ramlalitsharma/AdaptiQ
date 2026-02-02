@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ParticipantManagement } from './ParticipantManagement';
+import Image from 'next/image';
 
 interface InstructorPanelProps {
   roomId: string;
@@ -21,13 +22,37 @@ export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
   const [breakoutRooms, setBreakoutRooms] = useState<Array<{ id: string; name: string }>>([]);
   const [participants, setParticipants] = useState<Array<{ userId: string; userName: string }>>([]);
 
+  const fetchQnaQueue = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/live/qna?roomId=${roomId}`);
+      const data = await res.json();
+      if (data.success) {
+        setQnaQueue(data.data?.pending || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch Q&A queue:', error);
+    }
+  }, [roomId]);
+
+  const fetchPolls = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/live/student/polls?roomId=${roomId}`);
+      const data = await res.json();
+      if (data.success) {
+        setPolls(data.data?.active || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch polls:', error);
+    }
+  }, [roomId]);
+
   useEffect(() => {
     if (activeTab === 'qna') {
-      fetchQnaQueue();
+      setTimeout(() => fetchQnaQueue(), 0);
       const interval = setInterval(fetchQnaQueue, 3000);
       return () => clearInterval(interval);
     } else if (activeTab === 'polls') {
-      fetchPolls();
+      setTimeout(() => fetchPolls(), 0);
       const interval = setInterval(fetchPolls, 3000);
       return () => clearInterval(interval);
     } else if (activeTab === 'chat') {
@@ -47,31 +72,7 @@ export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
       }, 4000);
       return () => clearInterval(interval);
     }
-  }, [activeTab, roomId]);
-
-  const fetchQnaQueue = async () => {
-    try {
-      const res = await fetch(`/api/live/qna?roomId=${roomId}`);
-      const data = await res.json();
-      if (data.success) {
-        setQnaQueue(data.data?.pending || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch Q&A queue:', error);
-    }
-  };
-
-  const fetchPolls = async () => {
-    try {
-      const res = await fetch(`/api/live/student/polls?roomId=${roomId}`);
-      const data = await res.json();
-      if (data.success) {
-        setPolls(data.data?.active || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch polls:', error);
-    }
-  };
+  }, [activeTab, roomId, fetchQnaQueue, fetchPolls]);
 
   useEffect(() => {
     if (activeTab === 'breakouts') {
@@ -395,7 +396,16 @@ export function InstructorPanel({ roomId, jitsiApi }: InstructorPanelProps) {
                   </div>
                   {msg.isPinned && <p className="text-[10px] text-amber-600">Pinned</p>}
                   <p className="text-sm text-slate-700 mt-1 break-words">{msg.content}</p>
-                  {msg.imageUrl && <img src={msg.imageUrl} className="mt-2 rounded-lg max-h-40 object-cover" />}
+                  {msg.imageUrl && (
+                    <Image
+                      src={msg.imageUrl}
+                      alt=""
+                      width={640}
+                      height={360}
+                      unoptimized
+                      className="mt-2 rounded-lg max-h-40 object-cover"
+                    />
+                  )}
                   <div className="flex gap-2 mt-2">
                     <Button
                       variant="outline"

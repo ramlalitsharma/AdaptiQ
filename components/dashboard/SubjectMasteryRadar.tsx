@@ -26,7 +26,7 @@ interface MasteryData {
 }
 
 interface SubjectMasteryRadarProps {
-    // No props - always fetch real data
+    className?: string;
 }
 
 export function SubjectMasteryRadar(_props: SubjectMasteryRadarProps = {}) {
