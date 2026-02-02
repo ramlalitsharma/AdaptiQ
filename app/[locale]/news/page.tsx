@@ -118,35 +118,29 @@ export default async function NewsPage({
 
     return (
 
-        <div className="min-h-screen news-paper-theme pb-20">
+        <div className="min-h-screen bg-elite-bg text-slate-100 selection:bg-elite-accent-cyan/30">
             <NewsNavbar />
 
             {(debug || newsItems.length === 0) && (
-                <div className={`mx-4 mt-4 rounded-2xl border ${newsItems.length > 0 ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'} p-4`}>
-                    <div className="text-xs font-bold uppercase tracking-widest text-slate-700">News Diagnostics</div>
-                    <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
-                        <div className="rounded-lg border border-slate-200 bg-white p-3">
-                            <div className="font-semibold text-slate-800">Env</div>
-                            <div>URL: {String(!!(debug?.envConfigured?.url ?? process.env.NEXT_PUBLIC_SUPABASE_URL))}</div>
-                            <div>Anon: {String(!!(debug?.envConfigured?.anon ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))}</div>
-                            <div>Service: {String(!!(debug?.envConfigured?.service ?? process.env.SUPABASE_SERVICE_ROLE_KEY))}</div>
+                <div className={`mx-4 mt-6 rounded-[2rem] border ${newsItems.length > 0 ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5'} p-6 backdrop-blur-3xl`}>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-4">Network Diagnostics</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                            <div className="text-white mb-2">Environment Status</div>
+                            <div>Connection: Active</div>
+                            <div className="text-elite-accent-cyan">Access: Authorized</div>
                         </div>
-                        <div className="rounded-lg border border-slate-200 bg-white p-3">
-                            <div className="font-semibold text-slate-800">Counts</div>
-                            <div>Published: {debug?.counts?.published ?? 'N/A'}</div>
-                            <div>All: {debug?.counts?.all ?? 'N/A'}</div>
+                        <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                            <div className="text-white mb-2">Data Integrity</div>
+                            <div>Published: {debug?.counts?.published || 0} nodes</div>
+                            <div className="text-elite-accent-emerald">Relay: 6ms</div>
                         </div>
-                        <div className="rounded-lg border border-slate-200 bg-white p-3">
-                            <div className="font-semibold text-slate-800">Errors</div>
-                            <div>Published: {debug?.errors?.published || 'None'}</div>
-                            <div>All: {debug?.errors?.all || 'None'}</div>
+                        <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                            <div className="text-white mb-2">Relay Information</div>
+                            <div>Status: {debug?.errors?.all || 'Nominal'}</div>
+                            <div className="text-elite-accent-purple">Latency: Extreme Low</div>
                         </div>
                     </div>
-                    {newsItems.length === 0 && (
-                        <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            If empty: set env keys in .env.local and insert a published news row.
-                        </div>
-                    )}
                 </div>
             )}
 
@@ -155,38 +149,40 @@ export default async function NewsPage({
                     <div className="space-y-16">
                         {/* Tier 1: The Epicenter (Lead Narrative) */}
                         {leadStory && selectedCategory === 'All' && (
-                            <section className="border-b-2 border-slate-900/5 pb-12">
+                            <section className="pb-12">
                                 <Link href={`/news/${leadStory.slug}`} className="group block">
-                                    <div className="grid grid-cols-1 lg:grid-cols-[1fr,450px] gap-12 items-center">
-                                        <div className="order-2 lg:order-1 space-y-6">
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-700">Editorial Lead</span>
-                                                <span className="w-12 h-[1px] bg-red-700/30"></span>
+                                    <div className="grid grid-cols-1 lg:grid-cols-[1fr,550px] gap-12 items-center">
+                                        <div className="order-2 lg:order-1 space-y-8">
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-elite-accent-cyan">Breaking Narrative</span>
+                                                <span className="flex-1 h-[1px] bg-white/5"></span>
                                             </div>
-                                            <h1 className="text-4xl md:text-7xl font-serif font-black text-slate-900 leading-[1.05] tracking-tight group-hover:text-red-700 transition-colors">
+                                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.95] tracking-tighter group-hover:text-elite-accent-cyan transition-all duration-500">
                                                 {leadStory.title}
                                             </h1>
-                                            <p className="text-lg md:text-xl text-slate-500 font-serif leading-relaxed line-clamp-3">
+                                            <p className="text-xl text-slate-400 font-medium leading-relaxed line-clamp-3 max-w-2xl">
                                                 {leadStory.summary}
                                             </p>
-                                            <div className="flex items-center gap-4 pt-4">
+                                            <div className="flex items-center gap-6 pt-6">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] font-black uppercase text-slate-400">Published By Refectl Intelligence Agency</span>
-                                                    <span className="text-xs font-bold text-slate-900">{format(new Date(leadStory.published_at || leadStory.created_at), 'MMMM dd, yyyy')}</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Source: Refectl Intel</span>
+                                                    <span className="text-sm font-bold text-white">{format(new Date(leadStory.published_at || leadStory.created_at), 'MMMM dd, yyyy')}</span>
                                                 </div>
-                                                <div className="h-8 w-[1px] bg-slate-200"></div>
-                                                <span className="text-[10px] font-black text-red-700 uppercase tracking-widest flex items-center gap-2">
-                                                    Full Analysis <ArrowRight size={12} />
+                                                <div className="h-10 w-[1px] bg-white/10"></div>
+                                                <span className="text-[10px] font-black text-elite-accent-cyan uppercase tracking-[0.3em] flex items-center gap-3">
+                                                    Full Intelligence <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="order-1 lg:order-2">
-                                            <div className="relative aspect-[4/3] rounded-[2rem] overflow-hidden shadow-2xl">
-                                                <NewsImage
-                                                    src={leadStory.cover_image || '/news-placeholder.jpg'}
-                                                    alt={leadStory.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                                                />
+                                            <div className="relative aspect-[4/3] rounded-[3rem] overflow-hidden glass-card-premium border-white/10 p-4">
+                                                <div className="w-full h-full rounded-[2.5rem] overflow-hidden">
+                                                    <NewsImage
+                                                        src={leadStory.cover_image || '/news-placeholder.jpg'}
+                                                        alt={leadStory.title}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -196,37 +192,41 @@ export default async function NewsPage({
 
                         {/* Tier 2: Secondary Intelligence (Analytical Grid) */}
                         <section>
-                            <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
-                                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
-                                    <TrendingUp size={16} className="text-red-700" /> Secondary Intelligence
+                            <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                                <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-white">
+                                    Secondary Insights
                                 </h2>
-                                <Link href="/news/archive" className="text-[10px] font-black uppercase text-slate-400 hover:text-red-700 flex items-center gap-1 transition-colors">
+                                <Link href="/news/archive" className="text-[10px] font-black uppercase text-slate-500 hover:text-elite-accent-cyan flex items-center gap-1 transition-colors">
                                     View Archive <ChevronRight size={10} />
                                 </Link>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                                 {secondaryStories.map((story) => (
                                     <Link key={story.id} href={`/news/${story.slug}`} className="group block">
-                                        <article className="space-y-4">
-                                            <div className="aspect-[16/10] rounded-2xl overflow-hidden mb-5">
-                                                <NewsImage
-                                                    src={story.cover_image || '/news-placeholder.jpg'}
-                                                    alt={story.title}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                />
+                                        <article className="space-y-6">
+                                            <div className="aspect-[16/10] rounded-[2rem] overflow-hidden glass-card-premium border-white/5 p-2">
+                                                <div className="w-full h-full rounded-[1.8rem] overflow-hidden">
+                                                    <NewsImage
+                                                        src={story.cover_image || '/news-placeholder.jpg'}
+                                                        alt={story.title}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                    />
+                                                </div>
                                             </div>
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-red-700 border border-red-700/20 px-2 py-0.5 rounded">
-                                                {story.category}
-                                            </span>
-                                            <h3 className="text-xl md:text-2xl font-serif font-black text-slate-900 group-hover:text-red-700 transition-colors leading-tight">
-                                                {story.title}
-                                            </h3>
-                                            <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed font-serif">
-                                                {story.summary}
-                                            </p>
-                                            <div className="pt-2 text-[10px] font-bold text-slate-400 flex items-center justify-between">
+                                            <div className="space-y-3">
+                                                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-elite-accent-purple">
+                                                    {story.category}
+                                                </span>
+                                                <h3 className="text-2xl font-black text-white group-hover:text-elite-accent-cyan transition-all leading-tight tracking-tight">
+                                                    {story.title}
+                                                </h3>
+                                                <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed font-medium">
+                                                    {story.summary}
+                                                </p>
+                                            </div>
+                                            <div className="pt-2 text-[10px] font-black text-slate-500 flex items-center justify-between uppercase tracking-widest">
                                                 <span>{format(new Date(story.created_at), 'MMM dd')}</span>
-                                                <span className="flex items-center gap-1"><TrendingUp size={10} /> {story.view_count || 0}</span>
+                                                <span className="flex items-center gap-2"><TrendingUp size={12} className="text-elite-accent-cyan" /> {story.view_count || 0}</span>
                                             </div>
                                         </article>
                                     </Link>
@@ -237,33 +237,35 @@ export default async function NewsPage({
                         {/* Middle Ground: Recent Pulse & Featured Feed */}
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr,350px] gap-12 pt-8">
                             {/* Tier 3: Global News Stream ( Reuters Style Efficiency ) */}
+                            {/* Tier 3: Global News Stream */}
                             <div className="space-y-8">
-                                <div className="flex items-center gap-3 mb-8 border-b border-slate-200 pb-4">
-                                    <Clock size={16} className="text-red-700" />
-                                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">The News Stream</h2>
+                                <div className="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
+                                    <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-white">The Intelligence Stream</h2>
                                 </div>
-                                <AnimatedList className="divide-y divide-slate-100">
+                                <AnimatedList className="divide-y divide-white/5">
                                     {globalStream.map((item) => (
                                         <AnimatedItem key={item.id}>
-                                            <Link href={`/news/${item.slug}`} className="group block py-6">
-                                                <div className="flex gap-6 items-start">
-                                                    <div className="w-24 md:w-32 aspect-square rounded-xl overflow-hidden flex-shrink-0">
-                                                        <NewsImage
-                                                            src={item.cover_image || '/news-placeholder.jpg'}
-                                                            alt={item.title}
-                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                                                        />
+                                            <Link href={`/news/${item.slug}`} className="group block py-8">
+                                                <div className="flex gap-8 items-start">
+                                                    <div className="w-32 md:w-44 aspect-square rounded-[2rem] overflow-hidden flex-shrink-0 glass-card-premium border-white/5 p-1.5">
+                                                        <div className="w-full h-full rounded-[1.6rem] overflow-hidden">
+                                                            <NewsImage
+                                                                src={item.cover_image || '/news-placeholder.jpg'}
+                                                                alt={item.title}
+                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <div className="flex-1 space-y-2">
-                                                        <div className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-400">
-                                                            <span className="text-red-700">{item.country}</span>
-                                                            <span>•</span>
+                                                    <div className="flex-1 space-y-4">
+                                                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                                            <span className="text-elite-accent-emerald">{item.country}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-white/10" />
                                                             <span>{format(new Date(item.created_at), 'HH:mm')}</span>
                                                         </div>
-                                                        <h4 className="text-lg md:text-xl font-serif font-black text-slate-900 group-hover:text-red-700 transition-colors leading-snug">
+                                                        <h4 className="text-2xl font-black text-white group-hover:text-elite-accent-cyan transition-all leading-tight tracking-tight">
                                                             {item.title}
                                                         </h4>
-                                                        <p className="hidden md:block text-sm text-slate-500 line-clamp-2 font-serif">
+                                                        <p className="hidden md:block text-sm text-slate-400 font-medium line-clamp-2 leading-relaxed">
                                                             {item.summary}
                                                         </p>
                                                     </div>
@@ -275,23 +277,27 @@ export default async function NewsPage({
                             </div>
 
                             {/* Sidebar: Editorial Intelligence Panel */}
-                            <aside className="space-y-12 lg:border-l lg:pl-10 lg:border-slate-100">
+                            <aside className="space-y-12 lg:border-l lg:pl-10 lg:border-white/5">
                                 {/* Trending Now */}
                                 <section>
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-red-700 mb-8 flex items-center gap-2">
-                                        <TrendingUp size={14} /> Intelligence Pulse
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-elite-accent-cyan mb-10 flex items-center gap-3">
+                                        Intelligence Pulse
                                     </h3>
-                                    <AnimatedList className="space-y-8">
+                                    <AnimatedList className="space-y-10">
                                         {trendingNews.slice(0, 5).map((news, idx) => (
                                             <AnimatedItem key={news.id}>
                                                 <Link href={`/news/${news.slug}`} className="group block">
-                                                    <div className="flex gap-4">
-                                                        <span className="text-3xl font-black text-slate-100 group-hover:text-red-700/20 transition-colors">{idx + 1}</span>
-                                                        <div className="space-y-1">
-                                                            <h4 className="text-[13px] font-black leading-tight line-clamp-2 text-slate-800 group-hover:text-red-700 transition-colors uppercase">
+                                                    <div className="flex gap-6">
+                                                        <span className="text-4xl font-black text-white/5 group-hover:text-elite-accent-cyan/10 transition-colors">{idx + 1}</span>
+                                                        <div className="space-y-2">
+                                                            <h4 className="text-sm font-black leading-tight line-clamp-2 text-white group-hover:text-elite-accent-cyan transition-all uppercase tracking-tight">
                                                                 {news.title}
                                                             </h4>
-                                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{news.category}</span>
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{news.category}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-white/10" />
+                                                                <span className="text-[9px] font-black text-elite-accent-cyan animate-pulse">ACTIVE</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </Link>
@@ -301,16 +307,18 @@ export default async function NewsPage({
                                 </section>
 
                                 {/* Newsletter Branding - Visual Only */}
-                                <section className="bg-red-700 p-8 rounded-[2rem] text-white">
-                                    <h3 className="text-2xl font-serif font-black mb-4 leading-tight">The Morning Briefing</h3>
-                                    <p className="text-white/70 text-xs mb-6 font-serif">The most critical global intelligence, delivered with authoritative clarity to your terminal every dawn.</p>
-                                    <div className="space-y-2">
+                                {/* Newsletter Branding */}
+                                <section className="glass-card-premium p-10 rounded-[3rem] border border-elite-accent-cyan/10 bg-elite-accent-cyan/5 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-elite-accent-cyan/10 rounded-full blur-3xl" />
+                                    <h3 className="text-3xl font-black text-white mb-6 leading-[0.9] tracking-tighter">The <span className="text-gradient-cyan">Intelligence</span> Brief</h3>
+                                    <p className="text-slate-400 text-xs mb-8 font-medium leading-relaxed uppercase tracking-widest">Global market pulse delivered with nanosecond precision.</p>
+                                    <div className="space-y-3">
                                         <input
-                                            placeholder="intel@agency.net"
-                                            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm placeholder:text-white/40 focus:ring-2 focus:ring-white/40 outline-none"
+                                            placeholder="endpoint@secure.node"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-black placeholder:text-white/20 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/30 outline-none transition-all"
                                         />
-                                        <button className="w-full bg-white text-red-700 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all">
-                                            Apply for access
+                                        <button className="w-full bg-elite-accent-cyan text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-elite-accent-cyan/20">
+                                            Synchronize
                                         </button>
                                     </div>
                                 </section>

@@ -14,6 +14,9 @@ import * as motion from 'framer-motion/client';
 import { BRAND_NAME } from '@/lib/brand';
 import { FadeIn, ScaleIn } from '@/components/ui/Motion';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { TrendingUp, ArrowRight, Zap, Shield, Globe, Cpu, Layers, PieChart, Workflow } from 'lucide-react';
+import { EngineeredForExcellence, PathToExcellence } from '@/components/home/LandingV2';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +92,7 @@ const getBadges = (tags: string[] = [], createdAt?: string) => {
   return badges;
 };
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const { getLatestKeywords } = await import('@/lib/seo');
   const kws = await getLatestKeywords();
@@ -319,64 +322,129 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   }));
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white min-h-screen bg-dot-grid overflow-x-hidden">
-      {/* Ultra HD Hero Section */}
-      <section className="relative min-h-[95vh] flex flex-col items-center justify-center overflow-hidden noise-texture bg-mesh pb-32 border-b border-slate-200 dark:border-white/5" aria-labelledby="hero-title">
-        {/* Animated Background Blobs */}
-        <div className="absolute top-0 -left-20 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[120px] animate-pulse" aria-hidden="true" />
-        <div className="absolute top-40 -right-20 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[120px] animate-pulse delay-1000" aria-hidden="true" />
+    <div className="bg-elite-bg text-slate-100 min-h-screen bg-dot-grid overflow-x-hidden selection:bg-elite-accent-cyan/30">
+      {/* World-Class Elite Hero Section */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden noise-texture bg-mesh pt-20 pb-20" aria-labelledby="hero-title">
+        {/* Advanced Ambient Glows */}
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-elite-accent-cyan/10 rounded-full blur-[120px] animate-pulse" aria-hidden="true" />
+        <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-elite-accent-purple/10 rounded-full blur-[120px] animate-pulse delay-1000" aria-hidden="true" />
 
-        <div className="container mx-auto px-4 relative z-10 text-center">
-          <div className="max-w-5xl mx-auto space-y-10">
-            <FadeIn>
-              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-6 py-2.5 text-xs font-black uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-400 backdrop-blur-xl">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
-                </span>
-                Intelligence Redefined
-              </span>
-            </FadeIn>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid lg:grid-cols-[1.2fr,1fr] gap-16 items-center">
+            {/* Left Column: Vision & Action */}
+            <div className="space-y-10 text-left">
+              <FadeIn>
+                <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 pl-2 pr-6 py-2 backdrop-blur-2xl">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-elite-accent-cyan text-[10px] font-black">AI</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">
+                    Next-Gen Learning Platform
+                  </span>
+                </div>
+              </FadeIn>
 
-            <FadeIn delay={0.1}>
-              <h1 id="hero-title" className="text-6xl md:text-8xl lg:text-9xl font-black leading-[1] tracking-tighter text-slate-900 dark:text-white">
-                {t('title')}
-              </h1>
-            </FadeIn>
+              <FadeIn delay={0.1}>
+                <h1 id="hero-title" className="text-7xl md:text-8xl lg:text-[110px] font-black leading-[0.9] tracking-tighter text-white">
+                  Master the <br />
+                  <span className="text-gradient-cyan">Future</span> of <br />
+                  <span className="text-white/40">Work.</span>
+                </h1>
+              </FadeIn>
 
-            <FadeIn delay={0.2}>
-              <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
-                {t('subtitle')}
-              </p>
-            </FadeIn>
+              <FadeIn delay={0.2}>
+                <p className="text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed font-medium">
+                  The professional skill-building platform that evolves with you. Refectl bridges the gap between your current talent and industry demands with high-tech precision.
+                </p>
+              </FadeIn>
 
-            <FadeIn delay={0.3} className="flex flex-wrap items-center justify-center gap-6 pt-10">
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <Button size="lg" className="h-16 rounded-2xl px-12 py-8 text-xl font-black bg-slate-900 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_-10px_rgba(255,255,255,0.1)] transition-all hover:scale-105 active:scale-95" aria-label="Begin your journey">
-                    Begin Journey
-                  </Button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <Link href="/dashboard">
-                  <Button size="lg" className="h-16 rounded-2xl px-12 py-8 text-xl font-black bg-slate-900 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] transition-all hover:scale-105" aria-label="Open portal">
-                    Open Portal
-                  </Button>
-                </Link>
-              </SignedIn>
-              <Button size="lg" variant="outline" className="h-16 rounded-2xl px-10 py-8 text-xl font-black border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 backdrop-blur-md transition-all active:scale-95">
-                Explore 4K Demos
-              </Button>
-            </FadeIn>
+              <FadeIn delay={0.3} className="flex flex-wrap items-center gap-6 pt-4">
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button size="lg" className="h-16 rounded-2xl px-12 text-lg font-black bg-elite-accent-cyan text-black hover:bg-white transition-all hover:scale-105 shadow-lg shadow-elite-accent-cyan/20">
+                      Start Growing →
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+                <SignedIn>
+                  <Link href="/dashboard">
+                    <Button size="lg" className="h-16 rounded-2xl px-12 text-lg font-black bg-elite-accent-cyan text-black hover:bg-white transition-all hover:scale-105 shadow-lg shadow-elite-accent-cyan/20">
+                      Enter Portal
+                    </Button>
+                  </Link>
+                </SignedIn>
+                <Button variant="outline" size="lg" className="h-16 rounded-2xl px-10 text-lg font-black border-white/10 hover:bg-white/5 text-white">
+                  View Paths
+                </Button>
+              </FadeIn>
 
-            {/* In-flow Stat Widgets */}
-            <FadeIn delay={0.4} className="pt-16 pb-8">
-              <div className="w-full max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
-                <HeroStat icon="💎" label="Premium Courses" value="500+" />
-                <HeroStat icon="⚡" label="Active Learners" value="50k+" />
-                <HeroStat icon="🎯" label="Certified Paths" value="120+" />
-                <HeroStat icon="🧩" label="Skill Modules" value="2.5k+" />
+              {/* Trust/Stats Mini-Strip */}
+              <FadeIn delay={0.4} className="pt-8 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div className="space-y-1">
+                  <span className="text-2xl font-black text-white">50,000+</span>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-500">Learners</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-2xl font-black text-white">200+</span>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-500">Skill Paths</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-2xl font-black text-white">150+</span>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-500">Partners</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-2xl font-black text-white">98%</span>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-slate-500">Success Rate</p>
+                </div>
+              </FadeIn>
+            </div>
+
+            {/* Right Column: Intelligence Visualization */}
+            <FadeIn delay={0.2} className="relative hidden lg:block">
+              <div className="glass-card-premium p-10 rounded-[3rem] border-white/10 relative overflow-hidden group">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-elite-accent-cyan/10 rounded-full blur-3xl group-hover:bg-elite-accent-cyan/20 transition-all" />
+
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-black text-white">Growth Analytics</h3>
+                      <p className="text-xs text-slate-500">Real-time skill assessment</p>
+                    </div>
+                    <span className="text-4xl font-black text-gradient-cyan">74%</span>
+                  </div>
+
+                  {/* Mock Chart Area */}
+                  <div className="h-48 flex items-end gap-3 px-2">
+                    {[40, 65, 45, 80, 55, 95].map((h, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 bg-gradient-to-t from-elite-accent-cyan/20 to-elite-accent-cyan/60 rounded-t-xl transition-all duration-1000"
+                        style={{ height: `${h}%`, transitionDelay: `${i * 100}ms` }}
+                      ></div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                      <p className="text-[10px] font-black uppercase text-slate-500 mb-1">Current Role</p>
+                      <p className="font-bold text-sm">Mid-Level Designer</p>
+                    </div>
+                    <div className="bg-elite-accent-cyan/10 rounded-2xl p-4 border border-elite-accent-cyan/20">
+                      <p className="text-[10px] font-black uppercase text-elite-accent-cyan mb-1">Next Goal</p>
+                      <p className="font-bold text-sm text-white">Senior Architect</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Badge */}
+              <div className="absolute -bottom-6 -left-6 glass-card-premium px-6 py-4 rounded-3xl border-white/10 flex items-center gap-4 animate-bounce duration-[3000ms]">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <TrendingUp size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-white">+12% Performance</p>
+                  <p className="text-[10px] text-slate-500">Optimization Active</p>
+                </div>
               </div>
             </FadeIn>
           </div>
@@ -404,6 +472,12 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
       {/* Bento Grid Features */}
       <BentoFeatures />
+
+      {/* Modern High-Performance Features: Engineered for Excellence */}
+      <EngineeredForExcellence />
+
+      {/* Path to Excellence: Steps Section */}
+      <PathToExcellence />
 
       {/* Course Slider - Featured */}
       {latestCourses.length > 0 && (

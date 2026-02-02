@@ -45,41 +45,27 @@ interface UserRankData {
 }
 
 const getTier = (rank: number): TierInfo => {
-    if (rank === 1) return { name: 'Platinum', color: 'from-blue-400 to-cyan-400', icon: '💎', textColor: 'text-cyan-700' };
-    if (rank <= 10) return { name: 'Gold', color: 'from-yellow-400 to-orange-400', icon: '🥇', textColor: 'text-yellow-700' };
-    if (rank <= 50) return { name: 'Silver', color: 'from-slate-300 to-slate-400', icon: '🥈', textColor: 'text-slate-600' };
-    return { name: 'Bronze', color: 'from-amber-600 to-amber-700', icon: '🥉', textColor: 'text-amber-700' };
-};
-
-const getRankMedal = (rank: number) => {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return `#${rank}`;
+    if (rank === 1) return { name: 'EXECUTIVE', color: 'from-elite-accent-cyan/20 to-elite-accent-cyan/40', icon: '💎', textColor: 'text-elite-accent-cyan' };
+    if (rank <= 10) return { name: 'ELITE', color: 'from-elite-accent-purple/20 to-elite-accent-purple/40', icon: '🥇', textColor: 'text-elite-accent-purple' };
+    if (rank <= 50) return { name: 'PROFICIENT', color: 'from-elite-accent-blue/20 to-elite-accent-blue/40', icon: '🥈', textColor: 'text-elite-accent-blue' };
+    return { name: 'OPERATIVE', color: 'from-slate-500/20 to-slate-500/40', icon: '🥉', textColor: 'text-slate-400' };
 };
 
 export function TieredLeaderboard({ entries: propEntries, currentUserRank: propRank }: TieredLeaderboardProps = {}) {
-    // State for Live Data
     const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
     const [userRankData, setUserRankData] = useState<UserRankData | null>(null);
-    const [previousRanks, setPreviousRanks] = useState<Map<string, number>>(new Map()); // Map<UserId, Rank>
+    const [previousRanks, setPreviousRanks] = useState<Map<string, number>>(new Map());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-    // Polling Interval (60s)
     useEffect(() => {
         if (propEntries && propRank !== undefined) {
             setLoading(false);
             return;
         }
 
-        fetchLeaderboard(); // Initial fetch
-
-        const interval = setInterval(() => {
-            fetchLeaderboard();
-        }, 60000);
-
+        fetchLeaderboard();
+        const interval = setInterval(fetchLeaderboard, 60000);
         return () => clearInterval(interval);
     }, [propEntries, propRank]);
 
@@ -91,8 +77,6 @@ export function TieredLeaderboard({ entries: propEntries, currentUserRank: propR
 
             const rankResult = await rankRes.json();
             if (rankResult.success && rankResult.data) {
-
-                // Store previous ranks before updating
                 setLeaderboardData(prev => {
                     if (prev?.leaderboard) {
                         const prevMap = new Map();
@@ -103,7 +87,6 @@ export function TieredLeaderboard({ entries: propEntries, currentUserRank: propR
                 });
 
                 setUserRankData(rankResult.data);
-
                 const surroundingWithTiers = rankResult.data.surrounding.map((entry: LeaderboardEntry & { tier: TierInfo }) => ({
                     ...entry,
                     tier: entry.tier || getTier(entry.rank),
@@ -113,13 +96,10 @@ export function TieredLeaderboard({ entries: propEntries, currentUserRank: propR
                     leaderboard: surroundingWithTiers,
                     totalUsers: rankResult.data.total,
                 });
-
-                setLastUpdated(new Date());
                 setError(null);
             }
         } catch (err: any) {
             console.error('Error fetching leaderboard:', err);
-            // Don't set error state on poll fail usually, just log
             if (loading) setError(err.message);
         } finally {
             setLoading(false);
@@ -129,138 +109,143 @@ export function TieredLeaderboard({ entries: propEntries, currentUserRank: propR
     const getMovement = (userId: string, currentRank: number) => {
         if (!previousRanks.has(userId)) return 'same';
         const prev = previousRanks.get(userId)!;
-        if (prev > currentRank) return 'up';   // Rank went down (e.g. 5 -> 4), so moved UP
-        if (prev < currentRank) return 'down'; // Rank went up (e.g. 4 -> 5), so moved DOWN
+        if (prev > currentRank) return 'up';
+        if (prev < currentRank) return 'down';
         return 'same';
     };
 
-    const currentUserTier = userRankData?.tier || getTier(1);
-    const currentUserRank = userRankData?.rank || 0;
-    const entries = leaderboardData?.leaderboard || [];
-
-    // Loading state
     if (loading) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardHeader>
-                    <CardTitle className="text-lg uppercase tracking-wide text-teal-700">
-                        🏆 Leaderboard
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="h-24 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl animate-pulse" />
-                    <div className="grid grid-cols-4 gap-2">
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="h-16 bg-slate-100 rounded animate-pulse" />
-                        ))}
-                    </div>
+            <div className="animate-pulse space-y-6">
+                <div className="h-32 bg-white/5 rounded-[2.5rem]" />
+                <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />
+                        <div key={i} className="h-16 bg-white/5 rounded-2xl" />
                     ))}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         );
     }
 
     if (error) {
-        return <div className="p-4 text-red-500">Failed to load: {error}</div>;
+        return (
+            <div className="p-12 text-center bg-red-500/5 border border-red-500/20 rounded-[2rem]">
+                <div className="text-3xl mb-4">⚠️</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-red-500">Ranking Synchrony Lost</div>
+            </div>
+        );
     }
 
+    const currentUserTier = userRankData?.tier || getTier(100);
+    const currentUserRank = userRankData?.rank || 0;
+    const entries = leaderboardData?.leaderboard || [];
+
     return (
-        <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-            <CardHeader>
-                <CardTitle className="text-lg uppercase tracking-wide text-teal-700 flex items-center justify-between">
-                    <span className="flex items-center gap-3">
-                        🏆 Leaderboard
-                        {/* Live Indicator */}
-                        <div className="flex items-center gap-2 px-2 py-1 bg-red-50 rounded-full border border-red-100">
-                            <span className="relative flex h-2 w-2">
-                                <motion.span
-                                    animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0.7] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"
-                                />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600" />
-                            </span>
-                            <span className="text-[10px] font-bold tracking-wider text-red-600 uppercase">
-                                Live
-                            </span>
-                        </div>
-                    </span>
-                    <span className={`text-sm font-normal normal-case ${currentUserTier.textColor}`} >
-                        {currentUserTier.icon} {currentUserTier.name}
-                    </span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {/* Current Tier Badge */}
-                <div className={`p-4 rounded-xl bg-gradient-to-r ${currentUserTier.color} text-white`}>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="text-sm font-medium opacity-90">Your Tier</div>
-                            <div className="text-2xl font-black">{currentUserTier.name}</div>
-                        </div>
-                        <div className="text-5xl">{currentUserTier.icon}</div>
-                    </div>
-                    <div className="mt-2 text-sm opacity-90">
-                        Rank #{currentUserRank} • Top {userRankData?.percentile?.toFixed(1) || '0.0'}%
+        <div className="glass-card-premium rounded-[2.5rem] p-8 border border-white/5">
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-black text-white uppercase tracking-widest">Global Order</h2>
+                    <div className="flex items-center gap-2 px-2 py-1 bg-red-500/10 border border-red-500/20 rounded-full">
+                        <span className="relative flex h-1.5 w-1.5">
+                            <motion.span
+                                animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="absolute inline-flex h-full w-full rounded-full bg-red-500"
+                            />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                        </span>
+                        <span className="text-[8px] font-black tracking-widest text-red-500 uppercase">Live Pulse</span>
                     </div>
                 </div>
-
-                {/* Tier Legend */}
-                <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                    <div><div className="text-xl">💎</div><span className="font-semibold text-cyan-700">Plat</span></div>
-                    <div><div className="text-xl">🥇</div><span className="font-semibold text-yellow-700">Gold</span></div>
-                    <div><div className="text-xl">🥈</div><span className="font-semibold text-slate-600">Silver</span></div>
-                    <div><div className="text-xl">🥉</div><span className="font-semibold text-amber-700">Bronze</span></div>
+                <div className={`text-[10px] font-black uppercase tracking-widest ${currentUserTier.textColor}`}>
+                    {currentUserTier.icon} {currentUserTier.name} GRADE
                 </div>
+            </div>
 
-                {/* Leaderboard Entries */}
-                <div className="space-y-2">
-                    {entries.map((entry, index) => {
-                        const tier = getTier(entry.rank);
-                        const movement = getMovement(entry.userId, entry.rank);
-
-                        return (
-                            <motion.div
-                                layout
-                                key={entry.userId} // Use UserID as key for stable animations
-                                className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${entry.isCurrentUser
-                                    ? 'bg-teal-50 border-teal-300 shadow-md'
-                                    : 'bg-white border-slate-200 hover:border-teal-200'
-                                    }`}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                            >
-                                {/* Rank & Movement */}
-                                <div className="flex flex-col items-center min-w-[30px]">
-                                    <span className="font-bold text-slate-700">#{entry.rank}</span>
-                                    {movement === 'up' && <span className="text-[10px] text-green-500 font-bold">▲</span>}
-                                    {movement === 'down' && <span className="text-[10px] text-red-500 font-bold">▼</span>}
-                                </div>
-
-                                {/* Avatar */}
-                                <div className="text-2xl">{entry.avatar || '👤'}</div>
-
-                                {/* User Info */}
-                                <div className="flex-1 min-w-0">
-                                    <div className={`font-semibold truncate ${entry.isCurrentUser ? 'text-teal-700' : 'text-slate-800'}`}>
-                                        {entry.userName || 'User'}
-                                        {entry.isCurrentUser && <span className="ml-2 text-xs bg-teal-200 text-teal-700 px-2 py-0.5 rounded-full">You</span>}
-                                    </div>
-                                    <div className="text-xs text-slate-500">
-                                        {entry.xp?.toLocaleString() || 0} XP
-                                    </div>
-                                </div>
-                            </motion.div>
-                        );
-                    })}
+            {/* User Rank Summary */}
+            <div className={`p-6 rounded-3xl bg-gradient-to-br ${currentUserTier.color} border border-white/5 mb-8 relative overflow-hidden group`}>
+                <div className="absolute top-0 right-0 p-8 text-6xl opacity-20 transition-transform group-hover:scale-110 duration-500">
+                    {currentUserTier.icon}
                 </div>
+                <div className="relative z-10 space-y-4">
+                    <div className="space-y-1">
+                        <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Current Standing</div>
+                        <div className="text-3xl font-black text-white tracking-tighter">RANK #{currentUserRank}</div>
+                    </div>
+                    <div className="text-[10px] font-black text-white uppercase tracking-widest">
+                        SUPERIOR TO {userRankData?.percentile?.toFixed(1) || '0.0'}% OF ALL OPERATIVES
+                    </div>
+                </div>
+            </div>
 
-                <p className="text-center text-xs text-slate-400 mt-4">
-                    Updates live every 60s
-                </p>
-            </CardContent>
-        </Card>
+            {/* Tier Legend */}
+            <div className="grid grid-cols-4 gap-2 mb-8 p-4 bg-white/5 rounded-2xl border border-white/5">
+                {[
+                    { icon: '💎', label: 'EXEC', color: 'text-elite-accent-cyan' },
+                    { icon: '🥇', label: 'ELITE', color: 'text-elite-accent-purple' },
+                    { icon: '🥈', label: 'PROF', color: 'text-elite-accent-blue' },
+                    { icon: '🥉', label: 'OPER', color: 'text-slate-500' }
+                ].map((t) => (
+                    <div key={t.label} className="text-center">
+                        <div className="text-lg mb-1">{t.icon}</div>
+                        <div className={`text-[8px] font-black uppercase tracking-widest ${t.color}`}>{t.label}</div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Entries */}
+            <div className="space-y-2">
+                {entries.map((entry, index) => {
+                    const movement = getMovement(entry.userId, entry.rank);
+                    const tier = getTier(entry.rank);
+
+                    return (
+                        <motion.div
+                            layout
+                            key={entry.userId}
+                            className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${entry.isCurrentUser
+                                ? 'bg-elite-accent-cyan/10 border-elite-accent-cyan/30'
+                                : 'bg-white/5 border-white/5 hover:border-white/10'
+                                }`}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                        >
+                            <div className="flex flex-col items-center min-w-[32px]">
+                                <span className={`text-xs font-black ${entry.isCurrentUser ? 'text-elite-accent-cyan' : 'text-white'}`}>#{entry.rank}</span>
+                                {movement === 'up' && <span className="text-[8px] text-elite-accent-emerald font-black">▲</span>}
+                                {movement === 'down' && <span className="text-[8px] text-red-500 font-black">▼</span>}
+                            </div>
+
+                            <div className="text-2xl grayscale group-hover:grayscale-0 transition-all">{entry.avatar || '👤'}</div>
+
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <div className={`text-xs font-black uppercase tracking-widest truncate ${entry.isCurrentUser ? 'text-elite-accent-cyan' : 'text-white'}`}>
+                                        {entry.userName || 'Unknown'}
+                                    </div>
+                                    {entry.isCurrentUser && (
+                                        <div className="px-1.5 py-0.5 rounded-[4px] bg-elite-accent-cyan text-[7px] font-black text-white uppercase tracking-tighter">
+                                            SELF
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                                    {entry.xp?.toLocaleString() || 0} XP // LVL {entry.level}
+                                </div>
+                            </div>
+
+                            <div className="text-lg opacity-40">{tier.icon}</div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+
+            <div className="mt-8 text-center bg-white/5 rounded-xl py-3 border border-white/5">
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                    Next sync sequence in <span className="text-white">60S</span>
+                </span>
+            </div>
+        </div>
     );
 }

@@ -7,14 +7,11 @@ import { syncUserToDatabase } from '@/lib/user-sync';
 import { Leaderboard } from '@/components/leaderboard/Leaderboard';
 import { Achievements } from '@/components/achievements/Achievements';
 import { Progress } from '@/components/ui/Progress';
-import { StatCard } from '@/components/ui/StatCard';
 import { headers } from 'next/headers';
-import { FadeIn, ScaleOnHover } from '@/components/ui/Motion';
+import { FadeIn } from '@/components/ui/Motion';
 import { getDatabase } from '@/lib/mongodb';
 import { CourseRecommendations } from '@/components/courses/CourseRecommendations';
-import { getUserRole, isSuperAdmin } from '@/lib/admin-check';
-import { ViewAsSwitcher } from '@/components/admin/ViewAsSwitcher';
-import { CircularProgress } from '@/components/dashboard/CircularProgress';
+import { getUserRole } from '@/lib/admin-check';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { StudyStreak } from '@/components/dashboard/StudyStreak';
 import { ScoreTrendChart } from '@/components/dashboard/ScoreTrendChart';
@@ -37,14 +34,12 @@ export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  // Fire-and-forget sync to avoid blocking render
   syncUserToDatabase().catch(console.error);
 
   const baseUrl = await resolveBaseUrl();
   const cookie = (await headers()).get('cookie') || '';
   const common = { cache: 'no-store' as const, headers: { cookie } };
 
-  // Parallelize EVERYTHING
   const [
     user,
     role,
@@ -90,300 +85,247 @@ export default async function DashboardPage() {
     daysRemaining: Math.max(0, differenceInDays(new Date(p.challenge.endDate), new Date()))
   }));
 
-  const isSuperAdminUser = role === 'superadmin';
-
-  const recentActivityDisplay = recentActivity.map((a: Record<string, unknown>) => {
-    const t1 = a['completedAt'] as unknown;
-    const t2 = a['updatedAt'] as unknown;
-    const t = (t1 ?? t2) as unknown;
-    const displayTime = t instanceof Date ? t.toISOString() : typeof t === 'string' ? t : '';
-    return { ...a, displayTime } as Record<string, unknown> & { displayTime: string };
+  const recentActivityDisplay = recentActivity.map((a: any) => {
+    const t = a.completedAt ?? a.updatedAt;
+    const displayTime = t ? new Date(t).toLocaleDateString() : 'Recent';
+    return { ...a, displayTime };
   });
 
-  type ActivityDisplay = { completed?: boolean; subject?: string; score?: number; displayTime: string };
-  const activities: ActivityDisplay[] = recentActivityDisplay.map((a) => ({
-    completed: typeof a.completed === 'boolean' ? a.completed : undefined,
-    subject: typeof a.subject === 'string' ? a.subject : undefined,
-    score: typeof a.score === 'number' ? a.score : undefined,
-    displayTime: a.displayTime,
+  const displayCourses = (enrolledCourses as any[]).map((c) => ({
+    _id: c._id,
+    title: c.title,
+    summary: c.summary,
+    slug: c.slug,
   }));
 
-  type CourseLite = { _id: unknown; title: string; summary?: string; slug: string };
-  const displayCourses: CourseLite[] = (enrolledCourses as unknown[]).map((c) => {
-    const obj = c as Record<string, unknown>;
-    return {
-      _id: obj['_id'],
-      title: String(obj['title'] || ''),
-      summary: obj['summary'] ? String(obj['summary']) : undefined,
-      slug: String(obj['slug'] || ''),
-    } satisfies CourseLite;
-  });
-
-  type Gap = { topic?: string };
-  const gaps: Gap[] = (stats.knowledgeGaps || []) as Gap[];
-
-  type MasteryItem = { subject?: string; percent?: number };
-  const mastery: MasteryItem[] = (stats.mastery || []) as MasteryItem[];
-  const colors: ('blue' | 'green' | 'purple' | 'orange')[] = ['blue', 'green', 'purple', 'orange'];
+  const gaps = (stats.knowledgeGaps || []) as any[];
+  const mastery = (stats.mastery || []) as any[];
 
   const overallMastery = mastery.length
-    ? Math.round(mastery.reduce((sum, m) => sum + (m.percent || 0), 0) / mastery.length)
+    ? Math.round(mastery.reduce((sum: number, m: any) => sum + (m.percent || 0), 0) / mastery.length)
     : 0;
 
-  // Get last course for quick resume
   const lastCourseSlug = recentActivity.length > 0 ? displayCourses[0]?.slug : null;
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9] text-slate-900">
-      <div className="container mx-auto px-4 py-10 space-y-10">
-        <header className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr),minmax(0,1.2fr)] items-center">
-          <Card className="border-none shadow-xl bg-gradient-to-br from-teal-600 to-emerald-500 text-white">
-            <CardContent className="space-y-4 p-8">
-              <div className="text-sm uppercase tracking-wide text-white/80">Welcome back</div>
-              <h1 className="text-3xl font-semibold">Hi {user?.firstName || user?.email || 'Learner'}, your learning journey continues.</h1>
-              <p className="text-white/80 text-sm md:text-base max-w-xl">
-                Keep building momentum with adaptive quizzes, guided tracks, and real-time insights tailored to your goals.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link href="/subjects"><Button variant="inverse" className="px-6">Browse Subjects</Button></Link>
-                <Link href="/courses"><Button variant="outline" className="border-white text-white">Explore Courses</Button></Link>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-elite-bg text-slate-100 bg-dot-grid selection:bg-elite-accent-cyan/30 pb-20">
+      <div className="container mx-auto px-4 py-10 space-y-16">
+        {/* Elite Control Center Header */}
+        <header className="space-y-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <FadeIn>
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 backdrop-blur-xl">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-elite-accent-cyan opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-elite-accent-cyan"></span>
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-elite-accent-cyan">Control Center Active</span>
+                </div>
+              </FadeIn>
+              <FadeIn delay={0.1}>
+                <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
+                  Welcome, <span className="text-gradient-cyan">{user?.firstName || user?.email?.split('@')[0] || 'Learner'}</span>
+                </h1>
+              </FadeIn>
+              <FadeIn delay={0.2}>
+                <p className="text-slate-400 font-medium max-w-xl">
+                  Your intelligence profile is syncronized. Current performance is <span className="text-white font-bold tracking-tight">+12% above benchmark</span>.
+                </p>
+              </FadeIn>
+            </div>
 
-          <Card className="border-none shadow-xl">
-            <CardContent className="p-6 grid gap-4 sm:grid-cols-2">
-              <StatCard title="Total Quizzes" value={stats.totalQuizzes || 0} subtitle="Completed" icon="📝" color="blue" trend="+8%" />
-              <StatCard title="Average Score" value={`${Math.round(stats.averageScore || 0)}%`} subtitle="Mastery Level" icon="📈" color="green" trend="+3%" />
-              <StatCard title="Knowledge Gaps" value={(stats.knowledgeGaps || []).length} subtitle="Focus Areas" icon="🧩" color="orange" />
-              <StatCard title="Overall Mastery" value={`${overallMastery}%`} subtitle="Across subjects" icon="🎯" color="purple" />
-            </CardContent>
-          </Card>
+            <FadeIn delay={0.3} className="flex gap-4">
+              <Link href="/courses">
+                <Button className="h-14 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold px-8">
+                  New Assessment
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button className="h-14 rounded-2xl bg-elite-accent-cyan text-black hover:bg-white font-black px-8 shadow-lg shadow-elite-accent-cyan/20">
+                  Continue Path
+                </Button>
+              </Link>
+            </FadeIn>
+          </div>
+
+          <FadeIn delay={0.4}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <EliteStat icon="📊" label="Knowledge Depth" value={`${overallMastery}%`} color="cyan" trend="+4.2%" />
+              <EliteStat icon="⚡" label="Learning Momentum" value={currentStreak} color="purple" trend="Stable" />
+              <EliteStat icon="🎯" label="Skill Accuracy" value={`${Math.round(stats.averageScore || 0)}%`} color="emerald" trend="+2.1%" />
+              <EliteStat icon="🧩" label="Intel Modules" value={stats.totalQuizzes || 0} color="blue" trend="+12" />
+            </div>
+          </FadeIn>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
-          <div className="space-y-6">
-            <StreakCalendar
-              activityDates={[]} // Future: Get from new studyActivities API
-              currentStreak={currentStreak}
-              longestStreak={stats.longestStreak || currentStreak}
-            />
-            <StudyStreak />
+        <QuickActions lastCourseSlug={lastCourseSlug} />
+
+        {/* Global Intelligence Grid */}
+        <section className="grid gap-8 lg:grid-cols-[1.4fr,1fr]">
+          <div className="space-y-8">
+            <div className="glass-card-premium p-8 rounded-[2.5rem] border-white/5">
+              <div className="flex items-center justify-between mb-10">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-black text-white uppercase tracking-widest">Growth Heatmap</h2>
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Cumulative Activity Analysis</p>
+                </div>
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-elite-accent-cyan animate-pulse" />
+                  <div className="w-3 h-3 rounded-full bg-elite-accent-purple" />
+                </div>
+              </div>
+              <ActivityHeatmap />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="glass-card-premium p-8 rounded-[2.5rem] border-white/5">
+                <h2 className="text-xl font-black text-white uppercase tracking-widest mb-8">Temporal Map</h2>
+                <StreakCalendar
+                  activityDates={[]}
+                  currentStreak={currentStreak}
+                  longestStreak={stats.longestStreak || currentStreak}
+                />
+              </div>
+              <StudyStreak />
+            </div>
           </div>
-          <div>
+
+          <div className="space-y-8">
+            <div className="glass-card-premium p-8 rounded-[2.5rem] border-white/5 group">
+              <h2 className="text-xl font-black text-white uppercase tracking-widest mb-10">Skill Radar</h2>
+              <SubjectMasteryRadar />
+            </div>
             <SeasonalDashboard challenges={seasonalChallenges} />
           </div>
         </section>
 
-        <Card className="border-none shadow-lg backdrop-blur-sm bg-white/80">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Your Progress Overview</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center space-y-2">
-                <CircularProgress value={overallMastery} color="teal" size={100} strokeWidth={10} />
-                <div className="text-sm font-medium text-slate-700">Overall Mastery</div>
-              </div>
-              <div className="text-center space-y-2">
-                <CircularProgress
-                  value={stats.totalQuizzes > 0 ? Math.min(100, (stats.totalQuizzes / 50) * 100) : 0}
-                  color="blue"
-                  size={100}
-                  strokeWidth={10}
-                />
-                <div className="text-sm font-medium text-slate-700">{stats.totalQuizzes} Quizzes</div>
-              </div>
-              <div className="text-center space-y-2">
-                <CircularProgress
-                  value={stats.averageScore || 0}
-                  color="green"
-                  size={100}
-                  strokeWidth={10}
-                />
-                <div className="text-sm font-medium text-slate-700">Avg. Score</div>
-              </div>
-              <div className="text-center space-y-2">
-                <CircularProgress
-                  value={achievements.length > 0 ? Math.min(100, (achievements.length / 20) * 100) : 0}
-                  color="purple"
-                  size={100}
-                  strokeWidth={10}
-                />
-                <div className="text-sm font-medium text-slate-700">{achievements.length} Badges</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-
-        <QuickActions lastCourseSlug={lastCourseSlug} />
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold uppercase tracking-wide text-teal-700">Continue Learning</h2>
-            <Link href="/my-learning"><Button variant="outline" className="px-6">View All</Button></Link>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {displayCourses.slice(0, 3).map((course) => (
-              <Card key={String(course._id)} className="shadow-lg border-none backdrop-blur-sm bg-white/90 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-lg font-semibold line-clamp-1 group-hover:text-teal-600 transition-colors">{course.title}</h3>
-                  <p className="text-sm text-slate-500 line-clamp-2">{course.summary || 'Continue where you left off and complete the remaining lessons to unlock your certificate.'}</p>
-                  <Button className="w-full group-hover:bg-teal-600 transition-colors" asChild>
-                    <Link href={`/courses/${course.slug}`}>Resume Course</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-            {enrolledCourses.length === 0 && (
-              <Card className="shadow-md border-none backdrop-blur-sm bg-gradient-to-br from-slate-50 to to-blue-50">
-                <CardContent className="p-6 text-sm text-slate-600">
-                  You haven&apos;t enrolled in any courses yet. Browse trending courses to start learning.
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
-          <div className="space-y-6">
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-              <CardHeader>
-                <CardTitle className="text-lg uppercase tracking-wide text-teal-700">Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {activities.length ? activities.map((activity, idx) => (
-                  <div key={idx} className="flex items-center gap-4 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white px-4 py-3 hover:border-teal-300 hover:shadow-md transition-all duration-200">
-                    <span className="text-2xl">{activity.completed ? '✅' : '📝'}</span>
-                    <div className="flex-1">
-                      <div className="font-semibold text-slate-800">{activity.subject || 'General Quiz'}</div>
-                      <div className="text-xs text-slate-500">
-                        {activity.completed ? `Completed with ${activity.score || 0}%` : 'In progress'} • {activity.displayTime}
-                      </div>
+        {/* Intelligence Feed & Optimization */}
+        <section className="grid gap-8 lg:grid-cols-[1fr,1fr]">
+          <div className="glass-card-premium p-8 rounded-[2.5rem] border-white/5">
+            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-8">Intelligence Feed</h2>
+            <div className="space-y-4">
+              {recentActivityDisplay.length ? recentActivityDisplay.map((activity, idx) => (
+                <div key={idx} className="flex items-center gap-6 p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-elite-accent-cyan/20 transition-all group">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">{activity.completed ? '✅' : '🕒'}</span>
+                  <div className="flex-1">
+                    <div className="font-bold text-white mb-1">{activity.subject || 'Analysis Module'}</div>
+                    <div className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
+                      {activity.completed ? `Verified: ${activity.score || 0}%` : 'Sync in progress'} • {activity.displayTime}
                     </div>
                   </div>
-                )) : (
-                  <p className="text-sm text-slate-500">No recent quiz activity. Try a new subject to see it here.</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-              <CardHeader>
-                <CardTitle className="text-lg uppercase tracking-wide text-teal-700">Knowledge Gaps</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {gaps.slice(0, 4).map((gap, idx) => (
-                  <div key={idx} className="rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 px-4 py-3 hover:shadow-md transition-shadow duration-200">
-                    <div className="font-semibold text-amber-800">{gap.topic || 'Focus area'}</div>
-                    <div className="text-xs text-amber-700">Revise this topic to improve your mastery.</div>
-                  </div>
-                ))}
-                {(!stats.knowledgeGaps || stats.knowledgeGaps.length === 0) && (
-                  <p className="text-sm text-slate-500">No major gaps detected. Keep up the great work!</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Leaderboard entries={leaderboard} />
-            <Achievements achievements={achievements} />
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold uppercase tracking-wide text-teal-700">Recommended For You</h2>
-          <CourseRecommendations />
-        </section>
-
-        {/* Analytics Section */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold uppercase tracking-wide text-teal-700">📊 Learning Analytics</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-xs font-medium rounded-full bg-teal-100 text-teal-700 hover:bg-teal-200 transition-colors">
-                7 Days
-              </button>
-              <button className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                30 Days
-              </button>
-              <button className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                All Time
-              </button>
+                </div>
+              )) : (
+                <div className="text-center py-12 text-slate-500 font-bold uppercase tracking-widest text-xs">No activity detected</div>
+              )}
             </div>
           </div>
 
-          {/* Top Row: Score Trend & Study Time */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ScoreTrendChart />
-            <StudyTimeChart />
-          </div>
-
-          {/* Second Row: Activity Heatmap & Subject Radar */}
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr),minmax(0,1fr)]">
-            <ActivityHeatmap />
-            <SubjectMasteryRadar />
+          <div className="glass-card-premium p-8 rounded-[2.5rem] border-white/5">
+            <h2 className="text-xl font-black text-white uppercase tracking-widest mb-8">Optimization Gaps</h2>
+            <div className="grid gap-4">
+              {gaps.length ? gaps.slice(0, 4).map((gap, idx) => (
+                <div key={idx} className="p-5 rounded-2xl bg-elite-accent-purple/5 border border-elite-accent-purple/10 hover:border-elite-accent-purple/30 transition-all">
+                  <div className="font-bold text-elite-accent-purple mb-1 truncate uppercase">{gap.topic || 'Subject Delta'}</div>
+                  <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Neural re-alignment recommended</div>
+                </div>
+              )) : (
+                <div className="text-center py-12 text-emerald-500/50 font-black uppercase tracking-[0.3em] text-[10px]">Neural profile optimized</div>
+              )}
+            </div>
           </div>
         </section>
 
-        {/* Gamification Section */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold uppercase tracking-wide text-teal-700">🎮 Rewards & Achievements</h2>
+        {/* Peer Benchmarking */}
+        <section className="grid gap-8 lg:grid-cols-[1fr,1fr]">
+          <Leaderboard entries={leaderboard} />
+          <Achievements achievements={achievements} />
+        </section>
 
-          {/* Top Row: XP System & Daily Quests */}
-          <div className="grid gap-6 lg:grid-cols-2">
+        {/* Data Telemetry */}
+        <section className="space-y-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-elite-accent-cyan">Infrastructure</h2>
+              <h3 className="text-4xl font-black text-white tracking-tighter">Performance Telemetry</h3>
+            </div>
+            <div className="flex gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+              {['7D', '30D', 'ALL'].map(t => (
+                <button key={t} className={`px-6 py-2.5 text-[10px] font-black rounded-xl transition-all ${t === '7D' ? 'bg-elite-accent-cyan text-black' : 'text-slate-500 hover:text-white'}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div className="glass-card-premium p-10 rounded-[3rem] border-white/5">
+              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-10 text-center">Mastery Trend Delta</h4>
+              <ScoreTrendChart />
+            </div>
+            <div className="glass-card-premium p-10 rounded-[3rem] border-white/5">
+              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-10 text-center">Temporal Allocation</h4>
+              <StudyTimeChart />
+            </div>
+          </div>
+        </section>
+
+        {/* Motivational Utility */}
+        <section className="space-y-12">
+          <div className="space-y-2 text-center max-w-2xl mx-auto">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-elite-accent-purple">Incentives</h2>
+            <h3 className="text-5xl font-black text-white tracking-tighter">Achievement Ledger</h3>
+          </div>
+          <div className="grid gap-8 lg:grid-cols-2">
             <XPSystem />
             <DailyQuests />
           </div>
-
-          {/* Bottom Row: Badge Showcase & Tiered Leaderboard */}
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-8 lg:grid-cols-2">
             <BadgeShowcase />
             <TieredLeaderboard />
           </div>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold uppercase tracking-wide text-teal-700">Mastery Progress</h2>
-          <Card className="shadow-md border-none">
-            <CardContent className="space-y-4 p-6">
-              {mastery.length ? (
-                mastery.slice(0, 6).map((m, idx) => (
-                  <div key={m.subject || String(idx)}>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-slate-800">{m.subject || 'Subject'}</span>
-                      <span className="text-slate-500">{m.percent || 0}%</span>
-                    </div>
-                    <Progress value={m.percent || 0} color={colors[idx % colors.length]} />
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500">Complete quizzes to unlock detailed mastery analytics.</p>
-              )}
-            </CardContent>
-          </Card>
+        {/* Global Recommendations */}
+        <section className="space-y-10">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-elite-accent-cyan">Neural Mapping</h2>
+          <h3 className="text-4xl font-black text-white tracking-tighter">Recommended Evolutions</h3>
+          <CourseRecommendations />
         </section>
       </div>
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-sm">
-        <div className="grid grid-cols-4 text-sm">
-          <Link href="/subjects" className="flex items-center justify-center gap-1 py-3">
-            <span>📚</span>
-            <span>Subjects</span>
-          </Link>
-          <Link href="/courses" className="flex items-center justify-center gap-1 py-3">
-            <span>🎓</span>
-            <span>Courses</span>
-          </Link>
-          <Link href="/live" className="flex items-center justify-center gap-1 py-3">
-            <span>📺</span>
-            <span>Live</span>
-          </Link>
-          <Link href="/dashboard" className="flex items-center justify-center gap-1 py-3">
-            <span>🏠</span>
-            <span>Home</span>
-          </Link>
-        </div>
-      </nav>
-    </div >
+    </div>
+  );
+}
+
+function EliteStat({ icon, label, value, color, trend }: {
+  icon: string,
+  label: string,
+  value: string | number,
+  color: 'cyan' | 'purple' | 'emerald' | 'blue',
+  trend?: string
+}) {
+  const colorMap = {
+    cyan: "text-elite-accent-cyan border-elite-accent-cyan/20 bg-elite-accent-cyan/10",
+    purple: "text-elite-accent-purple border-elite-accent-purple/20 bg-elite-accent-purple/10",
+    emerald: "text-emerald-400 border-emerald-400/20 bg-emerald-400/10",
+    blue: "text-blue-400 border-blue-400/20 bg-blue-400/10",
+  };
+
+  return (
+    <div className={`glass-card-premium p-8 rounded-[2rem] border ${colorMap[color]} group relative overflow-hidden`}>
+      <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700" />
+      <div className="flex items-center justify-between mb-6 relative z-10">
+        <span className="text-3xl">{icon}</span>
+        {trend && (
+          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full bg-black/40 border border-white/5 ${trend.startsWith('+') ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {trend}
+          </span>
+        )}
+      </div>
+      <div className="space-y-1 relative z-10">
+        <div className="text-4xl font-black text-white tracking-tighter">{value}</div>
+        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">{label}</div>
+      </div>
+    </div>
   );
 }

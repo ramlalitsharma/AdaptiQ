@@ -37,40 +37,39 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer className="bg-slate-950 text-slate-300 relative overflow-hidden">
+    <footer className="bg-[#050810] text-slate-300 relative overflow-hidden border-t border-white/5">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 pointer-events-none" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(6,182,212,0.05),transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(168,85,247,0.05),transparent_70%)] pointer-events-none" />
 
-      <div className="container mx-auto px-4 py-16 grid gap-12 lg:grid-cols-[1.5fr,1fr] relative z-10">
-        <div className="space-y-6">
-          <SiteBrand variant="light" />
-          <p className="max-w-md text-base text-slate-400 leading-relaxed">
-            {BRAND_NAME} is the AI-native learning platform delivering adaptive learning paths, certification workflows, and real-time analytics for learners and administrators.
+      <div className="container mx-auto px-4 py-20 grid gap-16 lg:grid-cols-[1.5fr,1fr] relative z-10">
+        <div className="space-y-8">
+          <SiteBrand />
+          <p className="max-w-md text-sm text-slate-500 font-medium leading-loose uppercase tracking-wider">
+            {BRAND_NAME} IS THE AI-NATIVE LEARNING INFRASTRUCTURE DELIVERING ADAPTIVE NEURAL PATHWAYS AND REAL-TIME EVALUATION TELEMETRY.
           </p>
           <div className="flex gap-4 pt-4">
             {socialLinks.map((link) => (
-              <Link 
-                key={link.href} 
-                href={link.href} 
-                className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all hover:scale-110"
+              <Link
+                key={link.href}
+                href={link.href}
+                className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 hover:border-elite-accent-cyan/50 flex items-center justify-center text-white transition-all group"
               >
-                {/* We can use icons here if we had them imported, for now text is fine but let's assume icons or just labels */}
-                <span className="text-[10px] uppercase font-bold">{link.label[0]}</span>
+                <span className="text-xs font-black uppercase tracking-tighter group-hover:scale-110 transition-transform">{link.label.slice(0, 2)}</span>
               </Link>
             ))}
           </div>
         </div>
 
-        <div className="grid gap-8 grid-cols-2 sm:grid-cols-3">
+        <div className="grid gap-12 grid-cols-2 sm:grid-cols-3">
           {footerLinks.map((group) => (
-            <div key={group.title} className="space-y-4">
-              <h3 className="font-bold text-white tracking-wide text-sm uppercase">{group.title}</h3>
-              <ul className="space-y-3">
+            <div key={group.title} className="space-y-6">
+              <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{group.title}</h3>
+              <ul className="space-y-4">
                 {group.items.map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href} className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-teal-500 transition-colors" />
+                    <Link href={item.href} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-all flex items-center gap-3 group">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/5 group-hover:bg-elite-accent-cyan transition-colors" />
                       {item.label}
                     </Link>
                   </li>
@@ -81,15 +80,22 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/5 bg-black/20 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-8 text-xs font-medium text-slate-500 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Systems Normal
-            </span>
-            <p className="text-slate-600">AI-powered adaptive learning infrastructure.</p>
+      <div className="border-t border-white/5 bg-black/40 backdrop-blur-xl">
+        <div className="container mx-auto px-4 py-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="text-[8px] font-black text-slate-600 uppercase tracking-[0.4em]">
+            © {new Date().getFullYear()} {BRAND_NAME} // CORE SYSTEMS V2.8.0
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-40"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[8px] font-black text-emerald-500/80 uppercase tracking-widest">Global Link Stable</span>
+            </div>
+            <div className="text-[8px] font-black text-slate-600 uppercase tracking-[0.4em]">
+              NEURAL PROTOCOL ACTIVE
+            </div>
           </div>
         </div>
       </div>

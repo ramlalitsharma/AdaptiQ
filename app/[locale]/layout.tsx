@@ -164,7 +164,7 @@ export default async function RootLayout({
 
   return (
     <ClerkProvider>
-      <html lang={locale}>
+      <html lang={locale} suppressHydrationWarning>
         <head>
           <meta
             name="google-adsense-account"
@@ -220,7 +220,7 @@ export default async function RootLayout({
           </Script>
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300`}
+          className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased bg-slate-50 dark:bg-elite-bg text-slate-900 dark:text-slate-100 transition-colors duration-300 selection:bg-elite-accent-cyan/30 custom-scrollbar`}
         >
           <NextIntlClientProvider messages={messages} locale={locale}>
             <ErrorBoundary>

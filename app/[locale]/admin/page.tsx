@@ -240,95 +240,99 @@ export default async function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-gray-900 dark:to-gray-800">
-
-
-      <main className="container mx-auto px-4 py-10 space-y-10">
-        <section className="space-y-2">
-          <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Admin Control Center</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Curate every learning asset, manage learners, and orchestrate monetization from a unified studio suite.
+    <div className="min-h-screen bg-elite-bg text-slate-100 selection:bg-elite-accent-cyan/30">
+      <main className="container mx-auto px-4 py-16 space-y-16">
+        <section className="relative">
+          <div className="absolute -top-16 -left-16 w-64 h-64 bg-elite-accent-cyan/10 rounded-full blur-[100px]" />
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-4">Neural Command Center</h3>
+          <h1 className="text-6xl font-black text-white tracking-tighter uppercase leading-[0.9]">
+            Administrative <br />
+            <span className="text-gradient-cyan">Relay Pulse</span>
+          </h1>
+          <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-6 max-w-2xl">
+            Global orchestration of learning assets, cognitive telemetry, and economic logic from a unified intelligence studio.
           </p>
         </section>
 
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="Learners"
+            title="Active Intelligence Nodes"
             value={stats.totalUsers.toLocaleString()}
-            subtitle={`${stats.activeUsers} active this week`}
+            subtitle={`L-${stats.activeUsers} Weekly Relay`}
             icon="👥"
-            trend="↑"
+            trend="Stable"
           />
           <StatCard
-            title="Courses"
+            title="Curriculum Assets"
             value={stats.totalCourses.toLocaleString()}
-            subtitle={`${stats.publishedCourses} published`}
+            subtitle={`${stats.publishedCourses} Deployed`}
             icon="📚"
-            trend="↑"
+            trend="Active"
           />
           <StatCard
-            title="Question Banks"
+            title="Knowledge Clusters"
             value={stats.totalQuestionBanks.toLocaleString()}
-            subtitle="Across subjects"
+            subtitle="Neural Map Integration"
             icon="❓"
-            trend="↑"
+            trend="Optimal"
           />
           <StatCard
-            title="Revenue (est)"
+            title="Economic Throughput"
             value={`$${stats.monthlyRevenue.toLocaleString()}`}
-            subtitle="From premium plans"
+            subtitle="Tier 1 Pro Relay"
             icon="💰"
-            trend="↑"
+            trend="Growth"
           />
         </section>
 
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">Content Studios</h2>
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Asset Studios</h2>
             <Link href="/admin/studio">
-              <Button variant="outline" size="sm">Browse all studios</Button>
+              <Button variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-elite-accent-cyan hover:bg-elite-accent-cyan/10">All Terminals</Button>
             </Link>
           </div>
           <StudioGrid tiles={contentStudios} />
         </section>
 
-        <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-slate-900">Assessment & Exam Authoring</h2>
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Intelligence & Evaluation</h2>
+          </div>
           <StudioGrid tiles={assessmentStudios} />
         </section>
 
-        <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-slate-900">Operations & Monetization</h2>
+        <section className="space-y-8">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Global Operations</h2>
+          </div>
           <StudioGrid tiles={operationsTiles} columns="md:grid-cols-2 xl:grid-cols-3" />
         </section>
 
-        <Card className="border border-slate-200 bg-white shadow-sm">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-3">
-              <Button asChild>
-                <Link href="/admin/studio/courses">+ New Course</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/admin/studio/questions">+ New Question Set</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/admin/studio/exams">+ New Exam</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/admin/studio/blogs">+ New Blog</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/admin/users">Manage Learners</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/admin/analytics">View Analytics</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-card-premium rounded-[3rem] border border-white/5 p-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-elite-accent-cyan/10 rounded-full blur-[100px] -mr-32 -mt-32" />
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-8">Priority Overrides</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Button asChild className="h-14 rounded-2xl bg-white text-black font-black uppercase text-[10px] tracking-widest hover:bg-elite-accent-cyan transition-all shadow-xl shadow-white/5">
+              <Link href="/admin/studio/courses">+ Initialize Course</Link>
+            </Button>
+            <Button asChild className="h-14 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest hover:border-elite-accent-cyan transition-all">
+              <Link href="/admin/studio/questions">+ Assemble Quiz</Link>
+            </Button>
+            <Button asChild className="h-14 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest hover:border-elite-accent-cyan transition-all">
+              <Link href="/admin/studio/exams">+ Deploy Exam</Link>
+            </Button>
+            <Button asChild className="h-14 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest hover:border-elite-accent-cyan transition-all">
+              <Link href="/admin/studio/blogs">+ Draft Intelligence</Link>
+            </Button>
+            <Button asChild className="h-14 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest hover:border-elite-accent-cyan transition-all">
+              <Link href="/admin/users">Node Oversight</Link>
+            </Button>
+            <Button asChild className="h-14 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest hover:border-elite-accent-cyan transition-all">
+              <Link href="/admin/analytics">Neural Metrics</Link>
+            </Button>
+          </div>
+        </div>
       </main>
     </div>
   );
@@ -336,25 +340,33 @@ export default async function AdminPage() {
 
 function StudioGrid({ tiles, columns = 'md:grid-cols-2 xl:grid-cols-3' }: { tiles: StudioTile[]; columns?: string }) {
   return (
-    <div className={`grid gap-5 ${columns}`}>
+    <div className={`grid gap-6 ${columns}`}>
       {tiles.map((tile) => (
-        <Card key={tile.name} hover className="border border-slate-200 bg-white shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-start gap-3">
-              <span className="text-3xl">{tile.icon}</span>
-              <div>
-                <div className="text-lg font-semibold text-slate-900">{tile.name}</div>
-                <p className="text-sm text-slate-500">{tile.description}</p>
+        <div key={tile.name} className="glass-card-premium rounded-[2.5rem] p-8 border border-white/5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-elite-accent-cyan/10 rounded-full blur-3xl -mr-12 -mt-12 group-hover:scale-150 transition-all duration-700" />
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="flex items-start gap-5 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-3xl group-hover:rotate-12 transition-transform duration-500 shadow-xl border border-white/5">
+                {tile.icon}
               </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {tile.metric && <p className="text-xs text-slate-400">{tile.metric}</p>}
-            <Button asChild>
-              <Link href={tile.href}>{tile.action || `Open ${tile.name}`}</Link>
-            </Button>
-          </CardContent>
-        </Card>
+              <div>
+                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{tile.name}</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight leading-relaxed">{tile.description}</p>
+              </div>
+            </div>
+
+            <div className="mt-auto space-y-4">
+              {tile.metric && (
+                <div className="text-[9px] font-black uppercase tracking-widest text-elite-accent-cyan bg-elite-accent-cyan/5 border border-elite-accent-cyan/10 px-3 py-1.5 rounded-lg inline-block">
+                  {tile.metric}
+                </div>
+              )}
+              <Button asChild className="w-full h-11 rounded-xl border border-white/10 bg-white/5 text-white font-black uppercase text-[9px] tracking-[0.2em] hover:bg-elite-accent-cyan hover:text-black transition-all">
+                <Link href={tile.href}>{tile.action || `Connect Terminal`}</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );

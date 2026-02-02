@@ -36,21 +36,21 @@ const getXPForLevel = (level: number) => {
 };
 
 const getLevelTitle = (level: number) => {
-    if (level >= 50) return '🏆 Grandmaster';
-    if (level >= 40) return '💎 Master';
-    if (level >= 30) return '👑 Expert';
-    if (level >= 20) return '⭐ Advanced';
-    if (level >= 10) return '🔥 Intermediate';
-    return '🌱 Beginner';
+    if (level >= 50) return 'CENTURION';
+    if (level >= 40) return 'ARCHITECT';
+    if (level >= 30) return 'ORACLE';
+    if (level >= 20) return 'VANGUARD';
+    if (level >= 10) return 'INITIATE';
+    return 'NEOPHYTE';
 };
 
-const getLevelColor = (level: number) => {
-    if (level >= 50) return 'from-yellow-400 to-orange-500';
-    if (level >= 40) return 'from-purple-400 to-pink-500';
-    if (level >= 30) return 'from-blue-400 to-indigo-500';
-    if (level >= 20) return 'from-green-400 to-teal-500';
-    if (level >= 10) return 'from-orange-400 to-red-500';
-    return 'from-slate-400 to-slate-500';
+const getLevelColorClass = (level: number) => {
+    if (level >= 50) return 'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
+    if (level >= 40) return 'text-elite-accent-purple border-elite-accent-purple/20 bg-elite-accent-purple/10';
+    if (level >= 30) return 'text-elite-accent-cyan border-elite-accent-cyan/20 bg-elite-accent-cyan/10';
+    if (level >= 20) return 'text-elite-accent-emerald border-elite-accent-emerald/20 bg-elite-accent-emerald/10';
+    if (level >= 10) return 'text-orange-400 border-orange-400/20 bg-orange-400/10';
+    return 'text-white border-white/20 bg-white/10';
 };
 
 export function XPSystem({ currentXP: propXP, currentLevel: propLevel }: XPSystemProps) {
@@ -60,13 +60,11 @@ export function XPSystem({ currentXP: propXP, currentLevel: propLevel }: XPSyste
     const [showLevelUp, setShowLevelUp] = useState(false);
 
     useEffect(() => {
-        // If props provided (for testing/fallback), use them
         if (propXP !== undefined && propLevel !== undefined) {
             setTimeout(() => setLoading(false), 0);
             return;
         }
 
-        // Otherwise fetch from API
         fetch('/api/user/stats/xp')
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch XP data');
@@ -89,12 +87,10 @@ export function XPSystem({ currentXP: propXP, currentLevel: propLevel }: XPSyste
             });
     }, [propXP, propLevel]);
 
-    // Use prop data or fetched data
     const currentXP = propXP ?? data?.currentXP ?? 0;
     const currentLevel = propLevel ?? data?.currentLevel ?? 1;
     const levelInfo = data?.levelInfo;
 
-    // Calculate progress (use API data if available, otherwise calculate locally)
     const xpForCurrentLevel = getXPForLevel(currentLevel);
     const xpForNextLevel = getXPForLevel(currentLevel + 1);
     const xpInCurrentLevel = currentXP - xpForCurrentLevel;
@@ -107,175 +103,134 @@ export function XPSystem({ currentXP: propXP, currentLevel: propLevel }: XPSyste
             particleCount: 150,
             spread: 100,
             origin: { y: 0.6 },
-            colors: ['#fbbf24', '#f59e0b', '#f97316', '#ef4444'],
+            colors: ['#06b6d4', '#a855f7', '#10b981', '#ffffff'],
         });
         setTimeout(() => setShowLevelUp(false), 3000);
     };
 
-    // Loading state
     if (loading) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-16 h-16 rounded-full bg-slate-200 animate-pulse" />
-                            <div className="space-y-2">
-                                <div className="h-5 w-32 bg-slate-200 rounded animate-pulse" />
-                                <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="h-6 w-24 bg-slate-200 rounded animate-pulse ml-auto" />
-                            <div className="h-3 w-16 bg-slate-200 rounded animate-pulse ml-auto" />
-                        </div>
-                    </div>
-                    <div className="h-3 bg-slate-200 rounded-full animate-pulse" />
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="h-12 bg-slate-200 rounded animate-pulse" />
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="animate-pulse space-y-6">
+                <div className="h-24 bg-white/5 rounded-[2rem]" />
+                <div className="h-4 bg-white/5 rounded-full" />
+                <div className="grid grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-12 bg-white/5 rounded-xl" />
+                    ))}
+                </div>
+            </div>
         );
     }
 
-    // Error state
     if (error) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardContent className="p-6">
-                    <div className="text-center space-y-3">
-                        <div className="text-4xl">⚠️</div>
-                        <div className="text-sm font-medium text-red-600">Failed to load XP data</div>
-                        <div className="text-xs text-slate-500">{error}</div>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="text-xs text-teal-600 hover:text-teal-700 underline"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="p-12 text-center bg-red-500/5 border border-red-500/20 rounded-[2rem]">
+                <div className="text-3xl mb-4">⚠️</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-red-500">XP Synchrony Failed</div>
+            </div>
         );
     }
 
     return (
-        <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90 overflow-hidden relative">
-            <CardContent className="p-6 space-y-4">
-                {/* Level Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <motion.div
-                            className={`w-16 h-16 rounded-full bg-gradient-to-br ${getLevelColor(currentLevel)} flex items-center justify-center text-white font-black text-2xl shadow-lg`}
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            transition={{ type: 'spring', stiffness: 300 }}
-                        >
-                            {currentLevel}
-                        </motion.div>
-                        <div>
-                            <div className="text-lg font-bold text-slate-800">{getLevelTitle(currentLevel)}</div>
-                            <div className="text-sm text-slate-500">Level {currentLevel}</div>
-                        </div>
-                    </div>
+        <div className="glass-card-premium rounded-[2.5rem] p-8 border border-white/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-elite-accent-cyan/10 rounded-full blur-[80px] -mr-16 -mt-16 group-hover:scale-150 transition-all duration-700" />
 
-                    <div className="text-right">
-                        <div className="text-2xl font-black text-teal-600">{currentXP.toLocaleString()}</div>
-                        <div className="text-xs text-slate-500">Total XP</div>
+            {/* Level Header */}
+            <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-6">
+                    <motion.div
+                        className={`w-20 h-20 rounded-[2rem] border-2 flex flex-col items-center justify-center ${getLevelColorClass(currentLevel)} shadow-lg`}
+                        whileHover={{ scale: 1.05, rotate: -2 }}
+                    >
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-60">Tier</span>
+                        <span className="text-3xl font-black">{currentLevel}</span>
+                    </motion.div>
+                    <div>
+                        <div className="text-xl font-black text-white uppercase tracking-widest leading-none mb-1">{getLevelTitle(currentLevel)}</div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Synchronization Established</div>
                     </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Progress to Level {currentLevel + 1}</span>
-                        <span className="font-semibold text-slate-700">{Math.round(progressPercent)}%</span>
-                    </div>
+                <div className="text-right">
+                    <div className="text-3xl font-black text-white font-mono tracking-tighter">{currentXP.toLocaleString()}</div>
+                    <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Aggregate XP</div>
+                </div>
+            </div>
 
-                    <div className="relative h-3 bg-slate-200 rounded-full overflow-hidden">
-                        <motion.div
-                            className={`absolute inset-y-0 left-0 bg-gradient-to-r ${getLevelColor(currentLevel + 1)} rounded-full`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progressPercent}%` }}
-                            transition={{ duration: 1, ease: 'easeOut' }}
-                        />
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>{xpInCurrentLevel} / {xpNeededForNextLevel} XP</span>
-                        <span>{xpNeededForNextLevel - xpInCurrentLevel} XP to next level</span>
-                    </div>
+            {/* Progress Bar */}
+            <div className="space-y-4 mb-10">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-slate-500">Threshold Integration</span>
+                    <span className="text-white">{Math.round(progressPercent)}% Manifested</span>
                 </div>
 
-                {/* XP Earning Tips */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-lg">📝</span>
-                        <div>
-                            <div className="font-semibold text-slate-700">+50 XP</div>
-                            <div className="text-slate-500">Complete Quiz</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-lg">🎯</span>
-                        <div>
-                            <div className="font-semibold text-slate-700">+100 XP</div>
-                            <div className="text-slate-500">Perfect Score</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-lg">🔥</span>
-                        <div>
-                            <div className="font-semibold text-slate-700">+25 XP</div>
-                            <div className="text-slate-500">Daily Streak</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-lg">🎓</span>
-                        <div>
-                            <div className="font-semibold text-slate-700">+200 XP</div>
-                            <div className="text-slate-500">Finish Course</div>
-                        </div>
-                    </div>
+                <div className="relative h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <motion.div
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-elite-accent-cyan to-elite-accent-purple"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercent}%` }}
+                        transition={{ duration: 1.5, ease: 'circOut' }}
+                    />
                 </div>
 
-                {/* Demo Button */}
-                <button
-                    onClick={handleLevelUpDemo}
-                    className="w-full py-2 text-sm font-medium bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-lg hover:from-teal-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg"
-                >
-                    🎉 Preview Level Up Animation
-                </button>
-            </CardContent>
+                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-slate-500 font-mono">
+                    <span>{xpInCurrentLevel} / {xpNeededForNextLevel} Delta</span>
+                    <span className="text-elite-accent-cyan">-{xpNeededForNextLevel - xpInCurrentLevel} XP to Progression</span>
+                </div>
+            </div>
+
+            {/* XP Earning Tips */}
+            <div className="grid grid-cols-2 gap-4 pt-10 border-t border-white/5">
+                {[
+                    { icon: '📝', xp: '+50', label: 'CYCLE COMPLETED' },
+                    { icon: '🎯', xp: '+100', label: 'PERFECT FEEDBACK' },
+                    { icon: '🔥', xp: '+25', label: 'DAILY STREAK' },
+                    { icon: '🎓', xp: '+200', label: 'DOMAIN MASTERY' }
+                ].map((tip, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5 group/tip hover:border-white/20 transition-all">
+                        <span className="text-2xl grayscale group-hover/tip:grayscale-0 transition-all">{tip.icon}</span>
+                        <div>
+                            <div className="text-xs font-black text-white uppercase tracking-widest">{tip.xp} XP</div>
+                            <div className="text-[8px] text-slate-500 font-black uppercase tracking-widest">{tip.label}</div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Demo Button */}
+            <button
+                onClick={handleLevelUpDemo}
+                className="w-full mt-10 py-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+            >
+                Preview Evolution Event
+            </button>
 
             {/* Level Up Modal */}
             <AnimatePresence>
                 {showLevelUp && (
                     <motion.div
-                        className="absolute inset-0 bg-gradient-to-br from-yellow-400/95 to-orange-500/95 flex items-center justify-center z-50"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute inset-0 bg-black/95 flex items-center justify-center z-50 backdrop-blur-2xl"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                     >
-                        <div className="text-center space-y-4">
+                        <div className="text-center space-y-8">
                             <motion.div
-                                className="text-6xl"
-                                animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
-                                transition={{ duration: 0.6 }}
+                                className="w-24 h-24 rounded-[2rem] border-4 border-elite-accent-cyan flex items-center justify-center text-4xl mx-auto shadow-[0_0_50px_rgba(6,182,212,0.4)]"
+                                animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.2, 1] }}
+                                transition={{ repeat: Infinity, duration: 2 }}
                             >
-                                🎉
+                                ⚡
                             </motion.div>
-                            <div>
-                                <div className="text-4xl font-black text-white">LEVEL UP!</div>
-                                <div className="text-2xl font-bold text-white/90 mt-2">Level {currentLevel + 1}</div>
-                                <div className="text-lg text-white/80 mt-1">{getLevelTitle(currentLevel + 1)}</div>
+                            <div className="space-y-2">
+                                <div className="text-[10px] font-black text-elite-accent-cyan uppercase tracking-[0.8em]">Level Ascended</div>
+                                <div className="text-6xl font-black text-white tracking-tighter">TIER {currentLevel + 1}</div>
+                                <div className="text-xl font-black text-white uppercase tracking-widest opacity-60">{getLevelTitle(currentLevel + 1)}</div>
                             </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </Card>
+        </div>
     );
 }

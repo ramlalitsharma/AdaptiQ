@@ -3,9 +3,10 @@ import { Link } from '@/lib/navigation';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Newspaper, TrendingUp } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Newspaper, TrendingUp, ShieldAlert, BarChart3, Globe } from 'lucide-react';
 import { requireContentWriter } from '@/lib/admin-check';
 import { format } from 'date-fns';
+import { FadeIn } from '@/components/ui/Motion';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,155 +15,171 @@ export default async function NewsStudioPage() {
     const news = await NewsService.getAllNews().catch(() => []);
 
     return (
-        <div className="min-h-screen bg-[#fdfdfc] news-paper-theme p-8 space-y-12">
+        <div className="min-h-screen bg-elite-bg text-slate-100 p-8 lg:p-12 space-y-16 selection:bg-elite-accent-cyan/30">
             {/* Header / Brand Strip */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-slate-200 pb-10">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-red-700 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-red-500/20">
-                        TT
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-10">
+                <div className="flex items-center gap-8">
+                    <div className="w-20 h-20 bg-elite-accent-cyan rounded-[2rem] flex items-center justify-center text-black font-black text-3xl shadow-2xl shadow-elite-accent-cyan/20">
+                        RT
                     </div>
-                    <div>
-                        <h1 className="text-4xl font-black flex items-center gap-3 tracking-tighter uppercase font-serif">
-                            <span className="text-red-700">Terai Times</span> <span className="text-slate-900 leading-none">News Studio</span>
-                        </h1>
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] mt-2">
-                            Professional Newsroom Terminal | Refectl Intelligence Agency
-                        </p>
+                    <div className="space-y-1">
+                        <FadeIn>
+                            <h1 className="text-4xl lg:text-5xl font-black flex items-center gap-4 tracking-tighter uppercase text-white leading-none">
+                                Intelligence <span className="text-gradient-cyan">Studio</span>
+                            </h1>
+                        </FadeIn>
+                        <FadeIn delay={0.1}>
+                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.5em] mt-2 flex items-center gap-3">
+                                <span className="w-8 h-[1px] bg-slate-800" /> Professional Terminal | Node: Primary Core
+                            </p>
+                        </FadeIn>
                     </div>
                 </div>
-                <Link href="/admin/studio/news/create">
-                    <Button className="bg-red-700 hover:bg-black text-white shadow-xl shadow-red-500/20 transition-all hover:scale-105 font-black uppercase text-xs tracking-[0.2em] h-14 px-10 rounded-2xl">
-                        <Plus className="w-5 h-5 mr-3" />
-                        Initialize Report
-                    </Button>
-                </Link>
+                <FadeIn delay={0.2}>
+                    <Link href="/admin/studio/news/create">
+                        <Button className="bg-white text-black hover:bg-elite-accent-cyan shadow-xl transition-all font-black uppercase text-[10px] tracking-[0.3em] h-16 px-12 rounded-[2rem]">
+                            <Plus className="w-5 h-5 mr-3" />
+                            Initialize Report
+                        </Button>
+                    </Link>
+                </FadeIn>
             </div>
 
-            {/* Editorial Pulse Indices (Stats) */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Performance Monitoring Indices */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                 {[
-                    { label: 'Total Intelligence', value: news.length, color: 'text-slate-900' },
-                    { label: 'Deployed Reports', value: news.filter((n: any) => n.status === 'published').length, color: 'text-red-700' },
-                    { label: 'Pending Drafts', value: news.filter((n: any) => n.status === 'draft').length, color: 'text-amber-600' },
-                    { label: 'Trending Pulse', value: news.filter((n: any) => n.is_trending).length, color: 'text-blue-600' }
-                ].map(stat => (
-                    <div key={stat.label} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] block mb-3 group-hover:text-red-700 transition-colors">{stat.label}</span>
-                        <span className={`text-5xl font-black ${stat.color} font-serif tracking-tighter`}>{stat.value}</span>
-                    </div>
+                    { label: 'Network Assets', value: news.length, color: 'text-white', icon: Newspaper, accent: 'cyan' },
+                    { label: 'Live Deployments', value: news.filter((n: any) => n.status === 'published').length, color: 'text-elite-accent-emerald', icon: Globe, accent: 'emerald' },
+                    { label: 'Staged Buffer', value: news.filter((n: any) => n.status === 'draft').length, color: 'text-elite-accent-purple', icon: ShieldAlert, accent: 'purple' },
+                    { label: 'Pulse Anomalies', value: news.filter((n: any) => n.is_trending).length, color: 'text-elite-accent-cyan', icon: TrendingUp, accent: 'cyan' }
+                ].map((stat, index) => (
+                    <FadeIn key={stat.label} delay={index * 0.05 + 0.3}>
+                        <div className="glass-card-premium p-10 rounded-[3rem] border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
+                            <div className={`absolute top-0 right-0 w-24 h-24 bg-elite-accent-${stat.accent}/5 rounded-full blur-3xl`} />
+                            <div className="flex items-center justify-between mb-8">
+                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em]">{stat.label}</span>
+                                <stat.icon size={16} className={`text-elite-accent-${stat.accent}`} />
+                            </div>
+                            <span className={`text-6xl font-black ${stat.color} tracking-tighter`}>{stat.value}</span>
+                        </div>
+                    </FadeIn>
                 ))}
             </div>
 
-            {/* Archive Terminal */}
-            <div className="space-y-6">
-                <div className="flex items-center justify-between px-4">
-                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2">
-                        <Newspaper size={14} /> Intelligence Archive
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                            <input
-                                placeholder="Scan Archive..."
-                                className="pl-11 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-700/20 focus:bg-white transition-all w-64"
-                            />
+            {/* Main Terminal (Table) */}
+            <FadeIn delay={0.5}>
+                <div className="space-y-8">
+                    <div className="flex items-center justify-between px-6">
+                        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-3">
+                            <BarChart3 size={14} className="text-elite-accent-cyan" /> Intelligence Asset Ledger
+                        </h2>
+                        <div className="flex items-center gap-4">
+                            <div className="relative group">
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-hover:text-elite-accent-cyan transition-colors" />
+                                <input
+                                    placeholder="Scan Protocol..."
+                                    className="pl-14 pr-8 h-12 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:border-elite-accent-cyan/50 focus:bg-white/10 transition-all w-72 placeholder:text-slate-700"
+                                />
+                            </div>
+                            <Button variant="ghost" className="h-12 w-12 p-0 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 text-slate-400">
+                                <Filter className="w-4 h-4" />
+                            </Button>
                         </div>
-                        <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl border border-slate-100 hover:bg-white">
-                            <Filter className="w-4 h-4 text-slate-400" />
-                        </Button>
                     </div>
-                </div>
 
-                {news.length === 0 ? (
-                    <div className="text-center py-40 bg-white rounded-[4rem] border border-dashed border-slate-200 shadow-inner">
-                        <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-                            <Newspaper className="w-10 h-10 text-slate-300" />
+                    {news.length === 0 ? (
+                        <div className="text-center py-40 glass-card-premium rounded-[4rem] border border-dashed border-white/5">
+                            <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-10 border border-white/5">
+                                <Newspaper className="w-10 h-10 text-slate-700" />
+                            </div>
+                            <h3 className="text-4xl font-black text-white tracking-tighter uppercase mb-2">Terminal Idle</h3>
+                            <p className="text-slate-500 max-w-sm mx-auto mt-4 mb-12 font-black uppercase text-[10px] tracking-[0.4em] leading-relaxed">
+                                No global intelligence reports detected in local buffer. Initialize a broadcast to populate.
+                            </p>
+                            <Link href="/admin/studio/news/create">
+                                <Button className="bg-elite-accent-cyan text-black px-12 h-16 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.3em] shadow-xl shadow-elite-accent-cyan/20 hover:bg-white transition-all">Establish Relay</Button>
+                            </Link>
                         </div>
-                        <h3 className="text-3xl font-serif font-black text-slate-900 mb-2">Archive Dormant</h3>
-                        <p className="text-slate-400 max-w-sm mx-auto mt-2 mb-10 font-bold uppercase text-[10px] tracking-widest leading-relaxed">
-                            No global intelligence reports found in the terminal. Initialize a broadcast to begin.
-                        </p>
-                        <Link href="/admin/studio/news/create">
-                            <Button className="bg-slate-900 text-white px-10 h-14 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-black transition-all">Establish Broadcast</Button>
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-2xl">
-                        <table className="w-full text-left border-separate border-spacing-0">
-                            <thead>
-                                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] bg-slate-50/50">
-                                    <th className="p-8 border-b border-slate-100">Intelligence Asset</th>
-                                    <th className="p-8 border-b border-slate-100 text-center">Region</th>
-                                    <th className="p-8 border-b border-slate-100 text-center">Industry</th>
-                                    <th className="p-8 border-b border-slate-100 text-center">Deployment</th>
-                                    <th className="p-8 border-b border-slate-100 text-right pr-12">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {news.map((item: any) => (
-                                    <tr key={item.id} className="group hover:bg-slate-50/80 transition-all">
-                                        <td className="p-8">
-                                            <div className="flex items-center gap-6">
-                                                <div className="w-24 h-16 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 shadow-lg border border-slate-200/50">
-                                                    {item.cover_image && (
-                                                        <img
-                                                            src={item.cover_image}
-                                                            alt=""
-                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                        />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-black text-slate-900 group-hover:text-red-700 transition-colors line-clamp-1 uppercase tracking-tight font-serif">
-                                                        {item.title}
-                                                    </h3>
-                                                    <div className="flex items-center gap-3 mt-2">
-                                                        {item.is_trending && (
-                                                            <span className="bg-red-700 text-white py-0.5 px-2 text-[8px] font-black uppercase rounded shadow-lg shadow-red-500/20">Trending</span>
+                    ) : (
+                        <div className="glass-card-premium rounded-[3rem] border border-white/5 overflow-hidden shadow-2xl overflow-x-auto">
+                            <table className="w-full text-left border-separate border-spacing-0">
+                                <thead>
+                                    <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] bg-white/5">
+                                        <th className="p-10 border-b border-white/5">Intelligence Asset</th>
+                                        <th className="p-10 border-b border-white/5 text-center">Sector</th>
+                                        <th className="p-10 border-b border-white/5 text-center">Protocol Stutus</th>
+                                        <th className="p-10 border-b border-white/5 text-right pr-16">Data Access</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {news.map((item: any) => (
+                                        <tr key={item.id} className="group hover:bg-white/5 transition-all">
+                                            <td className="p-10">
+                                                <div className="flex items-center gap-8">
+                                                    <div className="w-28 h-18 rounded-2xl overflow-hidden bg-white/5 flex-shrink-0 border border-white/5 p-1 relative">
+                                                        {item.cover_image ? (
+                                                            <img
+                                                                src={item.cover_image}
+                                                                alt=""
+                                                                className="w-full h-full object-cover rounded-xl group-hover:scale-110 transition-transform duration-1000"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-xl">
+                                                                <Newspaper className="w-6 h-6 text-slate-800" />
+                                                            </div>
                                                         )}
-                                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{format(new Date(item.created_at), 'MMM dd, yyyy')}</span>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <h3 className="text-xl font-black text-white group-hover:text-elite-accent-cyan transition-all line-clamp-1 uppercase tracking-tighter">
+                                                            {item.title}
+                                                        </h3>
+                                                        <div className="flex items-center gap-4">
+                                                            {item.is_trending && (
+                                                                <span className="text-elite-accent-cyan text-[8px] font-black uppercase tracking-[0.2em] animate-pulse flex items-center gap-1.5">
+                                                                    <TrendingUp size={10} /> TRENDING PULSE
+                                                                </span>
+                                                            )}
+                                                            <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest">{format(new Date(item.created_at), 'MMM dd, yyyy')}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-8 text-center text-[11px] font-black text-slate-900 uppercase tracking-widest">
-                                            {item.country || 'Global'}
-                                        </td>
-                                        <td className="p-8 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                            {item.category || 'General'}
-                                        </td>
-                                        <td className="p-8 text-center">
-                                            <span className={`inline-flex items-center px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${item.status === 'published'
-                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                                : 'bg-amber-50 text-amber-700 border-amber-100'
-                                                }`}>
-                                                {item.status === 'published' ? 'Deployed' : 'Draft Intel'}
-                                            </span>
-                                        </td>
-                                        <td className="p-8 text-right pr-12">
-                                            <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                                                <Link href={`/news/${item.slug}`} target="_blank">
-                                                    <Button size="sm" variant="ghost" className="h-11 w-11 p-0 rounded-xl hover:bg-white shadow-sm border border-transparent hover:border-slate-100 transition-all">
-                                                        <Eye className="w-4 h-4 text-slate-400" />
+                                            </td>
+                                            <td className="p-10 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">
+                                                {item.category || 'General'}
+                                            </td>
+                                            <td className="p-10 text-center">
+                                                <span className={`inline-flex items-center px-5 py-2.5 rounded-[1.2rem] text-[9px] font-black uppercase tracking-[0.3em] border ${item.status === 'published'
+                                                    ? 'bg-elite-accent-emerald/10 text-elite-accent-emerald border-elite-accent-emerald/20 shadow-lg shadow-elite-accent-emerald/5'
+                                                    : 'bg-elite-accent-purple/10 text-elite-accent-purple border-elite-accent-purple/20'
+                                                    }`}>
+                                                    {item.status === 'published' ? 'Active Relay' : 'Draft Staged'}
+                                                </span>
+                                            </td>
+                                            <td className="p-10 text-right pr-16">
+                                                <div className="flex items-center justify-end gap-4 opacity-0 group-hover:opacity-100 transition-all translate-x-10 group-hover:translate-x-0">
+                                                    <Link href={`/news/${item.slug}`} target="_blank">
+                                                        <Button size="sm" variant="ghost" className="h-12 w-12 p-0 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    </Link>
+                                                    <Link href={`/admin/studio/news/edit/${item.id}`}>
+                                                        <Button size="sm" variant="ghost" className="h-12 w-12 p-0 rounded-2xl border border-white/5 bg-white/5 hover:bg-elite-accent-cyan/10 hover:text-elite-accent-cyan group/edit transition-all">
+                                                            <Edit className="w-4 h-4" />
+                                                        </Button>
+                                                    </Link>
+                                                    <Button size="sm" variant="ghost" className="h-12 w-12 p-0 rounded-2xl border border-white/5 bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all">
+                                                        <Trash2 className="w-4 h-4" />
                                                     </Button>
-                                                </Link>
-                                                <Link href={`/admin/studio/news/edit/${item.id}`}>
-                                                    <Button size="sm" variant="ghost" className="h-11 w-11 p-0 rounded-xl border border-transparent hover:border-red-100 hover:bg-red-50 group/edit transition-all">
-                                                        <Edit className="w-4 h-4 text-slate-400 group-hover/edit:text-red-700" />
-                                                    </Button>
-                                                </Link>
-                                                <Button size="sm" variant="ghost" className="h-11 w-11 p-0 rounded-xl border border-transparent hover:bg-red-700 group/del transition-all">
-                                                    <Trash2 className="w-4 h-4 text-slate-400 group-hover/del:text-white" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </FadeIn>
         </div>
     );
 }

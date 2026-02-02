@@ -7,10 +7,14 @@ export function SiteBrand({ variant = 'default', className = '' }: { variant?: '
     variant === 'light'
       ? 'text-white'
       : variant === 'dark'
-        ? 'text-slate-950 dark:text-white'
-        : 'text-indigo-600 dark:text-indigo-400 hover:opacity-80 transition-opacity';
+        ? 'text-white'
+        : 'text-gradient-cyan hover:scale-105 transition-all';
   return (
-    <Link href="/" className={`${base} ${color} ${className}`}>
+    <Link href="/" className={`${base} ${color} ${className} flex items-center gap-2`}>
+      <span className="relative flex h-3 w-3">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-elite-accent-cyan opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-3 w-3 bg-elite-accent-cyan"></span>
+      </span>
       {BRAND_NAME}
     </Link>
   );

@@ -20,7 +20,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/Button';
 import { TipTapEditor } from '@/components/editor/TipTapEditor';
-import { LiveRoomCreator } from './LiveRoomCreator'; // Added import
+import { LiveRoomCreator } from './LiveRoomCreator';
+import { Activity, Sparkles, Box, Trash2 } from 'lucide-react';
 
 // --- Types ---
 interface ManualLesson {
@@ -109,33 +110,37 @@ function SortableUnitItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm mb-6 transition-all hover:border-teal-100">
-      <div className="flex items-center gap-4 mb-5">
+    <div ref={setNodeRef} style={style} className={`glass-card-premium rounded-[2.5rem] p-8 mb-8 transition-all relative overflow-hidden group ${isDragging ? 'opacity-50 ring-2 ring-elite-accent-cyan' : 'opacity-100 hover:border-elite-accent-cyan/30 shadow-2xl shadow-black/50'}`}>
+      <div className="absolute top-0 left-0 w-1 h-full bg-elite-accent-cyan/20 group-hover:bg-elite-accent-cyan/50 transition-all" />
+
+      <div className="flex items-center gap-6 mb-8">
         {!readOnly && (
-          <div {...attributes} {...listeners} className="cursor-grab text-slate-300 hover:text-teal-500 p-2 text-xl font-bold">
-            ⋮⋮
+          <div {...attributes} {...listeners} className="cursor-grab text-slate-700 hover:text-elite-accent-cyan transition-colors p-3 bg-white/5 rounded-xl border border-white/5">
+            <Activity size={14} className="opacity-50" />
           </div>
         )}
         <div className="flex-1">
-          <label className="space-y-1 text-xs font-bold uppercase tracking-wider text-slate-400 block">
-            {mode === 'professional' ? 'Skill / Section' : 'Unit Title'}
+          <label className="space-y-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 block">
+            {mode === 'professional' ? 'Strategic Domain' : 'Neural Sector'}
             <input
               value={unit.title}
               onChange={(e) => onUpdateUnit(unitIndex, e.target.value)}
               disabled={readOnly}
-              placeholder={mode === 'professional' ? "e.g. Backend Essentials" : "Module/Unit Name (e.g. Introduction)"}
-              className="w-full text-lg font-semibold rounded-xl border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-teal-100 focus:border-teal-500 outline-none"
+              placeholder={mode === 'professional' ? "Backend Essentials" : "Sector Title (e.g. Introduction)"}
+              className="w-full text-xl font-black rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/5 focus:border-elite-accent-cyan/50 outline-none transition-all uppercase tracking-tight"
             />
           </label>
         </div>
         {!readOnly && (
-          <Button variant="ghost" size="sm" onClick={() => onRemoveUnit(unitIndex)} className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8 p-0">
+          <Button variant="ghost" size="sm" onClick={() => onRemoveUnit(unitIndex)} className="text-slate-600 hover:text-red-400 hover:bg-red-400/10 rounded-xl h-10 w-10 p-0 transition-all">
             ×
           </Button>
         )}
       </div>
 
-      <div className="pl-6 border-l-4 border-slate-50 space-y-6">
+      <div className="pl-12 space-y-8 relative">
+        <div className="absolute left-[22px] top-0 bottom-8 w-[2px] bg-gradient-to-b from-elite-accent-cyan/20 via-white/5 to-transparent" />
+
         <SortableContext items={(unit.chapters || []).map((_, i) => `chapter-${unitIndex}-${i}`)} strategy={verticalListSortingStrategy}>
           {(unit.chapters || []).map((chapter, chapterIndex) => (
             <SortableChapterItem
@@ -156,9 +161,15 @@ function SortableUnitItem({
             />
           ))}
         </SortableContext>
+
         {!readOnly && (
-          <Button variant="outline" size="sm" onClick={() => onAddChapter(unitIndex)} className="w-full border-dashed border-2 hover:bg-teal-50 hover:border-teal-200">
-            {mode === 'professional' ? '+ Add Project / Day' : '+ Add Chapter (Section)'}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onAddChapter(unitIndex)}
+            className="w-full h-12 rounded-xl border-dashed border-white/10 text-slate-500 hover:text-white hover:bg-white/5 hover:border-white/20 text-[9px] font-black uppercase tracking-widest transition-all"
+          >
+            {mode === 'professional' ? '+ Initialize Project' : '+ Add Node Chapter'}
           </Button>
         )}
       </div>
@@ -207,33 +218,33 @@ function SortableChapterItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-      <div className="flex items-center gap-3 mb-4">
+    <div ref={setNodeRef} style={style} className="rounded-2xl border border-white/5 bg-white/5 p-6 relative group/chapter">
+      <div className="flex items-center gap-4 mb-6">
         {!readOnly && (
-          <div {...attributes} {...listeners} className="cursor-grab text-slate-300 hover:text-slate-500">
-            ⋮⋮
+          <div {...attributes} {...listeners} className="cursor-grab text-slate-700 hover:text-elite-accent-cyan transition-colors">
+            <Activity size={12} className="opacity-30" />
           </div>
         )}
         <div className="flex-1">
-          <label className="text-xs font-bold text-slate-500 block mb-1">
-            {mode === 'professional' ? 'PROJECT / DAY' : 'CHAPTER / DAY'}
+          <label className="text-[9px] font-black text-slate-500 block mb-2 tracking-[0.2em] uppercase">
+            {mode === 'professional' ? 'PROJECT MODULE' : 'NODE CHAPTER'}
           </label>
           <input
             value={chapter.title}
             onChange={(e) => onUpdateChapter(unitIndex, chapterIndex, e.target.value)}
             disabled={readOnly}
-            placeholder={mode === 'professional' ? "Project title (e.g. Day 1: MongoDB Setup)" : "Chapter title (e.g. Getting Started)"}
-            className="w-full font-medium rounded-lg border border-slate-200 px-3 py-1.5 focus:border-teal-400 outline-none"
+            placeholder={mode === 'professional' ? "Project title" : "Chapter title"}
+            className="w-full font-bold rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:border-elite-accent-cyan/50 outline-none transition-all"
           />
         </div>
         {!readOnly && (
-          <Button variant="ghost" size="sm" onClick={() => onRemoveChapter(unitIndex, chapterIndex)} className="h-6 w-6 p-0 text-slate-400 hover:text-red-500">
+          <Button variant="ghost" size="sm" onClick={() => onRemoveChapter(unitIndex, chapterIndex)} className="h-8 w-8 p-0 text-slate-700 hover:text-red-400 transition-all">
             ×
           </Button>
         )}
       </div>
 
-      <div className="space-y-3 pl-4">
+      <div className="space-y-4 pl-8 border-l border-white/5">
         {(chapter.lessons || []).map((lesson, lessonIndex) => (
           <LessonItem
             key={`${unitIndex}-${chapterIndex}-${lessonIndex}`}
@@ -248,8 +259,13 @@ function SortableChapterItem({
           />
         ))}
         {!readOnly && (
-          <Button variant="ghost" size="xs" onClick={() => onAddLesson(unitIndex, chapterIndex)} className="text-teal-600 hover:text-teal-700 hover:bg-teal-50">
-            + Add Lesson / Session
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={() => onAddLesson(unitIndex, chapterIndex)}
+            className="text-[9px] font-black uppercase tracking-widest text-elite-accent-cyan hover:bg-elite-accent-cyan/10 px-4 h-8 rounded-lg transition-all"
+          >
+            + Link Neural Lesson
           </Button>
         )}
       </div>
@@ -403,41 +419,41 @@ function LessonItem({
 
   return (
     <>
-      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm hover:shadow-md transition-shadow">
-        <div className="flex flex-wrap items-start gap-3 mb-3">
+      <div className="rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10 group/lesson">
+        <div className="flex flex-wrap items-start gap-4 mb-4">
           <div className="flex-1 min-w-[200px]">
             <input
               value={lesson.title}
               onChange={(e) => onUpdate('title', e.target.value)}
               disabled={readOnly}
               placeholder="Lesson Title"
-              className="w-full text-sm font-semibold rounded px-2 py-1 border-b border-transparent hover:border-slate-100 focus:border-teal-400 outline-none"
+              className="w-full text-xs font-bold rounded px-2 py-1 bg-transparent border-b border-white/5 focus:border-elite-accent-cyan/50 outline-none text-white uppercase tracking-widest placeholder:text-white/10"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <select
               value={lesson.contentType}
               onChange={(e) => onUpdate('contentType', e.target.value)}
               disabled={readOnly}
-              className="text-xs rounded border border-slate-200 px-2 py-1 bg-slate-50 font-medium"
+              className="text-[9px] font-black uppercase tracking-widest rounded-lg border border-white/10 px-3 py-1.5 bg-white/5 text-slate-300 outline-none appearance-none"
             >
-              <option value="text">Text Entry</option>
-              <option value="video">Video Class</option>
-              <option value="live">Live Stream</option>
-              <option value="document">PDF / Doc</option>
-              <option value="quiz">Interactive Quiz</option>
+              <option value="text" className="bg-elite-bg">Text Entry</option>
+              <option value="video" className="bg-elite-bg">Video Class</option>
+              <option value="live" className="bg-elite-bg">Live Stream</option>
+              <option value="document" className="bg-elite-bg">PDF / Doc</option>
+              <option value="quiz" className="bg-elite-bg">Interactive Quiz</option>
             </select>
             {!readOnly && (
               <>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setShowContentEditor(true)}
-                  className="h-7 px-3 text-xs"
+                  className="h-8 px-4 text-[9px] font-black uppercase tracking-widest bg-white/5 text-white hover:bg-elite-accent-cyan hover:text-black rounded-lg transition-all"
                 >
-                  ✏️ Edit Content
+                  Configure
                 </Button>
-                <Button variant="ghost" size="sm" onClick={onRemove} className="h-6 w-6 p-0 text-slate-300 hover:text-red-500">
+                <Button variant="ghost" size="sm" onClick={onRemove} className="h-8 w-8 p-0 text-slate-700 hover:text-red-400">
                   ×
                 </Button>
               </>
@@ -446,35 +462,37 @@ function LessonItem({
         </div>
 
         {lesson.contentType === 'text' && (
-          <TipTapEditor
-            value={lesson.content || ''}
-            onChange={(next) => onUpdate('content', next)}
-            height={120}
-            placeholder="Detailed lesson notes..."
-            disabled={readOnly}
-          />
+          <div className="rounded-xl border border-white/5 bg-black/20 overflow-hidden">
+            <TipTapEditor
+              value={lesson.content || ''}
+              onChange={(next) => onUpdate('content', next)}
+              height={120}
+              placeholder="Detailed lesson notes..."
+              disabled={readOnly}
+            />
+          </div>
         )}
 
         {lesson.contentType === 'video' && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <input
               value={lesson.videoUrl || ''}
               onChange={(e) => onUpdate('videoUrl', e.target.value)}
-              placeholder="https://..."
-              className="w-full text-xs rounded border border-slate-200 px-3 py-1.5"
+              placeholder="Asset URL (HLS/MP4)"
+              className="w-full text-[10px] font-bold rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white outline-none placeholder:text-white/10"
             />
-            <p className="text-[10px] text-slate-400 italic">Enter the HLS (.m3u8) or MP4 URL for this masterclass.</p>
+            <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest px-1">Neural Relay Protocol: Direct CDN Link Required</p>
           </div>
         )}
 
         {lesson.contentType === 'live' && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
               <input
                 value={lesson.liveRoomId || defaultLiveRoomId || ''}
                 onChange={(e) => onUpdate('liveRoomId', e.target.value)}
-                placeholder={defaultLiveRoomId ? "Uses course default if empty" : "Room Name or ID"}
-                className="flex-1 text-xs rounded border border-slate-200 px-3 py-1.5"
+                placeholder={defaultLiveRoomId ? "Course Default Active" : "Room Descriptor"}
+                className="flex-1 text-[10px] font-bold rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white outline-none placeholder:text-white/10"
               />
               {!readOnly && (
                 <button
@@ -493,31 +511,31 @@ function LessonItem({
                       onUpdate('liveRoomId', '__CREATE_NEW__');
                     }
                   }}
-                  className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-bold rounded hover:bg-indigo-600 transition-colors whitespace-nowrap"
+                  className="px-6 py-2.5 bg-elite-accent-cyan text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white transition-all whitespace-nowrap"
                 >
-                  {defaultLiveRoomId || lesson.liveRoomId ? 'Start Class' : 'Create Room'}
+                  {defaultLiveRoomId || lesson.liveRoomId ? 'Initialize Stream' : 'Secure Room'}
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-slate-400 italic">Link this session to a room or use the course default.</p>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest px-1">Synchronous Node Relay v2.4</p>
+            <div className="grid grid-cols-2 gap-4">
               <input
                 type="date"
                 value={scheduleDate}
                 onChange={(e) => setScheduleDate(e.target.value)}
                 disabled={readOnly}
-                className="text-xs rounded border border-slate-200 px-3 py-1.5"
+                className="text-[10px] font-black rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white outline-none"
               />
               <input
                 type="time"
                 value={scheduleTime}
                 onChange={(e) => setScheduleTime(e.target.value)}
                 disabled={readOnly}
-                className="text-xs rounded border border-slate-200 px-3 py-1.5"
+                className="text-[10px] font-black rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white outline-none"
               />
             </div>
             {!readOnly && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={async () => {
                     if (!scheduleDate || !scheduleTime) return;
@@ -552,10 +570,10 @@ function LessonItem({
                       setIsScheduling(false);
                     }
                   }}
-                  className="px-3 py-1.5 bg-teal-500 text-white text-xs font-bold rounded hover:bg-teal-600 transition-colors"
+                  className="px-6 py-2.5 border border-white/10 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-white/5 transition-all w-full flex items-center justify-center gap-2"
                   disabled={isScheduling || !scheduleDate || !scheduleTime}
                 >
-                  {isScheduling ? 'Scheduling...' : 'Schedule'}
+                  {isScheduling ? 'Syncing...' : 'Schedule Relay'}
                 </button>
               </div>
             )}
@@ -565,11 +583,15 @@ function LessonItem({
 
       {/* Content Editor Modal */}
       {showContentEditor && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-black text-slate-900">Edit Lesson Content</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowContentEditor(false)}>✕</Button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-[100] p-4 lg:p-12">
+          <div className="glass-card-premium rounded-[3.5rem] w-full max-w-5xl max-h-[90vh] overflow-y-auto p-12 border border-white/10 relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-elite-accent-cyan/10 rounded-full blur-[100px] -mr-32 -mt-32" />
+            <div className="flex items-center justify-between mb-12 relative z-10">
+              <div className="space-y-1">
+                <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Lesson Configuration</h3>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Node ID: {lesson.id || 'Pending Synthesis'}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowContentEditor(false)} className="text-slate-500 hover:text-white text-xl">✕</Button>
             </div>
 
             {/* Lesson Title */}

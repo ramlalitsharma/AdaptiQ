@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       take: Math.max(1, Math.min(100, limit)),
     });
 
-    const items = ebooks.map((e) => ({
+    const items = ebooks.map((e: { id: any; title: any; tags: any; updatedAt: any; }) => ({
       id: e.id,
       title: e.title || '',
       tags: Array.isArray(e.tags) ? e.tags : [],

@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { requireAdmin } from '@/lib/admin-check';
 import { getDatabase } from '@/lib/mongodb';
 import { CourseCreatorStudio } from '@/components/admin/CourseCreatorStudio';
+import { Target, Zap } from 'lucide-react';
+import { FadeIn } from '@/components/ui/Motion';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +37,7 @@ export default async function CourseStudioPage({ searchParams }: PageProps) {
     title: course.title,
     status: course.status || 'draft',
     level: course.level,
-    createdAt: course.createdAt,
+    createdAt: course.createdAt ? course.createdAt.toISOString() : undefined,
   }));
 
   const params = searchParams ? await searchParams : undefined;
@@ -76,9 +78,9 @@ export default async function CourseStudioPage({ searchParams }: PageProps) {
           title: module.title,
           lessons: Array.isArray(module.lessons)
             ? module.lessons.map((lesson: any) => ({
-                title: lesson.title,
-                content: lesson.content,
-              }))
+              title: lesson.title,
+              content: lesson.content,
+            }))
             : [],
         })),
         resources: resources.map((resource: any) => ({
@@ -91,17 +93,48 @@ export default async function CourseStudioPage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
-      <header className="border-b bg-white/80 backdrop-blur">
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-2xl font-semibold text-slate-900">Course Studio</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Architect adaptive learning programs with AI acceleration, manual module controls, and version-aware publishing.
-          </p>
+    <div className="min-h-screen bg-elite-bg text-slate-100 selection:bg-elite-accent-cyan/30">
+      <header className="sticky top-0 z-50 glass-card-premium border-b border-white/5 px-8 py-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-4">
+            <FadeIn>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-1.5 backdrop-blur-xl">
+                <Target size={12} className="text-elite-accent-cyan" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-elite-accent-cyan">Architecture Terminal</span>
+              </div>
+            </FadeIn>
+            <div className="space-y-1">
+              <FadeIn delay={0.1}>
+                <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter uppercase leading-none">
+                  Course <span className="text-gradient-cyan">Architect</span>
+                </h1>
+              </FadeIn>
+              <FadeIn delay={0.2}>
+                <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.4em] mt-2 flex items-center gap-3">
+                  <span className="w-8 h-[1px] bg-slate-800" /> Neural Curriculum Engine v2.0
+                </p>
+              </FadeIn>
+            </div>
+          </div>
+
+          <FadeIn delay={0.3}>
+            <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/5 group hover:border-elite-accent-cyan/30 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-elite-accent-cyan/10 flex items-center justify-center text-elite-accent-cyan">
+                <Zap size={18} className="animate-pulse" />
+              </div>
+              <div>
+                <div className="text-[10px] font-black text-white uppercase tracking-widest">Active Relay</div>
+                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter transition-colors group-hover:text-slate-400">Node Synchronized</div>
+              </div>
+            </div>
+          </FadeIn>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-10">
-        <CourseCreatorStudio recentCourses={formatted} selectedCourse={selectedCourseData || undefined} />
+
+      <main className="max-w-7xl mx-auto p-8 lg:p-12">
+        <FadeIn delay={0.4}>
+          <CourseCreatorStudio recentCourses={formatted} selectedCourse={selectedCourseData || undefined} />
+        </FadeIn>
       </main>
     </div>
   );

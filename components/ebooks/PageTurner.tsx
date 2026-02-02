@@ -86,23 +86,32 @@ export function PageTurner({ chapters, approxCharsPerPage = 1400 }: PageTurnerPr
   const atEnd = rightPageIndex >= pages.length - 1;
 
   return (
-    <div className="flex flex-col gap-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-8" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="flex flex-wrap items-center justify-between gap-6 px-4">
         <button
           onClick={prev}
           disabled={atStart}
-          className={`h-10 w-10 rounded-full flex items-center justify-center border transition ${
-            atStart ? 'border-slate-200 text-slate-300' : 'border-rose-400 text-rose-600 hover:bg-rose-50'
-          }`}
+          className={`h-12 w-12 rounded-2xl flex items-center justify-center border transition-all duration-300 ${atStart
+            ? 'border-slate-100 dark:border-white/5 text-slate-300 dark:text-slate-700'
+            : 'border-slate-200 dark:border-white/10 text-elite-accent-cyan hover:border-elite-accent-cyan/50 hover:bg-elite-accent-cyan/10 active:scale-90 shadow-sm'
+            }`}
           title="Previous page"
         >
-          ‹
+          <span className="text-xl">←</span>
         </button>
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-semibold text-slate-600">
-            {double ? `${leftPageIndex + 1}–${Math.min(pages.length, rightPageIndex + 1)}` : `${leftPageIndex + 1}`} / {pages.length}
+
+        <div className="flex flex-wrap items-center gap-8">
+          <div className="flex flex-col items-center gap-1">
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Coordinate</div>
+            <div className="text-sm font-black text-slate-900 dark:text-white font-mono tracking-tighter">
+              {double ? `${leftPageIndex + 1}–${Math.min(pages.length, rightPageIndex + 1)}` : `${leftPageIndex + 1}`} <span className="text-slate-300 dark:text-slate-600">/</span> {pages.length}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/5 hidden sm:block" />
+
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Density</div>
             <input
               type="range"
               min={1000}
@@ -110,65 +119,88 @@ export function PageTurner({ chapters, approxCharsPerPage = 1400 }: PageTurnerPr
               step={100}
               value={charsPerPage}
               onChange={(e) => setCharsPerPage(Number(e.target.value))}
-              className="w-40"
-              aria-label="Page size"
+              className="w-32 h-1 bg-slate-200 dark:bg-white/5 rounded-full appearance-none cursor-pointer accent-elite-accent-cyan"
+              aria-label="Page density"
             />
-            <select
-              value={fontSize}
-              onChange={(e) => setFontSize(e.target.value as typeof fontSize)}
-              className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
-              aria-label="Typography"
-            >
-              <option value="text-sm">Small</option>
-              <option value="text-base">Medium</option>
-              <option value="text-lg">Large</option>
-            </select>
+          </div>
+
+          <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/5 hidden sm:block" />
+
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Typography</div>
+            <div className="flex gap-1">
+              {(['text-sm', 'text-base', 'text-lg'] as const).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setFontSize(size)}
+                  className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all ${fontSize === size
+                    ? 'bg-elite-accent-cyan text-white dark:text-black'
+                    : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                >
+                  {size.replace('text-', '')}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+
         <button
           onClick={next}
           disabled={atEnd}
-          className={`h-10 w-10 rounded-full flex items-center justify-center border transition ${
-            atEnd ? 'border-slate-200 text-slate-300' : 'border-slate-300 text-slate-700 hover:bg-slate-50'
-          }`}
+          className={`h-12 w-12 rounded-2xl flex items-center justify-center border transition-all duration-300 ${atEnd
+            ? 'border-slate-100 dark:border-white/5 text-slate-300 dark:text-slate-700'
+            : 'border-slate-200 dark:border-white/10 text-elite-accent-cyan hover:border-elite-accent-cyan/50 hover:bg-elite-accent-cyan/10 active:scale-90 shadow-sm'
+            }`}
           title="Next page"
         >
-          ›
+          <span className="text-xl">→</span>
         </button>
       </div>
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="min-h-[480px] p-4 sm:p-6 lg:p-8 grid gap-0 lg:grid-cols-2">
+
+      <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/[0.02] dark:from-white/[0.02] to-transparent pointer-events-none" />
+        <div className="min-h-[600px] p-8 sm:p-12 lg:p-16 grid gap-0 lg:grid-cols-2">
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div
               key={leftPageIndex}
-              initial={{ rotateY: -12, x: -40, opacity: 0.2 }}
+              initial={{ rotateY: -12, x: -40, opacity: 0 }}
               animate={{ rotateY: 0, x: 0, opacity: 1 }}
               exit={{ rotateY: 12, x: 40, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-              className="border-r lg:border-slate-200 pr-4 lg:pr-6"
+              className={`border-r border-slate-200 lg:dark:border-white/5 pr-8 lg:pr-12 ${fontSize} leading-relaxed text-slate-700 dark:text-slate-300 font-medium`}
             >
-              <div className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                {pages[leftPageIndex]?.title}
+              <div className="mb-10 flex items-center gap-3">
+                <span className="h-4 w-1 bg-elite-accent-cyan rounded-full" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500 truncate">
+                  {pages[leftPageIndex]?.title}
+                </span>
               </div>
-              <div className={`prose max-w-none text-slate-800 ${fontSize}`}>
+              <div className="space-y-6">
                 {pages[leftPageIndex]?.text.split(/\n{2,}/).map((para, i) => (
-                  <p key={i}>{para}</p>
+                  <p key={i} className="first-letter:text-3xl first-letter:font-black first-letter:text-elite-accent-cyan first-letter:mr-1">
+                    {para}
+                  </p>
                 ))}
               </div>
             </motion.div>
+
             {double && pages[rightPageIndex] && (
               <motion.div
                 key={rightPageIndex}
-                initial={{ rotateY: 12, x: 40, opacity: 0.2 }}
+                initial={{ rotateY: 12, x: 40, opacity: 0 }}
                 animate={{ rotateY: 0, x: 0, opacity: 1 }}
                 exit={{ rotateY: -12, x: -40, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-                className="pl-4 lg:pl-6"
+                className={`pl-8 lg:pl-12 ${fontSize} leading-relaxed text-slate-700 dark:text-slate-300 font-medium`}
               >
-                <div className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                  {pages[rightPageIndex]?.title}
+                <div className="mb-10 flex items-center gap-3">
+                  <span className="h-4 w-1 bg-elite-accent-purple rounded-full" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500 truncate">
+                    {pages[rightPageIndex]?.title}
+                  </span>
                 </div>
-                <div className={`prose max-w-none text-slate-800 ${fontSize}`}>
+                <div className="space-y-6">
                   {pages[rightPageIndex]?.text.split(/\n{2,}/).map((para, i) => (
                     <p key={i}>{para}</p>
                   ))}

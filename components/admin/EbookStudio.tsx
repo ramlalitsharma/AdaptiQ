@@ -84,12 +84,12 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
           prev.map((c, i) =>
             i === index
               ? {
-                  title: chapter.title || c.title,
-                  summary: chapter.summary || c.summary,
-                  keyTakeaways: (chapter.keyTakeaways || []).map((item: string) => `• ${item}`).join('\n'),
-                  resources: (chapter.resources || []).join('\n'),
-                  content: typeof chapter.content === 'string' ? chapter.content : c.content || '',
-                }
+                title: chapter.title || c.title,
+                summary: chapter.summary || c.summary,
+                keyTakeaways: (chapter.keyTakeaways || []).map((item: string) => `• ${item}`).join('\n'),
+                resources: (chapter.resources || []).join('\n'),
+                content: typeof chapter.content === 'string' ? chapter.content : c.content || '',
+              }
               : c
           )
         );
@@ -196,35 +196,35 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
     if (!canSubmit) return;
     setSaving(true);
     setError(null);
-      try {
-        const payload = {
-          title: form.title.trim(),
-          audience: form.audience.trim() || undefined,
-          tone: form.tone.trim() || undefined,
-          focus: form.focus.trim() || undefined,
-          chapters: form.chapters ? Number(form.chapters) : undefined,
-          outline: {
-            chapters: chapters.map((chapter) => ({
-              title: chapter.title,
-              summary: chapter.summary,
-              keyTakeaways: chapter.keyTakeaways
-                .split('\n')
-                .map((line) => line.replace(/^•\s?/, '').trim())
-                .filter(Boolean),
-              resources: chapter.resources
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean),
-              content: chapter.content || '',
-            })),
-          },
-          releaseAt: form.releaseAt || undefined,
-          tags: form.tags
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean),
-          seo: seo || undefined,
-        };
+    try {
+      const payload = {
+        title: form.title.trim(),
+        audience: form.audience.trim() || undefined,
+        tone: form.tone.trim() || undefined,
+        focus: form.focus.trim() || undefined,
+        chapters: form.chapters ? Number(form.chapters) : undefined,
+        outline: {
+          chapters: chapters.map((chapter) => ({
+            title: chapter.title,
+            summary: chapter.summary,
+            keyTakeaways: chapter.keyTakeaways
+              .split('\n')
+              .map((line) => line.replace(/^•\s?/, '').trim())
+              .filter(Boolean),
+            resources: chapter.resources
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean),
+            content: chapter.content || '',
+          })),
+        },
+        releaseAt: form.releaseAt || undefined,
+        tags: form.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        seo: seo || undefined,
+      };
 
       const res = await fetch('/api/admin/ebooks', {
         method: 'POST',
@@ -242,179 +242,240 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900">Ebook & Notes Studio</h2>
-              <p className="text-sm text-slate-500">Generate chapter-wise ebooks, study guides, and downloadable notes.</p>
-            </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleGenerateOutline} disabled={previewing || !form.title}>
-              {previewing ? 'Generating…' : 'AI Outline'}
+    <div className="space-y-12">
+      <div className="glass-card-premium rounded-[3rem] border border-slate-200 dark:border-white/5 p-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-elite-accent-cyan/10 dark:bg-elite-accent-cyan/5 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="flex flex-wrap items-center justify-between gap-8 mb-12 border-b border-slate-100 dark:border-white/5 pb-10">
+          <div>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-2">Protocol: Ebook Engineering</h2>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Intelligence <span className="text-gradient-cyan">Synthesis Hub</span></h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="rounded-2xl bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-elite-accent-cyan/50 text-[10px] font-black uppercase tracking-widest h-12 px-6 shadow-sm"
+              onClick={handleGenerateOutline}
+              disabled={previewing || !form.title}
+            >
+              {previewing ? 'Sychronizing...' : '⚡ Generate Logic Map'}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleGenerateFull} disabled={previewing || !form.title}>
-              {previewing ? 'Generating…' : 'AI Full Draft'}
+            <Button
+              variant="outline"
+              className="rounded-2xl bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-elite-accent-purple/50 text-[10px] font-black uppercase tracking-widest h-12 px-6 shadow-sm"
+              onClick={handleGenerateFull}
+              disabled={previewing || !form.title}
+            >
+              {previewing ? 'Manifesting...' : '🧬 Synthesize Draft'}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleGenerateSEO} disabled={previewing || !form.title}>
-              {previewing ? 'Generating…' : 'AI SEO'}
+            <Button
+              variant="outline"
+              className="rounded-2xl bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-elite-accent-emerald/50 text-[10px] font-black uppercase tracking-widest h-12 px-6 shadow-sm"
+              onClick={handleGenerateSEO}
+              disabled={previewing || !form.title}
+            >
+              {previewing ? 'Computing...' : '🔍 Matrix SEO'}
             </Button>
           </div>
-          </div>
+        </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr),minmax(0,1.2fr),minmax(0,0.9fr)]">
-          <section className="space-y-4">
-            <label className="space-y-1 text-sm text-slate-600">
-              Ebook title
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Node Title</label>
               <input
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                placeholder="Adaptive Learning Playbook"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                placeholder="ADAPTIVE LEARNING PLAYBOOK"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-bold uppercase tracking-wider outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
               />
-            </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              Target audience
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Target Neural Group</label>
               <input
                 value={form.audience}
                 onChange={(e) => setForm((prev) => ({ ...prev, audience: e.target.value }))}
-                placeholder="Teachers, exam aspirants"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                placeholder="EDUCATORS, EXAM ASPIRANTS"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-bold uppercase tracking-wider outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
               />
-            </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              Tone & style
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Linguistic Tone</label>
               <input
                 value={form.tone}
                 onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
-                placeholder="Practical and inspiring"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                placeholder="PRACTICAL AND INSPIRING"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-bold uppercase tracking-wider outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
               />
-            </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              Core focus
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Cognitive Core Focus</label>
               <input
                 value={form.focus}
                 onChange={(e) => setForm((prev) => ({ ...prev, focus: e.target.value }))}
-                placeholder="Adaptive assessments for competitive exams"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                placeholder="ADAPTIVE ASSESSMENTS FOR COMPETITIVE EXAMS"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-bold uppercase tracking-wider outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
               />
-            </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              Number of chapters (suggested)
-              <input
-                type="number"
-                value={form.chapters}
-                onChange={(e) => setForm((prev) => ({ ...prev, chapters: Number(e.target.value) }))}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
-              />
-            </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              Tags
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Segment Count</label>
+                <input
+                  type="number"
+                  value={form.chapters}
+                  onChange={(e) => setForm((prev) => ({ ...prev, chapters: Number(e.target.value) }))}
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-bold uppercase tracking-wider outline-none transition-all text-slate-900 dark:text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Deployment Schedule</label>
+                <input
+                  type="datetime-local"
+                  value={form.releaseAt}
+                  onChange={(e) => setForm((prev) => ({ ...prev, releaseAt: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-bold uppercase tracking-wider outline-none transition-all invert dark:invert-0"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-2">Archive Tags (Comma Separated)</label>
               <input
                 value={form.tags}
                 onChange={(e) => setForm((prev) => ({ ...prev, tags: e.target.value }))}
-                placeholder="ebook, adaptive"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                placeholder="EBOOK, ADAPTIVE"
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-bold uppercase tracking-wider outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
               />
-            </label>
-            <label className="space-y-1 text-sm text-slate-600">
-              Release at (optional)
-              <input
-                type="datetime-local"
-                value={form.releaseAt}
-                onChange={(e) => setForm((prev) => ({ ...prev, releaseAt: e.target.value }))}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2"
-              />
-            </label>
+            </div>
           </section>
 
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">Chapters</h3>
-              <Button variant="outline" size="sm" onClick={addChapter}>
-                + Chapter
+          <section className="space-y-8">
+            <div className="flex items-center justify-between border-b border-white/5 pb-4">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Segment Map</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addChapter}
+                className="rounded-xl bg-white/5 border-white/10 text-[9px] font-black uppercase tracking-widest px-4"
+              >
+                + New Segment
               </Button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {chapters.map((chapter, index) => (
-                <div key={index} className="rounded-xl border border-slate-200 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex-1 text-sm text-slate-600">
-                      Chapter title
+                <div key={index} className="rounded-[2rem] border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 p-8 space-y-6 relative group transition-all hover:bg-slate-100 dark:hover:bg-white/[0.07] shadow-sm">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Segment {index + 1} Identifier</label>
                       <input
                         value={chapter.title}
                         onChange={(e) => updateChapter(index, 'title', e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        className="w-full bg-white dark:bg-elite-bg border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wider outline-none text-slate-900 dark:text-white"
                       />
-                    </label>
-                    {chapters.length > 1 && (
-                      <Button variant="ghost" size="sm" onClick={() => removeChapter(index)}>
-                        Remove
+                    </div>
+                    <div className="flex items-center gap-2 pt-6">
+                      {chapters.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeChapter(index)}
+                          className="text-red-500 hover:bg-red-500/10 text-[9px] font-black uppercase"
+                        >
+                          DELETE
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => regenerateChapter(index)}
+                        disabled={previewing || !form.title}
+                        className="rounded-xl bg-white/5 border-white/10 text-[9px] font-black uppercase tracking-widest px-4 hover:border-elite-accent-cyan/50"
+                      >
+                        REGENERATE
                       </Button>
-                    )}
-                    <Button variant="outline" size="sm" onClick={() => regenerateChapter(index)} disabled={previewing || !form.title}>
-                      Regenerate
-                    </Button>
+                    </div>
                   </div>
-                  <label className="mt-3 block text-sm text-slate-600">
-                    Summary
-                    <textarea
-                      value={chapter.summary}
-                      onChange={(e) => updateChapter(index, 'summary', e.target.value)}
-                      rows={3}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                  <label className="mt-3 block text-sm text-slate-600">
-                    Key takeaways (one per line)
-                    <textarea
-                      value={chapter.keyTakeaways}
-                      onChange={(e) => updateChapter(index, 'keyTakeaways', e.target.value)}
-                      rows={3}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                <label className="mt-3 block text-sm text-slate-600">
-                  Resources / references
-                  <textarea
-                    value={chapter.resources}
-                    onChange={(e) => updateChapter(index, 'resources', e.target.value)}
-                    rows={2}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
-                  />
-                </label>
-                <label className="mt-3 block text-sm text-slate-600">
-                  Chapter content
-                  <textarea
-                    value={chapter.content || ''}
-                    onChange={(e) => updateChapter(index, 'content', e.target.value)}
-                    rows={6}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
-                  />
-                </label>
-              </div>
-            ))}
-          </div>
 
-            {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
-            <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
-              {saving ? 'Saving…' : 'Save ebook'}
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Cognitive Summary</label>
+                      <textarea
+                        value={chapter.summary}
+                        onChange={(e) => updateChapter(index, 'summary', e.target.value)}
+                        rows={4}
+                        className="w-full bg-white dark:bg-elite-bg border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-xl px-4 py-3 text-xs font-medium leading-relaxed outline-none text-slate-800 dark:text-slate-300"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Key Deliverables (One per line)</label>
+                      <textarea
+                        value={chapter.keyTakeaways}
+                        onChange={(e) => updateChapter(index, 'keyTakeaways', e.target.value)}
+                        rows={4}
+                        className="w-full bg-white dark:bg-elite-bg border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-xl px-4 py-3 text-xs font-medium leading-relaxed outline-none text-slate-800 dark:text-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Intellectual Resources / Citations</label>
+                    <textarea
+                      value={chapter.resources}
+                      onChange={(e) => updateChapter(index, 'resources', e.target.value)}
+                      rows={2}
+                      className="w-full bg-white dark:bg-elite-bg border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-xl px-4 py-3 text-xs font-medium leading-relaxed outline-none text-slate-800 dark:text-slate-300"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Deep Content Synthesis</label>
+                    <textarea
+                      value={chapter.content || ''}
+                      onChange={(e) => updateChapter(index, 'content', e.target.value)}
+                      rows={10}
+                      className="w-full bg-white dark:bg-elite-bg border border-slate-200 dark:border-white/10 focus:border-elite-accent-cyan/50 rounded-2xl px-5 py-4 text-sm font-medium leading-loose outline-none text-slate-800 dark:text-slate-300"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {error && (
+              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-[10px] font-black uppercase tracking-widest text-red-500">
+                ⚠️ Protocol Failure: {error}
+              </div>
+            )}
+
+            <Button
+              className="w-full h-16 rounded-2xl bg-elite-accent-cyan text-black font-black uppercase text-xs tracking-[0.3em] shadow-2xl shadow-elite-accent-cyan/20 hover:scale-[1.02] active:scale-95 transition-all"
+              onClick={handleSubmit}
+              disabled={!canSubmit || saving}
+            >
+              {saving ? 'SYNCHRONIZING DATA...' : 'DEPLOY INTELLIGENCE ASSET'}
             </Button>
           </section>
 
-          <aside className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm text-sm text-slate-700">
-              <h3 className="text-sm font-semibold text-slate-700">Preview</h3>
-              <div className="mt-3 space-y-2">
-                <div className="font-semibold text-slate-900">{form.title || 'Ebook title'}</div>
-                <div className="text-xs text-slate-500">Audience: {form.audience || 'N/A'} • Chapters: {chapters.length}</div>
-                <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600">
-                  <span className="font-semibold text-slate-700">Outline</span>
-                  <ol className="mt-2 space-y-1 list-decimal pl-4">
+          <aside className="space-y-6">
+            <div className="glass-card-premium rounded-[2rem] border border-white/5 p-8 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-elite-accent-cyan/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-all duration-700" />
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6">Real-Time Probe</h3>
+              <div className="space-y-6">
+                <div className="space-y-1">
+                  <div className="text-lg font-black text-white uppercase tracking-tight">{form.title || 'UNNAMED NODE'}</div>
+                  <div className="text-[9px] font-black text-elite-accent-cyan uppercase tracking-widest">
+                    {form.audience || 'GENERAL AUDIENCE'} • {chapters.length} SEGMENTS
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-black/40 border border-white/5 p-6 text-[10px] font-medium leading-loose text-slate-400">
+                  <span className="text-white font-black uppercase tracking-widest block mb-3 border-b border-white/5 pb-2">Structure Manifest</span>
+                  <ol className="mt-3 space-y-3 list-none">
                     {chapters.map((chapter, index) => (
-                      <li key={index}>
-                        {chapter.title} – {chapter.summary.slice(0, 80) || 'Summary pending'}
+                      <li key={index} className="flex gap-3">
+                        <span className="text-elite-accent-cyan font-black">{(index + 1).toString().padStart(2, '0')}</span>
+                        <div className="flex-1">
+                          <span className="text-white font-bold uppercase block">{chapter.title || 'PENDING IDENTIFIER'}</span>
+                          <span className="text-[9px] line-clamp-1 opacity-60">{(chapter.summary || 'Summary matrix empty').slice(0, 100)}</span>
+                        </div>
                       </li>
                     ))}
                   </ol>
@@ -422,17 +483,22 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent ebooks</h3>
+            <div className="glass-card-premium rounded-[2rem] border border-white/5 p-8">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6">Archived Nodes</h3>
               {recentEbooks.length === 0 ? (
-                <p className="mt-3 text-xs text-slate-500">No ebooks yet.</p>
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center py-4">NO PREVIOUS DATA</p>
               ) : (
-                <div className="mt-3 space-y-3">
+                <div className="space-y-4">
                   {recentEbooks.map((ebook) => (
-                    <div key={ebook.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2">
-                      <div>
-                        <div className="text-sm font-medium text-slate-800">{ebook.title}</div>
-                        <div className="text-xs text-slate-400">{ebook.updatedAt ? new Date(ebook.updatedAt).toLocaleString() : ''}</div>
+                    <div key={ebook.id} className="group relative flex items-center justify-between rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/[0.08] hover:border-elite-accent-cyan/30 transition-all cursor-pointer">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-black text-white uppercase tracking-wider truncate mb-1">{ebook.title}</div>
+                        <div className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
+                          {ebook.updatedAt ? new Date(ebook.updatedAt).toLocaleDateString() : ''}
+                        </div>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 text-elite-accent-cyan transition-opacity text-xs">
+                        ↗
                       </div>
                     </div>
                   ))}
@@ -440,20 +506,44 @@ export function EbookStudio({ recentEbooks }: EbookStudioProps) {
               )}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">SEO Preview</h3>
+            <div className="glass-card-premium rounded-[2rem] border border-white/5 p-8 relative overflow-hidden">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6 flex items-center justify-between">
+                Matrix SEO
+                {seo && <span className="w-2 h-2 rounded-full bg-elite-accent-emerald glow-emerald" />}
+              </h3>
               {!seo ? (
-                <p className="mt-3 text-xs text-slate-500">Use AI SEO to generate metadata.</p>
+                <div className="text-center py-8 space-y-4 border border-dashed border-white/10 rounded-2xl">
+                  <div className="text-2xl grayscale opacity-30">🕸️</div>
+                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Metadata Empty</p>
+                </div>
               ) : (
-                <div className="mt-3 space-y-2 text-xs text-slate-700">
-                  <div><span className="font-semibold">Title:</span> {seo.seoTitle}</div>
-                  <div><span className="font-semibold">Description:</span> {seo.metaDescription}</div>
-                  <div><span className="font-semibold">Keywords:</span> {(seo.keywords || []).join(', ')}</div>
-                  <div><span className="font-semibold">Slug:</span> {seo.slug}</div>
-                  <div><span className="font-semibold">Canonical:</span> {seo.canonicalPath}</div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 mt-2">
-                    <div className="font-semibold">Structured Data</div>
-                    <pre className="mt-1 whitespace-pre-wrap break-words text-[10px]">{JSON.stringify(seo.schemaOrg, null, 2)}</pre>
+                <div className="space-y-6 text-[10px] font-medium text-slate-400">
+                  <div className="space-y-1">
+                    <span className="text-white font-black uppercase block tracking-widest">Title</span>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 border border-white/5">{seo.seoTitle}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-white font-black uppercase block tracking-widest">Synthesis Description</span>
+                    <div className="bg-white/5 rounded-lg px-3 py-2 border border-white/5 leading-relaxed">{seo.metaDescription}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-white font-black uppercase block tracking-widest">Key Vectors</span>
+                      <div className="flex flex-wrap gap-1">
+                        {(seo.keywords || []).map((k: string) => (
+                          <span key={k} className="bg-elite-accent-cyan/10 text-elite-accent-cyan px-2 py-0.5 rounded text-[8px] font-black uppercase">{k}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-white font-black uppercase block tracking-widest">Node Path</span>
+                      <div className="bg-white/5 rounded-lg px-2 py-1 border border-white/5 truncate">{seo.slug}</div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-black/40 border border-white/5 p-4 mt-4">
+                    <span className="text-white font-black uppercase tracking-widest block mb-2 text-[9px]">Schema Matrix</span>
+                    <pre className="whitespace-pre-wrap break-words text-[8px] font-mono text-slate-500 opacity-80">{JSON.stringify(seo.schemaOrg, null, 2)}</pre>
                   </div>
                 </div>
               )}

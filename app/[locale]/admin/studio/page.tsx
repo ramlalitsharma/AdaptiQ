@@ -1,65 +1,107 @@
 import { Link } from '@/lib/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Newspaper, FileText, Video, PenTool } from 'lucide-react';
+import { Newspaper, FileText, Video, PenTool, LayoutDashboard, Database, Activity, Target } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { FadeIn } from '@/components/ui/Motion';
 
 export default async function StudioPage() {
   const t = await getTranslations('Admin');
 
   const tools = [
     {
-      title: 'News Studio',
-      description: 'Create and manage news articles, announcements, and updates.',
+      title: 'Intelligence Studio',
+      description: 'Manage news articles, announcements, and global intelligence nodes.',
       icon: Newspaper,
       href: '/admin/studio/news',
-      color: 'bg-blue-500/10 text-blue-600',
-      action: 'Manage News'
+      color: 'text-elite-accent-cyan border-elite-accent-cyan/20 bg-elite-accent-cyan/10',
+      action: 'Enter Newsroom'
     },
     {
-      title: 'Blog Studio',
-      description: 'Write insightful blog posts and share knowledge with the community.',
+      title: 'Knowledge Base',
+      description: 'Synchronize blog posts and share vertical insights with the network.',
       icon: PenTool,
       href: '/admin/studio/blogs',
-      color: 'bg-purple-500/10 text-purple-600',
-      action: 'Manage Blogs'
+      color: 'text-elite-accent-purple border-elite-accent-purple/20 bg-elite-accent-purple/10',
+      action: 'Manage Insights'
     },
     {
-      title: 'Course Studio',
-      description: 'Design comprehensive courses with videos, quizzes, and resources.',
+      title: 'Curriculum Hub',
+      description: 'Engineers comprehensive courses, modules, and intellectual paths.',
       icon: Video,
       href: '/admin/studio/courses',
-      color: 'bg-emerald-500/10 text-emerald-600',
-      action: 'Manage Courses'
+      color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10',
+      action: 'Design Paths'
+    },
+    {
+      title: 'Neural Archives',
+      description: 'Manage quiz repositories, question banks, and assessment logic.',
+      icon: Database,
+      href: '/admin/questions',
+      color: 'text-blue-400 border-blue-400/20 bg-blue-400/10',
+      action: 'Configure Logic'
+    },
+    {
+      title: 'Network Pulse',
+      description: 'Real-time telemetry of user engagement and system throughput.',
+      icon: Activity,
+      href: '/admin/analytics',
+      color: 'text-orange-400 border-orange-400/20 bg-orange-400/10',
+      action: 'View Pulse'
+    },
+    {
+      title: 'Mission Control',
+      description: 'Global system configuration and cross-node administration.',
+      icon: LayoutDashboard,
+      href: '/admin/dashboard',
+      color: 'text-slate-400 border-white/10 bg-white/5',
+      action: 'System Root'
     },
   ];
 
   return (
-    <div className="space-y-8 p-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Content Studio</h1>
-        <p className="text-slate-600 dark:text-slate-400">Manage all your platform content in one place.</p>
+    <div className="min-h-screen bg-elite-bg text-slate-100 p-12 space-y-16">
+      <div className="flex flex-col gap-4 max-w-2xl">
+        <FadeIn>
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-1.5 backdrop-blur-xl">
+            <Target size={12} className="text-elite-accent-cyan" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-elite-accent-cyan">Central Command</span>
+          </div>
+        </FadeIn>
+        <FadeIn delay={0.1}>
+          <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">Content <span className="text-gradient-cyan">Studio</span> V2.0</h1>
+        </FadeIn>
+        <FadeIn delay={0.2}>
+          <p className="text-slate-400 font-medium text-lg leading-relaxed">
+            Welcome to the command interface. Deploy global intelligence, curricular paths, and manage the platform infrastructure from a single immersive portal.
+          </p>
+        </FadeIn>
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {tools.map((tool) => (
-          <Card key={tool.title} className="hover:shadow-lg transition-all duration-300 border-slate-200 dark:border-slate-800">
-            <CardHeader>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${tool.color}`}>
-                <tool.icon className="w-6 h-6" />
-              </div>
-              <CardTitle>{tool.title}</CardTitle>
-              <CardDescription>{tool.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href={tool.href}>
-                <Button variant="outline" className="w-full group">
-                  {tool.action}
-                  <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {tools.map((tool, index) => (
+          <FadeIn key={tool.title} delay={index * 0.05 + 0.3}>
+            <Card className="glass-card-premium border-white/5 rounded-[2.5rem] group hover:border-elite-accent-cyan/20 transition-all duration-500 relative overflow-hidden h-full flex flex-col">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
+              <CardHeader className="p-10 space-y-6 flex-1">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${tool.color} group-hover:scale-110 transition-transform duration-500`}>
+                  <tool.icon className="w-6 h-6" />
+                </div>
+                <div className="space-y-2">
+                  <CardTitle className="text-2xl font-black text-white tracking-tight uppercase group-hover:text-elite-accent-cyan transition-colors">{tool.title}</CardTitle>
+                  <CardDescription className="text-slate-500 font-medium leading-relaxed">{tool.description}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-10 pt-0">
+                <Link href={tool.href}>
+                  <Button className="w-full h-14 rounded-2xl border border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-[0.3em] group-hover:bg-elite-accent-cyan group-hover:text-black group-hover:border-transparent transition-all duration-500">
+                    {tool.action}
+                    <span className="ml-3 group-hover:translate-x-2 transition-transform">→</span>
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </FadeIn>
         ))}
       </div>
     </div>

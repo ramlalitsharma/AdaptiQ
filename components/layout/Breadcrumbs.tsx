@@ -21,7 +21,7 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
   const breadcrumbItems: BreadcrumbItem[] = items || (() => {
     const paths = pathname?.split('/').filter(Boolean) || [];
     const generated: BreadcrumbItem[] = [{ label: 'Home', href: '/' }];
-    
+
     let currentPath = '';
     paths.forEach((path, index) => {
       currentPath += `/${path}`;
@@ -34,29 +34,29 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
         href: index === paths.length - 1 ? undefined : currentPath,
       });
     });
-    
+
     return generated;
   })();
 
   if (breadcrumbItems.length <= 1) return null;
 
   return (
-    <nav className={`flex items-center gap-2 text-sm text-slate-600 ${className}`} aria-label="Breadcrumb">
+    <nav className={`flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ${className}`} aria-label="Breadcrumb">
       {breadcrumbItems.map((item, index) => {
         const isLast = index === breadcrumbItems.length - 1;
         return (
-          <div key={index} className="flex items-center gap-2">
+          <div key={index} className="flex items-center gap-3">
             {item.href && !isLast ? (
               <Link
                 href={item.href}
-                className="hover:text-teal-600 transition-colors"
+                className="hover:text-elite-accent-cyan transition-colors"
               >
                 {item.label}
               </Link>
             ) : (
-              <span className={isLast ? 'text-slate-900 font-medium' : ''}>{item.label}</span>
+              <span className={isLast ? 'text-white' : ''}>{item.label}</span>
             )}
-            {!isLast && <span className="text-slate-400">›</span>}
+            {!isLast && <span className="text-white/10 select-none">//</span>}
           </div>
         );
       })}

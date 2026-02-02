@@ -58,173 +58,116 @@ export function SubjectMasteryRadar(_props: SubjectMasteryRadarProps = {}) {
         }
     };
 
-    // Loading state
     if (loading) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardHeader>
-                    <CardTitle className="text-lg uppercase tracking-wide text-teal-700">
-                        🎯 Subject Mastery
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="h-[350px] bg-slate-100 rounded-lg animate-pulse" />
-                    <div className="mt-4 grid grid-cols-3 gap-2">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse" />
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="animate-pulse space-y-6">
+                <div className="h-64 bg-white/5 rounded-[2rem]" />
+                <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-12 bg-white/5 rounded-xl" />
+                    ))}
+                </div>
+            </div>
         );
     }
 
-    // Error state
     if (error) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardContent className="p-6">
-                    <div className="text-center space-y-2">
-                        <div className="text-3xl">⚠️</div>
-                        <div className="text-sm font-medium text-red-600">Failed to load subject mastery</div>
-                        <div className="text-xs text-red-500">{error}</div>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="p-12 text-center bg-red-500/5 border border-red-500/20 rounded-[2rem]">
+                <div className="text-3xl mb-4">⚠️</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-red-500">Cognitive Mapping Failed</div>
+            </div>
         );
     }
 
     if (!data || data.chartData.length === 0) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardHeader>
-                    <CardTitle className="text-lg uppercase tracking-wide text-teal-700">
-                        🎯 Subject Mastery
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="h-[350px] flex items-center justify-center text-slate-400">
-                        <div className="text-center space-y-2">
-                            <div className="text-4xl">📚</div>
-                            <div className="text-sm">No subject data yet</div>
-                            <div className="text-xs">Complete quizzes in different subjects</div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="p-12 text-center bg-white/5 border border-white/5 rounded-[2rem]">
+                <div className="text-4xl mb-4">📚</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Neural Blueprint Empty</div>
+            </div>
         );
     }
 
     const stats = data.stats;
 
-    const getGradeColor = (mastery: number) => {
-        if (mastery >= 85) return 'text-green-600';
-        if (mastery >= 70) return 'text-blue-600';
-        if (mastery >= 55) return 'text-orange-600';
-        return 'text-red-600';
-    };
-
-    const getMasteryLabel = (level: string) => {
-        const labels: Record<string, string> = {
-            'Expert': '🏆 Expert',
-            'Advanced': '🌟 Advanced',
-            'Intermediate': '📘 Intermediate',
-            'Beginner': '📙 Beginner',
-        };
-        return labels[level] || level;
-    };
-
     // Prepare radar chart data with max 6 subjects for readability
     const radarData = data.chartData.slice(0, 6).map(d => ({
-        subject: d.subject.length > 12 ? d.subject.substring(0, 12) + '...' : d.subject,
+        subject: d.subject.length > 10 ? d.subject.substring(0, 10).toUpperCase() : d.subject.toUpperCase(),
         mastery: d.mastery,
         fullMark: 100,
     }));
 
     return (
-        <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-            <CardHeader>
-                <CardTitle className="text-lg uppercase tracking-wide text-teal-700 flex items-center justify-between">
-                    <span>🎯 Subject Mastery</span>
-                    <span className={`text-sm font-normal normal-case ${getGradeColor(stats.overallAverage)}`}>
-                        Avg: {stats.overallAverage}%
-                    </span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="w-full flex justify-center">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                            <PolarGrid stroke="#e2e8f0" />
-                            <PolarAngleAxis
-                                dataKey="subject"
-                                tick={{ fill: '#64748b', fontSize: 10 }}
-                            />
-                            <PolarRadiusAxis
-                                angle={90}
-                                domain={[0, 100]}
-                                tick={{ fill: '#64748b', fontSize: 10 }}
-                            />
-                            <Radar
-                                name="Mastery %"
-                                dataKey="mastery"
-                                stroke="#14b8a6"
-                                fill="#14b8a6"
-                                fillOpacity={0.6}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                                }}
-                                formatter={(value: number) => [`${value}%`, 'Mastery']}
-                            />
-                            <Legend wrapperStyle={{ fontSize: '12px' }} />
-                        </RadarChart>
-                    </ResponsiveContainer>
-                </div>
+        <div className="space-y-8">
+            <div className="w-full h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
+                        <PolarGrid stroke="rgba(255,255,255,0.05)" />
+                        <PolarAngleAxis
+                            dataKey="subject"
+                            tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8, fontWeight: 900, letterSpacing: '0.1em' }}
+                        />
+                        <PolarRadiusAxis
+                            angle={90}
+                            domain={[0, 100]}
+                            tick={false}
+                            axisLine={false}
+                        />
+                        <Radar
+                            name="Neural Mastery"
+                            dataKey="mastery"
+                            stroke="#06b6d4"
+                            strokeWidth={2}
+                            fill="#06b6d4"
+                            fillOpacity={0.15}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#0b1120',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '12px',
+                                fontSize: '10px',
+                                color: '#fff'
+                            }}
+                            itemStyle={{ color: '#06b6d4', fontWeight: 900, textTransform: 'uppercase' }}
+                        />
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
 
-                {/* Subject Details */}
-                <div className="mt-4 space-y-2">
-                    {data.chartData.slice(0, 6).map((item, idx) => (
-                        <div
-                            key={idx}
-                            className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 border border-slate-200"
-                        >
-                            <div className="flex-1 min-w-0">
-                                <span className="text-slate-700 font-medium truncate block">{item.subject}</span>
-                                <span className="text-xs text-slate-500">
-                                    {item.quizzesTaken} {item.quizzesTaken === 1 ? 'quiz' : 'quizzes'} • {item.timeSpent} min
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className={`font-semibold ${getGradeColor(item.mastery)}`}>
-                                    {item.mastery}%
-                                </span>
-                                <span className="text-xs text-slate-500">{getMasteryLabel(item.level)}</span>
+            <div className="grid gap-3">
+                {data.chartData.slice(0, 4).map((item, idx) => (
+                    <div
+                        key={idx}
+                        className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-elite-accent-cyan/20 transition-all group"
+                    >
+                        <div className="flex-1">
+                            <div className="text-[10px] font-black text-white uppercase tracking-widest mb-1 group-hover:text-elite-accent-cyan transition-colors">{item.subject}</div>
+                            <div className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
+                                {item.quizzesTaken} Neural Cycles
                             </div>
                         </div>
-                    ))}
-                </div>
-
-                {/* Stats Summary */}
-                {stats.strongestSubject && (
-                    <div className="mt-4 pt-3 border-t border-slate-200 grid grid-cols-2 gap-3 text-sm">
-                        <div className="text-center p-2 rounded-lg bg-green-50 border border-green-200">
-                            <div className="font-semibold text-green-700 truncate">{stats.strongestSubject}</div>
-                            <div className="text-xs text-green-600">Strongest • {stats.strongestScore}%</div>
+                        <div className="text-right">
+                            <div className="text-sm font-black text-white font-mono">{item.mastery}%</div>
+                            <div className="text-[8px] font-black uppercase text-slate-500 tracking-widest">Verified</div>
                         </div>
-                        {stats.weakestSubject && (
-                            <div className="text-center p-2 rounded-lg bg-orange-50 border border-orange-200">
-                                <div className="font-semibold text-orange-700 truncate">{stats.weakestSubject}</div>
-                                <div className="text-xs text-orange-600">Focus Area • {stats.weakestScore}%</div>
-                            </div>
-                        )}
                     </div>
-                )}
-            </CardContent>
-        </Card>
+                ))}
+            </div>
+
+            {stats.strongestSubject && (
+                <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
+                    <div className="p-4 rounded-xl bg-elite-accent-cyan/5 border border-elite-accent-cyan/10">
+                        <div className="text-[8px] font-black text-elite-accent-cyan uppercase tracking-widest mb-1">Peak Domain</div>
+                        <div className="text-[10px] font-black text-white uppercase truncate">{stats.strongestSubject}</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-elite-accent-purple/5 border border-elite-accent-purple/10">
+                        <div className="text-[8px] font-black text-elite-accent-purple uppercase tracking-widest mb-1">Target Delta</div>
+                        <div className="text-[10px] font-black text-white uppercase truncate">{stats.weakestSubject || 'N/A'}</div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

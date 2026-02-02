@@ -11,6 +11,7 @@ import { VideoUploader } from '@/components/video/VideoUploader';
 import { ManualEnrollment } from '@/components/admin/ManualEnrollment';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { CourseOutlineEditor } from '@/components/admin/CourseOutlineEditor';
+import { Sparkles, History, Box, Activity } from 'lucide-react';
 
 interface CourseSummary {
   id: string;
@@ -454,228 +455,247 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">
-              {editingSlug ? 'Edit Course' : 'Course Authoring'}
+    <div className="space-y-12">
+      <div className="glass-card-premium rounded-[3rem] border border-white/5 p-10">
+        <div className="flex flex-wrap items-center justify-between gap-8">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black text-white tracking-tighter uppercase">
+              {editingSlug ? 'Refine Architecture' : 'Initialize Curriculum'}
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-400 font-medium max-w-2xl leading-relaxed">
               {editingSlug
-                ? 'Update modules, metadata, and publishing status for this course.'
-                : 'Design curricula with AI suggestions, manual control, and rich metadata.'}
+                ? 'Precision adjustment of modules, neural metadata, and global deployment parameters.'
+                : 'Engineer adaptive learning paths with integrated AI acceleration and version-controlled logic.'}
             </p>
           </div>
-          <div className="flex gap-2 text-sm">
-            <Button variant={mode === 'ai' ? 'inverse' : 'outline'} size="sm" onClick={() => setMode('ai')} disabled={Boolean(editingSlug)}>
-              AI Mode
+          <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl border border-white/5">
+            <Button
+              variant={mode === 'ai' ? 'inverse' : 'ghost'}
+              size="sm"
+              onClick={() => setMode('ai')}
+              disabled={Boolean(editingSlug)}
+              className={`rounded-xl px-6 h-10 text-[10px] font-black uppercase tracking-widest ${mode === 'ai' ? 'bg-elite-accent-cyan text-black' : 'text-slate-500 hover:text-white'}`}
+            >
+              Neural Mode
             </Button>
-            <Button variant={mode === 'manual' ? 'inverse' : 'outline'} size="sm" onClick={() => setMode('manual')}>
-              Manual Mode
+            <Button
+              variant={mode === 'manual' ? 'inverse' : 'ghost'}
+              size="sm"
+              onClick={() => setMode('manual')}
+              className={`rounded-xl px-6 h-10 text-[10px] font-black uppercase tracking-widest ${mode === 'manual' ? 'bg-elite-accent-cyan text-black' : 'text-slate-500 hover:text-white'}`}
+            >
+              Manual Override
             </Button>
             {editingSlug && (
-              <Button variant="outline" size="sm" onClick={clearEditing}>
-                + New Course
+              <Button variant="outline" size="sm" onClick={clearEditing} className="rounded-xl px-6 h-10 text-[10px] font-black uppercase tracking-widest border-white/10 text-white hover:bg-white/5">
+                New Project
               </Button>
             )}
           </div>
         </div>
 
         {feedback && (
-          <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{feedback}</div>
+          <div className="mt-8 rounded-[2rem] border border-elite-accent-emerald/20 bg-elite-accent-emerald/10 p-5 text-[10px] font-black uppercase tracking-widest text-elite-accent-emerald flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-elite-accent-emerald animate-pulse" />
+            {feedback}
+          </div>
         )}
         {error && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>
+          <div className="mt-8 rounded-[2rem] border border-red-500/20 bg-red-500/10 p-5 text-[10px] font-black uppercase tracking-widest text-red-400 flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-red-400" />
+            {error}
+          </div>
         )}
 
         <div className="mt-6 grid gap-6 2xl:grid-cols-3">
           {/* Column 1: Metadata */}
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-800">Course metadata</h3>
-            <div className="space-y-3">
-              <label className="space-y-1 text-sm text-slate-600 block">
-                Title
+          <section className="space-y-8">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6">Course Parameters</h3>
+            <div className="space-y-6">
+              <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                Primary Headline
                 <input
                   value={form.title}
                   onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="AI-Powered Mathematics Mastery"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                  placeholder="Neural Mathematics Mastery"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all"
                 />
               </label>
-              <label className="space-y-1 text-sm text-slate-600 block">
-                Category
+              <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                Deployment Sector
                 <select
                   value={form.categoryId}
                   onChange={(e) => setForm((prev) => ({ ...prev, categoryId: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all appearance-none"
                 >
-                  <option value="">Uncategorized</option>
+                  <option value="" className="bg-elite-bg">Uncategorized</option>
                   {categories.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
+                    <option key={cat._id} value={cat._id} className="bg-elite-bg">
                       {cat.name}
                     </option>
                   ))}
                 </select>
               </label>
-              <label className="space-y-1 text-sm text-slate-600 block">
-                Subject
+              <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                Subject Focus
                 <input
                   value={form.subject}
                   onChange={(e) => setForm((prev) => ({ ...prev, subject: e.target.value }))}
-                  placeholder="Mathematics"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                  placeholder="Theoretical Physics"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all"
                 />
               </label>
-              <label className="space-y-1 text-sm text-slate-600 block">
-                Level
+              <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                Complexity Level
                 <select
                   value={form.level}
                   onChange={(e) => setForm((prev) => ({ ...prev, level: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all appearance-none"
                 >
-                  <option value="">Auto detect</option>
-                  <option value="basic">Basic</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
+                  <option value="" className="bg-elite-bg">Auto detect</option>
+                  <option value="basic" className="bg-elite-bg">Basic</option>
+                  <option value="intermediate" className="bg-elite-bg">Intermediate</option>
+                  <option value="advanced" className="bg-elite-bg">Advanced</option>
                 </select>
               </label>
-              <div className="space-y-1 text-sm text-slate-600">
-                Executive summary
-                <TipTapEditor
-                  value={form.summary}
-                  onChange={(next) => setForm((prev) => ({ ...prev, summary: next }))}
-                  placeholder="3-week accelerator to master adaptive testing."
-                  height={180}
-                />
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">Abstract & Narrative</label>
+                <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+                  <TipTapEditor
+                    value={form.summary}
+                    onChange={(next) => setForm((prev) => ({ ...prev, summary: next }))}
+                    placeholder="3-week accelerator to master adaptive testing."
+                    height={180}
+                  />
+                </div>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="space-y-1 text-sm text-slate-600 block">
-                  Language
+              <div className="grid gap-6 md:grid-cols-2">
+                <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                  Language Dialect
                   <input
                     value={form.language}
                     onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}
                     placeholder="English"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all"
                   />
                 </label>
-                <label className="space-y-1 text-sm text-slate-600 block">
-                  Tags
+                <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                  Neural Tags
                   <input
                     value={form.tags}
                     onChange={(e) => setForm((prev) => ({ ...prev, tags: e.target.value }))}
-                    placeholder="adaptive learning, ai quizzes"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                    placeholder="adaptive, quantum, mastery"
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all"
                   />
                 </label>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="space-y-1 text-sm text-slate-600 block">
-                  Price amount
+              <div className="grid gap-6 md:grid-cols-2">
+                <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                  Access Amount
                   <input
                     type="number"
                     value={form.priceAmount}
                     onChange={(e) => setForm((prev) => ({ ...prev, priceAmount: e.target.value }))}
                     placeholder="199"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all"
                   />
                 </label>
-                <label className="space-y-1 text-sm text-slate-600 block">
-                  Currency
+                <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                  Sector Currency
                   <input
                     value={form.priceCurrency}
                     onChange={(e) => setForm((prev) => ({ ...prev, priceCurrency: e.target.value }))}
                     placeholder="USD"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all"
                   />
                 </label>
               </div>
-              <div>
+              <div className="pt-4">
                 <ImageUploader
                   value={form.thumbnail}
                   onChange={(url) => setForm((prev) => ({ ...prev, thumbnail: url }))}
-                  label="Course Thumbnail"
+                  label="Architectural Cover"
                 />
               </div>
 
               {(mode === 'ai' && !editingSlug) && (
-                <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <h4 className="text-sm font-semibold text-slate-700">AI guidance</h4>
-                  <label className="space-y-1 text-xs text-slate-600 block">
-                    Target audience
+                <div className="space-y-6 rounded-[2.5rem] border border-elite-accent-purple/20 bg-elite-accent-purple/5 p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-elite-accent-purple/10 rounded-full blur-3xl -mr-12 -mt-12 transition-all group-hover:scale-150" />
+                  <div className="flex items-center gap-3">
+                    <Sparkles size={16} className="text-elite-accent-purple" />
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Neural Guidance</h4>
+                  </div>
+                  <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                    Target User Profile
                     <input
                       value={form.audience}
                       onChange={(e) => setForm((prev) => ({ ...prev, audience: e.target.value }))}
-                      placeholder="University freshmen, aspiring product managers"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                      placeholder="Aspiring Quantum Engineers"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-bold text-white placeholder:text-white/10 focus:border-elite-accent-purple/50 outline-none"
                     />
                   </label>
-                  <label className="space-y-1 text-xs text-slate-600 block">
-                    Learning outcomes
+                  <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                    Expansion Goals
                     <input
                       value={form.goals}
                       onChange={(e) => setForm((prev) => ({ ...prev, goals: e.target.value }))}
-                      placeholder="Build adaptive quizzes, analyze performance dashboards"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                      placeholder="Harness neural networks for curriculum design"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-bold text-white placeholder:text-white/10 focus:border-elite-accent-purple/50 outline-none"
                     />
                   </label>
-                  <label className="space-y-1 text-xs text-slate-600 block">
-                    Tone or style
-                    <input
-                      value={form.tone}
-                      onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
-                      placeholder="Accessible, hands-on, inspiring"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <label className="space-y-1 text-xs text-slate-600 block">
-                      Unit count
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                      Sector Hierarchy
                       <input
                         type="number"
                         min={1}
                         value={form.unitsCount}
                         onChange={(e) => setForm((prev) => ({ ...prev, unitsCount: Number(e.target.value) }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-bold text-white outline-none"
                       />
                     </label>
-                    <label className="space-y-1 text-xs text-slate-600 block">
-                      Lessons per chapter
+                    <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                      Node Density
                       <input
                         type="number"
                         min={1}
                         value={form.lessonsPerChapter}
                         onChange={(e) => setForm((prev) => ({ ...prev, lessonsPerChapter: Number(e.target.value) }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-bold text-white outline-none"
                       />
                     </label>
                   </div>
-                  <Button size="sm" variant="outline" disabled={generatingPreview} onClick={handleGenerateOutline}>
-                    {generatingPreview ? 'Generating outline…' : 'Generate outline draft'}
+                  <Button
+                    variant="outline"
+                    disabled={generatingPreview}
+                    onClick={handleGenerateOutline}
+                    className="w-full h-12 rounded-xl bg-elite-accent-purple text-black font-black uppercase text-[10px] tracking-[0.2em] border-none hover:bg-white transition-all shadow-lg shadow-elite-accent-purple/20"
+                  >
+                    {generatingPreview ? 'Synthesizing...' : 'Initialize Neural Synthesis'}
                   </Button>
                 </div>
               )}
 
-              <div className="pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-semibold text-slate-700 mb-3">SEO metadata</h4>
-                <div className="space-y-3">
-                  <label className="space-y-1 text-xs text-slate-600 block">
-                    SEO title
+              <div className="pt-8 border-t border-white/5 space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Global Discovery (SEO)</h4>
+                <div className="space-y-6">
+                  <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                    Meta Headline
                     <input
                       value={form.seoTitle}
                       onChange={(e) => setForm((prev) => ({ ...prev, seoTitle: e.target.value }))}
-                      placeholder="Master adaptive learning with AdaptIQ"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                      placeholder="Master Quantum Dynamics with Refectl"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all"
                     />
                   </label>
-                  <label className="space-y-1 text-xs text-slate-600 block">
-                    SEO description
+                  <label className="space-y-2 text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+                    Meta Description
                     <textarea
                       value={form.seoDescription}
                       onChange={(e) => setForm((prev) => ({ ...prev, seoDescription: e.target.value }))}
-                      placeholder="Personalized adaptive course with AI-driven analytics."
+                      placeholder="Deep dive into advanced neural architectures..."
                       rows={3}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm font-bold text-white placeholder:text-white/10 focus:border-elite-accent-cyan/50 focus:ring-1 focus:ring-elite-accent-cyan/20 outline-none transition-all resize-none"
                     />
                   </label>
                 </div>
@@ -684,15 +704,24 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
           </section>
 
           {/* Column 2: Outline Builder */}
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-800">Outline builder</h3>
-            <div className="flex items-center justify-between">
-              <Button variant="outline" size="sm" onClick={() => setUnits([...units, { title: 'New Unit', chapters: [] }])}>
-                + Unit
+          <section className="space-y-8">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6">Curriculum Architecture</h3>
+            <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5 mb-6">
+              <div className="flex items-center gap-3">
+                <Box size={14} className="text-elite-accent-cyan" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-white">Hierarchical Structure</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setUnits([...units, { title: 'New Sector', chapters: [] }])}
+                className="h-9 px-4 rounded-xl border-white/10 text-white hover:bg-white/5 text-[9px] font-black uppercase tracking-widest"
+              >
+                + Initialize Sector
               </Button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <CourseOutlineEditor
                 units={units}
                 onChange={setUnits}
@@ -700,9 +729,9 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
             </div>
 
             {editingSlug && (
-              <div className="space-y-6 pt-6 border-t border-slate-100">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <h4 className="text-sm font-semibold text-slate-700">Workflow status</h4>
+              <div className="space-y-8 pt-10 mt-10 border-t border-white/5">
+                <div className="rounded-[2.5rem] border border-white/5 bg-white/5 p-8">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6">Deployment Protocol</h4>
                   <WorkflowControls
                     contentType="course"
                     contentId={editingSlug}
@@ -714,13 +743,16 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
                     }}
                   />
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                  <h4 className="text-sm font-semibold text-slate-700 mb-4">Manual Enrollment</h4>
+                <div className="rounded-[2.5rem] border border-white/5 bg-white/5 p-8">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center gap-2">
+                    <Activity size={12} className="text-elite-accent-cyan" />
+                    Manual Provisioning
+                  </h4>
                   <ManualEnrollment
                     courseId={selectedCourse?.id || editingSlug}
                     courseTitle={form.title || selectedCourse?.title}
                     onEnrolled={() => {
-                      setFeedback('Student enrolled successfully!');
+                      setFeedback('Student provisioned successfully.');
                       router.refresh();
                     }}
                   />
@@ -728,67 +760,82 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
               </div>
             )}
 
-            <div className="flex flex-wrap gap-3 pt-6">
-              <Button onClick={() => handleSubmit()} disabled={!canSubmit || loading}>
-                {loading ? 'Saving…' : editingSlug ? 'Update course' : 'Save draft'}
+            <div className="flex flex-wrap gap-4 pt-10">
+              <Button
+                onClick={() => handleSubmit()}
+                disabled={!canSubmit || loading}
+                className="h-14 px-10 rounded-2xl bg-white text-black font-black uppercase text-[10px] tracking-widest hover:bg-elite-accent-cyan transition-all shadow-xl shadow-white/5"
+              >
+                {loading ? 'Storing...' : editingSlug ? 'Update Architecture' : 'Store Draft Entry'}
               </Button>
               {editingSlug && (
-                <Button variant="outline" disabled={loading || !canSubmit} onClick={() => handleSubmit('published')}>
-                  Publish course
+                <Button
+                  variant="outline"
+                  disabled={loading || !canSubmit}
+                  onClick={() => handleSubmit('published')}
+                  className="h-14 px-10 rounded-2xl border-white/10 text-white font-black uppercase text-[10px] tracking-widest hover:bg-white/5"
+                >
+                  Global Deployment
                 </Button>
               )}
             </div>
           </section>
 
           {/* Column 3: Preview & History */}
-          <aside className="space-y-6">
+          <aside className="space-y-12">
             <CoursePreviewPanel form={form} units={units} resources={resources} />
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recent courses</h3>
+            <div className="glass-card-premium rounded-[2.5rem] border border-white/5 p-8 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-elite-accent-cyan/10 transition-all" />
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-3">
+                  <History size={14} className="text-elite-accent-cyan" />
+                  Asset Ledger
+                </h3>
+              </div>
               {courseList.length === 0 ? (
-                <p className="mt-3 text-xs text-slate-500">No courses created yet.</p>
+                <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-600 text-center py-10 border border-dashed border-white/5 rounded-2xl">Ledger Empty</p>
               ) : (
-                <div className="mt-3 space-y-3">
-                  {courseList.map((course) => {
+                <div className="space-y-4">
+                  {courseList.slice(0, 5).map((course) => {
                     const isActive = editingSlug === course.slug;
                     return (
                       <div
                         key={course.id}
-                        className={`rounded-lg border px-3 py-2 transition ${isActive
-                          ? 'border-teal-400 bg-teal-50 text-teal-800'
-                          : 'border-slate-100 text-slate-700 hover:border-slate-300'
+                        className={`group/item rounded-2xl border px-5 py-4 transition-all hover:bg-white/5 ${isActive
+                          ? 'border-elite-accent-cyan bg-elite-accent-cyan/10 text-white'
+                          : 'border-white/5 text-slate-400 hover:border-white/20'
                           }`}
                       >
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center justify-between gap-4">
                           <div className="min-w-0">
-                            <div className="font-medium line-clamp-1 text-sm">{course.title}</div>
-                            <div className="text-[10px] text-slate-400">
+                            <div className={`font-bold line-clamp-1 text-xs uppercase tracking-tight ${isActive ? 'text-white' : 'text-slate-200'}`}>{course.title}</div>
+                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
                               {course.level ? `${course.level} • ` : ''}
                               {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : ''}
                             </div>
                           </div>
-                          <Badge variant={course.status === 'published' ? 'success' : course.status === 'in_review' ? 'info' : 'default'} className="text-[9px] px-1.5 py-0">
+                          <Badge variant={course.status === 'published' ? 'success' : course.status === 'in_review' ? 'info' : 'default'} className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border-none">
                             {course.status}
                           </Badge>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mt-4 flex flex-wrap gap-2 opacity-0 group-hover/item:opacity-100 transition-all translate-y-2 group-hover/item:translate-y-0">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="xs"
-                            className="h-7 text-[10px]"
+                            className="h-8 px-4 text-[9px] font-black uppercase tracking-widest bg-white/5 text-white hover:bg-elite-accent-cyan hover:text-black rounded-lg"
                             onClick={() => router.push(`/admin/studio/courses?slug=${course.slug}`)}
                           >
-                            Edit
+                            Access
                           </Button>
                           <Button
                             variant="ghost"
                             size="xs"
-                            className="h-7 text-[10px]"
+                            className="h-8 px-4 text-[9px] font-black uppercase tracking-widest bg-white/5 text-white hover:bg-elite-accent-emerald hover:text-black rounded-lg"
                             onClick={() => handleQuickStatus(course.slug, 'published')}
                             disabled={loading}
                           >
-                            Publish
+                            Deploy
                           </Button>
                         </div>
                       </div>
@@ -802,10 +849,11 @@ export function CourseCreatorStudio({ recentCourses, selectedCourse }: CourseCre
       </div>
 
       {result && !editingSlug && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-emerald-900">Course drafted</h3>
-          <p className="text-sm text-emerald-700">{result.title} — status {result.status}</p>
-          <pre className="mt-3 max-h-72 overflow-auto rounded-lg bg-white/80 p-4 text-xs text-slate-700">
+        <div className="rounded-[2.5rem] border border-elite-accent-emerald/20 bg-elite-accent-emerald/5 p-8 mt-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-elite-accent-emerald/10 rounded-full blur-3xl -mr-16 -mt-16" />
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-elite-accent-emerald mb-4">Architecture Initialized</h3>
+          <p className="text-xl font-black text-white tracking-tighter uppercase mb-6">{result.title} — Sector Status: {result.status}</p>
+          <pre className="max-h-72 overflow-auto rounded-2xl bg-black/40 border border-white/5 p-6 text-[10px] text-slate-400 font-mono custom-scrollbar">
             {JSON.stringify(result.units || result.modules, null, 2)}
           </pre>
         </div>
@@ -832,55 +880,74 @@ function CoursePreviewPanel({
   units: ManualUnit[];
   resources: CourseResource[];
 }) {
-  const seoTitle = form.seoTitle || `${form.title} | Course Preview`;
+  const seoTitle = form.seoTitle || `${form.title} | Global Preview`;
   const seoDescription = form.seoDescription || form.summary;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-700">Live preview</h3>
-      <div className="mt-3 space-y-2">
+    <div className="glass-card-premium rounded-[2.5rem] border border-white/5 p-8 relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-elite-accent-cyan/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-125 transition-all" />
+      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-8">Neural Visualization</h3>
+      <div className="space-y-8">
         <div>
-          <h4 className="text-lg font-semibold text-slate-900">{form.title || 'Course title'}</h4>
-          <p className="text-xs text-slate-500">
-            {form.subject && `${form.subject} • `}
-            {form.level || 'Level TBD'} • {form.language || 'Language TBD'}
-          </p>
+          <h4 className="text-2xl font-black text-white tracking-tighter uppercase leading-none mb-3">
+            {form.title || 'Inertia Variable'}
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-elite-accent-cyan px-2 py-1 bg-elite-accent-cyan/10 rounded-lg">
+              {form.subject || 'Domain Unknown'}
+            </span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-2 py-1 bg-white/5 rounded-lg border border-white/5">
+              {form.level || 'Adaptive'}
+            </span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-2 py-1 bg-white/5 rounded-lg border border-white/5">
+              {form.language || 'Global'}
+            </span>
+          </div>
         </div>
-        <p className="text-sm text-slate-600">{form.summary || 'A compelling summary will appear here once provided.'}</p>
-        <div className="space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Curriculum Structure</span>
-          <ul className="space-y-1 text-sm text-slate-600">
-            {units.slice(0, 4).map((unit, index) => {
+
+        <p className="text-sm text-slate-400 font-medium leading-relaxed">
+          {form.summary || 'Initiate narrative synthesis to visualize abstract...'}
+        </p>
+
+        <div className="space-y-4">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Sector Hierarchy map</span>
+          <div className="grid gap-3">
+            {units.slice(0, 3).map((unit, index) => {
               const lessonCount = unit.chapters.reduce((acc, c) => acc + c.lessons.length, 0);
               return (
-                <li key={index} className="rounded-lg bg-white px-3 py-2 shadow-sm border border-slate-100">
-                  <div className="font-semibold text-slate-800 text-xs uppercase tracking-tight">{unit.title}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">
-                    {unit.chapters.length} Chapter{unit.chapters.length === 1 ? '' : 's'} • {lessonCount} Lesson{lessonCount === 1 ? '' : 's'}
+                <div key={index} className="rounded-2xl bg-white/5 p-4 border border-white/5 hover:border-elite-accent-cyan/30 transition-all">
+                  <div className="font-black text-white text-[10px] uppercase tracking-widest flex items-center justify-between">
+                    {unit.title || `Node ${index + 1}`}
+                    <span className="text-[8px] text-elite-accent-cyan">{lessonCount} Assets</span>
                   </div>
-                </li>
+                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-elite-accent-cyan/50 w-1/3" />
+                  </div>
+                </div>
               );
             })}
-            {units.length > 4 && <li className="text-xs text-slate-400 pl-2">+ {units.length - 4} more units</li>}
-          </ul>
+            {units.length > 3 && <div className="text-[9px] font-black uppercase tracking-widest text-slate-600 pl-2">+ {units.length - 3} Deep Layers</div>}
+          </div>
         </div>
+
         {resources.length > 0 && (
-          <div className="space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Resources</span>
-            <ul className="text-xs text-slate-500 space-y-1">
+          <div className="space-y-3">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Asset Relay</span>
+            <div className="flex flex-wrap gap-2">
               {resources.map((resource, index) => (
-                <li key={index}>
-                  {resource.label || resource.url} ({resource.type})
-                </li>
+                <span key={index} className="text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 border border-white/5 text-slate-400">
+                  {resource.type}
+                </span>
               ))}
-            </ul>
+            </div>
           </div>
         )}
-        <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-500">
-          <div className="font-semibold text-slate-700">SEO Preview</div>
-          <div className="text-slate-900">{seoTitle}</div>
-          <div>{seoDescription || 'Add an SEO description to improve discoverability.'}</div>
-          <div className="text-slate-400">https://adaptiq.com/courses/{form.title ? form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'your-course'}</div>
+
+        <div className="rounded-[2rem] border border-white/5 bg-black/40 p-6 text-[10px] space-y-3 backdrop-blur-xl">
+          <div className="font-black text-slate-500 uppercase tracking-widest">Global Relay Protocol</div>
+          <div className="text-white font-bold text-xs truncate">{seoTitle}</div>
+          <div className="text-slate-400 leading-relaxed line-clamp-2">{seoDescription || 'Awaiting meta-relay input...'}</div>
+          <div className="text-elite-accent-cyan truncate opacity-50 font-mono">https://refectl.ai/nodes/{form.title ? form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'active-node'}</div>
         </div>
       </div>
     </div>

@@ -26,19 +26,19 @@ interface ActivityHeatmapProps {
 }
 
 const getColor = (intensity: number) => {
-    if (intensity === 0) return '#f1f5f9'; // slate-100 - No activity
-    if (intensity === 1) return '#ccfbf1'; // teal-100 - Light
-    if (intensity === 2) return '#5eead4'; // teal-300 - Moderate
-    if (intensity === 3) return '#14b8a6'; // teal-500 - Active
-    return '#0d9488'; // teal-600 - Very active
+    if (intensity === 0) return 'rgba(255, 255, 255, 0.03)';
+    if (intensity === 1) return 'rgba(6, 182, 212, 0.2)';
+    if (intensity === 2) return 'rgba(6, 182, 212, 0.4)';
+    if (intensity === 3) return 'rgba(6, 182, 212, 0.7)';
+    return '#06b6d4';
 };
 
 const getIntensityLabel = (intensity: number) => {
-    if (intensity === 0) return 'No activity';
-    if (intensity === 1) return 'Light activity';
-    if (intensity === 2) return 'Moderate activity';
-    if (intensity === 3) return 'Active';
-    return 'Very active';
+    if (intensity === 0) return 'Dormant';
+    if (intensity === 1) return 'Light Sync';
+    if (intensity === 2) return 'Moderate Relay';
+    if (intensity === 3) return 'Active Pulse';
+    return 'Maximum Output';
 };
 
 export function ActivityHeatmap({ months = 3 }: ActivityHeatmapProps = {}) {
@@ -72,58 +72,40 @@ export function ActivityHeatmap({ months = 3 }: ActivityHeatmapProps = {}) {
         }
     };
 
-    // Loading state
     if (loading) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardHeader>
-                    <CardTitle className="text-lg uppercase tracking-wide text-teal-700">
-                        📅 Activity Heatmap
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                        {[1, 2].map(i => (
-                            <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse" />
-                        ))}
-                    </div>
-                    <div className="h-32 bg-slate-100 rounded-lg animate-pulse" />
-                </CardContent>
-            </Card>
+            <div className="animate-pulse space-y-6">
+                <div className="grid grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-16 bg-white/5 rounded-2xl" />
+                    ))}
+                </div>
+                <div className="h-40 bg-white/5 rounded-[2rem]" />
+            </div>
         );
     }
 
-    // Error state
     if (error) {
         return (
-            <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-                <CardContent className="p-6">
-                    <div className="text-center space-y-2">
-                        <div className="text-3xl">⚠️</div>
-                        <div className="text-sm font-medium text-red-600">Failed to load activity heatmap</div>
-                        <div className="text-xs text-red-500">{error}</div>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="p-12 text-center bg-red-500/5 border border-red-500/20 rounded-[2rem]">
+                <div className="text-3xl mb-4">⚠️</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-red-500">Neural Sync Interrupted</div>
+            </div>
         );
     }
 
     if (!data) return null;
 
-    // Create a map for quick lookups
     const activityMap = new Map(data.heatmapData.map(d => [d.date, d]));
-
-    // Generate all days for the period
     const endDate = new Date();
     const startDate = subMonths(endDate, months);
     const allDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-    // Group by weeks
     const weeks: Array<Array<{ date: Date; activity?: typeof data.heatmapData[0] }>> = [];
     let currentWeek: typeof weeks[0] = [];
 
     allDays.forEach((day, index) => {
-        const dayOfWeek = day.getDay(); // 0 = Sunday
+        const dayOfWeek = day.getDay();
         const dateStr = format(day, 'yyyy-MM-dd');
         const activity = activityMap.get(dateStr);
 
@@ -141,94 +123,85 @@ export function ActivityHeatmap({ months = 3 }: ActivityHeatmapProps = {}) {
     const stats = data.stats;
 
     return (
-        <Card className="shadow-lg border-none backdrop-blur-sm bg-white/90">
-            <CardHeader>
-                <CardTitle className="text-lg uppercase tracking-wide text-teal-700 flex items-center justify-between">
-                    <span>📅 Activity Heatmap</span>
-                    <span className="text-sm font-normal text-slate-500 normal-case">
-                        Last {months} months
-                    </span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {/* Stats */}
-                    <div className="grid grid-cols-4 gap-2">
-                        <div className="text-center p-2 rounded-lg bg-teal-50 border border-teal-200">
-                            <div className="text-xl font-bold text-teal-600">{stats.totalActivities}</div>
-                            <div className="text-xs text-teal-700">Activities</div>
-                        </div>
-                        <div className="text-center p-2 rounded-lg bg-emerald-50 border border-emerald-200">
-                            <div className="text-xl font-bold text-emerald-600">{stats.activeDays}</div>
-                            <div className="text-xs text-emerald-700">Active Days</div>
-                        </div>
-                        <div className="text-center p-2 rounded-lg bg-cyan-50 border border-cyan-200">
-                            <div className="text-xl font-bold text-cyan-600">{stats.currentStreak}</div>
-                            <div className="text-xs text-cyan-700">Current Streak</div>
-                        </div>
-                        <div className="text-center p-2 rounded-lg bg-blue-50 border border-blue-200">
-                            <div className="text-xl font-bold text-blue-600">{stats.longestStreak}</div>
-                            <div className="text-xs text-blue-700">Best Streak</div>
-                        </div>
-                    </div>
+        <div className="space-y-10">
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 group hover:border-elite-accent-cyan/20 transition-all">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Output</div>
+                    <div className="text-2xl font-black text-white">{stats.totalActivities}</div>
+                </div>
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 group hover:border-elite-accent-emerald/20 transition-all">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Sync Nodes</div>
+                    <div className="text-2xl font-black text-white">{stats.activeDays}</div>
+                </div>
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 group hover:border-elite-accent-cyan/20 transition-all">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Relay Streak</div>
+                    <div className="text-2xl font-black text-elite-accent-cyan">{stats.currentStreak}</div>
+                </div>
+                <div className="p-5 rounded-2xl bg-white/5 border border-white/5 group hover:border-elite-accent-purple/20 transition-all">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Peak Relay</div>
+                    <div className="text-2xl font-black text-white">{stats.longestStreak}</div>
+                </div>
+            </div>
 
-                    {/* Heatmap Grid */}
-                    <div className="overflow-x-auto pb-2">
-                        <div className="flex gap-1 min-w-max">
-                            {weeks.map((week, weekIndex) => (
-                                <div key={weekIndex} className="flex flex-col gap-1">
-                                    {[0, 1, 2, 3, 4, 5, 6].map(dayOfWeek => {
-                                        const dayData = week.find(d => d.date.getDay() === dayOfWeek);
-                                        const activity = dayData?.activity;
-                                        return (
-                                            <div
-                                                key={`${weekIndex}-${dayOfWeek}`}
-                                                className="w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-2 hover:ring-teal-400"
-                                                style={{
-                                                    backgroundColor: activity ? getColor(activity.intensity) : '#f1f5f9',
-                                                }}
-                                                onMouseEnter={() => activity && setHoveredDay(activity)}
-                                                onMouseLeave={() => setHoveredDay(null)}
-                                                title={activity
-                                                    ? `${activity.date}: ${activity.count} activities, ${activity.minutes} min`
-                                                    : dayData ? format(dayData.date, 'MMM dd') : 'No data'}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Tooltip */}
-                    {hoveredDay && (
-                        <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm">
-                            <div className="font-semibold text-slate-800">
-                                {format(new Date(hoveredDay.date), 'MMM dd, yyyy')}
+            {/* Heatmap Grid */}
+            <div className="relative">
+                <div className="overflow-x-auto pb-4 custom-scrollbar">
+                    <div className="flex gap-1.5 min-w-max">
+                        {weeks.map((week, weekIndex) => (
+                            <div key={weekIndex} className="flex flex-col gap-1.5">
+                                {[0, 1, 2, 3, 4, 5, 6].map(dayOfWeek => {
+                                    const dayData = week.find(d => d.date.getDay() === dayOfWeek);
+                                    const activity = dayData?.activity;
+                                    return (
+                                        <div
+                                            key={`${weekIndex}-${dayOfWeek}`}
+                                            className="w-3.5 h-3.5 rounded-sm cursor-pointer transition-all hover:scale-125 hover:z-10 hover:shadow-[0_0_10px_rgba(6,182,212,0.4)]"
+                                            style={{
+                                                backgroundColor: activity ? getColor(activity.intensity) : 'rgba(255,255,255,0.03)',
+                                            }}
+                                            onMouseEnter={() => activity && setHoveredDay(activity)}
+                                            onMouseLeave={() => setHoveredDay(null)}
+                                        />
+                                    );
+                                })}
                             </div>
-                            <div className="text-slate-600 mt-1">
-                                {hoveredDay.count} {hoveredDay.count === 1 ? 'activity' : 'activities'} • {hoveredDay.minutes} min •{' '}
-                                <span className="font-medium">{getIntensityLabel(hoveredDay.intensity)}</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Legend */}
-                    <div className="flex items-center justify-between text-xs text-slate-600">
-                        <span>Less</span>
-                        <div className="flex gap-1">
-                            {[0, 1, 2, 3, 4].map(level => (
-                                <div
-                                    key={level}
-                                    className="w-3 h-3 rounded-sm"
-                                    style={{ backgroundColor: getColor(level) }}
-                                />
-                            ))}
-                        </div>
-                        <span>More</span>
+                        ))}
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+
+                {/* Tooltip */}
+                <div className={`mt-6 h-14 flex items-center gap-4 transition-all duration-300 ${hoveredDay ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                    {hoveredDay && (
+                        <>
+                            <div className="px-4 py-2 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-lg">
+                                {format(new Date(hoveredDay.date), 'MMM dd')}
+                            </div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-white">
+                                {hoveredDay.count} Reagents <span className="text-slate-500 px-2">•</span> {hoveredDay.minutes}m Flow <span className="text-slate-500 px-2">•</span> <span className="text-elite-accent-cyan">{getIntensityLabel(hoveredDay.intensity)}</span>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-between mt-4">
+                <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Flux Density</div>
+                <div className="flex items-center gap-6">
+                    <span className="text-[9px] font-black uppercase text-slate-700">Dormant</span>
+                    <div className="flex gap-1.5">
+                        {[0, 1, 2, 3, 4].map(level => (
+                            <div
+                                key={level}
+                                className="w-3.5 h-3.5 rounded-sm"
+                                style={{ backgroundColor: getColor(level) }}
+                            />
+                        ))}
+                    </div>
+                    <span className="text-[9px] font-black uppercase text-slate-700">Critical</span>
+                </div>
+            </div>
+        </div>
     );
 }
