@@ -230,36 +230,52 @@ export function Navbar() {
                         <span>{dropdown.label}</span>
                         <span className="text-[10px] opacity-30 transition-transform duration-200 group-hover:rotate-180">▼</span>
                       </button>
-                      {/* Dropdown Menu */}
+                      {/* Enhanced Dropdown Menu with Description */}
                       <div
                         id={`desktop-nav-dropdown-${idx}`}
-                        className={`absolute left-0 top-full mt-2 w-64 transition-all duration-200 ease-out z-[1001] ${
+                        className={`absolute left-0 top-full mt-2 w-72 transition-all duration-200 ease-out z-[1001] ${
                           isOpen
                             ? "opacity-100 visible translate-y-0"
                             : "opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0"
                         }`}
                       >
                         <div className="glass-card-premium rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                          {dropdown.items.map((subItem) => {
-                            const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
-                            return (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className={`block px-5 py-3 hover:bg-white/5 transition-all duration-200 ease-out flex items-center gap-3 ${isActive ? 'bg-elite-accent-cyan/10 font-black text-elite-accent-cyan' : 'text-slate-400 hover:text-white'
-                                  }`}
-                                onClick={() => setOpenDesktopDropdown(null)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Escape") {
-                                    setOpenDesktopDropdown(null);
-                                  }
-                                }}
-                              >
-                                {subItem.icon && <span className="text-base grayscale group-hover:grayscale-0">{subItem.icon}</span>}
-                                <span>{subItem.label}</span>
-                              </Link>
-                            );
-                          })}
+                          {/* Dropdown Header with Description */}
+                          {dropdown.description && (
+                            <div className="px-5 py-3 bg-white/5 border-b border-white/5">
+                              <div className="flex items-start gap-2">
+                                {dropdown.icon && <span className="text-base mt-1">{dropdown.icon}</span>}
+                                <div className="flex-1">
+                                  <div className="text-xs font-black text-white mb-1">{dropdown.label}</div>
+                                  <div className="text-[11px] text-slate-400">{dropdown.description}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Dropdown Items */}
+                          <div className="space-y-1 p-2">
+                            {dropdown.items.map((subItem) => {
+                              const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className={`block px-4 py-2.5 hover:bg-white/5 transition-all duration-200 ease-out flex items-center gap-3 rounded-lg ${isActive ? 'bg-elite-accent-cyan/10 font-black text-elite-accent-cyan' : 'text-slate-400 hover:text-white'
+                                    }`}
+                                  onClick={() => setOpenDesktopDropdown(null)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Escape") {
+                                      setOpenDesktopDropdown(null);
+                                    }
+                                  }}
+                                >
+                                  {subItem.icon && <span className="text-base">{subItem.icon}</span>}
+                                  <span className="text-sm">{subItem.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -303,7 +319,7 @@ export function Navbar() {
               type="button"
               aria-label="Open menu"
               aria-expanded={mobileOpen}
-              className="lg:hidden touch-target inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all duration-200 p-2.5 sm:p-3 shrink-0"
+              className="inline-flex lg:!hidden touch-target items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all duration-200 p-2.5 sm:p-3 shrink-0"
               onClick={() => setMobileOpen((v) => !v)}
             >
               <svg
@@ -581,36 +597,52 @@ export function Navbar() {
 
               {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
-                  {/* Primary Navigation */}
-                <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-2">
-                  <div className="px-3 py-2 text-slate-500 text-[11px] font-black uppercase tracking-[0.22em]">Navigate</div>
+                {/* Primary Navigation */}
+                <div className="space-y-4">
                   {navConfig.primaryLinks.map((item, idx) => {
                     // Check if this is a dropdown menu
                     if ('items' in item) {
                       const dropdown = item as import('@/lib/navigation-config').NavDropdown;
                       return (
-                        <div key={idx} className="space-y-1">
-                          <div className="px-3 py-2 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide flex items-center gap-2">
-                            {dropdown.icon && <span className="text-base">{dropdown.icon}</span>}
-                            {dropdown.label}
+                        <div key={idx} className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                          {/* Category Header */}
+                          <div className="px-4 py-3 bg-white/5 border-b border-white/5">
+                            <div className="flex items-start gap-3">
+                              {dropdown.icon && <span className="text-lg mt-0.5">{dropdown.icon}</span>}
+                              <div className="flex-1">
+                                <div className="text-xs font-black text-white uppercase tracking-widest">{dropdown.label}</div>
+                                {dropdown.description && (
+                                  <div className="text-[11px] text-slate-400 font-medium mt-1">{dropdown.description}</div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          {dropdown.items.map((subItem) => {
-                            const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
-                            return (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className={`touch-target pl-6 pr-3 py-3 rounded-xl flex items-center gap-3 transition-all ${isActive
-                                  ? 'bg-white/10 font-black text-white border border-elite-accent-cyan/30'
-                                  : 'text-slate-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                                  }`}
-                                onClick={() => setMobileOpen(false)}
-                              >
-                                {subItem.icon && <span className="text-lg">{subItem.icon}</span>}
-                                <span className="text-sm font-medium">{subItem.label}</span>
-                              </Link>
-                            );
-                          })}
+                          
+                          {/* Category Items */}
+                          <div className="space-y-1 p-2">
+                            {dropdown.items.map((subItem) => {
+                              const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className={`touch-target px-4 py-3 rounded-lg flex items-center gap-3 transition-all ${isActive
+                                    ? 'bg-white/10 font-black text-white border border-elite-accent-cyan/30'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                                    }`}
+                                  onClick={() => setMobileOpen(false)}
+                                >
+                                  {subItem.icon && <span className="text-lg">{subItem.icon}</span>}
+                                  <span className="text-sm font-medium">{subItem.label}</span>
+                                  {subItem.badge && (
+                                    <span className="ml-auto text-[10px] bg-elite-accent-cyan/20 text-elite-accent-cyan px-2 py-0.5 rounded-full font-black">
+                                      {subItem.badge}
+                                    </span>
+                                  )}
+                                </Link>
+                              );
+                            })}
+                          </div>
                         </div>
                       );
                     }
@@ -622,9 +654,9 @@ export function Navbar() {
                       <Link
                         key={link.href}
                         href={link.href}
-                        className={`touch-target px-4 py-3 rounded-xl flex items-center gap-3 transition-all ${isActive
-                          ? 'bg-white/10 font-black text-white border border-elite-accent-cyan/30'
-                          : 'text-slate-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                        className={`touch-target px-4 py-3 rounded-xl flex items-center gap-3 transition-all border ${isActive
+                          ? 'bg-white/10 font-black text-white border-elite-accent-cyan/30'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5 active:bg-white/10 border-transparent'
                           }`}
                         onClick={() => setMobileOpen(false)}
                       >

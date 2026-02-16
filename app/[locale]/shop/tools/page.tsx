@@ -42,7 +42,7 @@ const ALL_TOOLS = [
   }
 ];
 
-export default function ShopPage() {
+export default function ToolsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-elite-bg py-16">
       <div className="container mx-auto px-4">
@@ -54,7 +54,7 @@ export default function ShopPage() {
           </p>
         </div>
 
-        {/* All Tools Section */}
+        {/* All Tools Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {ALL_TOOLS.map((tool, idx) => (
             <motion.div
