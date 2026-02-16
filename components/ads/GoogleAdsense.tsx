@@ -3,6 +3,16 @@
 import Script from 'next/script';
 import { useEffect } from 'react';
 
+/**
+ * Google AdSense Slot Reference
+ * Publisher: ca-pub-8149507764464883
+ * 
+ * Available Slots:
+ * - 5087174988: Horizontal (Top/Bottom banner)
+ * - 9337411181: Vertical/Rectangle (Sidebar ads)
+ * - 5094089430: Auto-responsive (Content ads, recommended)
+ */
+
 interface GoogleAdsenseProps {
   adSlot: string;
   adFormat?: 'auto' | 'horizontal' | 'vertical' | 'rectangle';
