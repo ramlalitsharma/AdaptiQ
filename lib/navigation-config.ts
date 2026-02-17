@@ -72,7 +72,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
       },
 
       // 🛠️ Tools & Resources - All tools in one place
-      { href: '/shop/tools', label: 'Tools & Resources', icon: '🛠️' },
+      { href: '/shop', label: 'Tools & Resources', icon: '🛠️' },
 
       // 🎯 Practice Hub - Assessments & tests
       {
@@ -140,7 +140,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
       },
 
       // 🛠️ Tools & Resources - All tools in one place
-      { href: '/shop/tools', label: 'Tools & Resources', icon: '🛠️' },
+      { href: '/shop', label: 'Tools & Resources', icon: '🛠️' },
 
       {
         label: 'Administration',
@@ -193,7 +193,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
       },
 
       // 🛠️ Tools & Resources - All tools in one place
-      { href: '/shop/tools', label: 'Tools & Resources', icon: '🛠️' },
+      { href: '/shop', label: 'Tools & Resources', icon: '🛠️' },
 
       {
         label: 'Teaching Studio',
@@ -349,7 +349,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
       },
 
       // 🛠️ Tools & Resources - All tools in one place
-      { href: '/shop/tools', label: 'Tools & Resources', icon: '🛠️' },
+      { href: '/shop', label: 'Tools & Resources', icon: '🛠️' },
     ],
     dashboardLink: { href: '/dashboard', label: 'My Dashboard' },
     showAdminBadge: false,
@@ -396,7 +396,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
       },
 
       // 🛠️ Tools & Resources - All tools in one place
-      { href: '/shop/tools', label: 'Tools & Resources', icon: '🛠️' },
+      { href: '/shop', label: 'Tools & Resources', icon: '🛠️' },
     ],
     dashboardLink: { href: '/dashboard', label: 'My Dashboard' },
     showAdminBadge: false,

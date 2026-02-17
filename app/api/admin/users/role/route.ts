@@ -2,7 +2,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { isAdmin, isSuperAdmin, updateUserRole } from '@/lib/admin-check';
+import { isAdmin, isSuperAdmin } from '@/lib/admin-check';
+import { updateUserRole } from '@/lib/admin-service';
 
 export async function PATCH(request: NextRequest) {
     try {

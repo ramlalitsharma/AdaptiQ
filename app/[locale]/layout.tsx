@@ -13,6 +13,7 @@ import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistr
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
+import { AdSenseScript } from "@/components/ads/AdSenseScript";
 import { locales } from "@/lib/navigation";
 import { notFound } from "next/navigation";
 import "../globals.css";
@@ -174,6 +175,7 @@ export default async function RootLayout({
     <ClerkProvider>
       <html lang={locale} suppressHydrationWarning>
         <head>
+          <AdSenseScript />
           <script
             dangerouslySetInnerHTML={{
               __html: `
@@ -319,7 +321,6 @@ export default async function RootLayout({
               </>
             )}
           </PostHogProvider>
-          {!isPro && <AdSenseScript />}
         </body>
       </html>
     </ClerkProvider>

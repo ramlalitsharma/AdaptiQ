@@ -14,11 +14,6 @@ export async function GET(req: Request) {
       NewsService.getTrendingNews(6),
     ]);
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[API_DEBUG] /api/public/news hit. Params: cat=${category}, country=${country}`);
-      console.log(`[API_DEBUG] Published found: ${published?.length || 0}`);
-      console.log(`[API_DEBUG] Trending found: ${trending?.length || 0}`);
-    }
 
     return NextResponse.json({
       items: published || [],
