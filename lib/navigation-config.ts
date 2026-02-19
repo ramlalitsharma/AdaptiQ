@@ -65,7 +65,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
         description: 'Share knowledge & connect',
         items: [
           { href: '/blog', label: 'Blog Platform', icon: '✍️' },
-          { href: '/news', label: 'News Feed', icon: '📰' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
           { href: '/forum', label: 'Discussion Forum', icon: '💬' },
           { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],
@@ -133,7 +133,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
         description: 'Manage community features',
         items: [
           { href: '/blog', label: 'Blog Platform', icon: '✍️' },
-          { href: '/news', label: 'News Feed', icon: '📰' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
           { href: '/forum', label: 'Discussion Forum', icon: '💬' },
           { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],
@@ -186,7 +186,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
         description: 'Engage with community',
         items: [
           { href: '/blog', label: 'Blog Platform', icon: '✍️' },
-          { href: '/news', label: 'News Feed', icon: '📰' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
           { href: '/forum', label: 'Discussion Forum', icon: '💬' },
           { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],
@@ -256,7 +256,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
         description: 'View published content',
         items: [
           { href: '/blog', label: 'Blog Platform', icon: '✍️' },
-          { href: '/news', label: 'News Feed', icon: '📰' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
           { href: '/forum', label: 'Forums', icon: '💬' },
         ],
       },
@@ -296,7 +296,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
         description: 'View published content',
         items: [
           { href: '/blog', label: 'Blog Platform', icon: '✍️' },
-          { href: '/news', label: 'News Feed', icon: '📰' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
           { href: '/forum', label: 'Forums', icon: '💬' },
         ],
       },
@@ -342,7 +342,7 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
         description: 'Connect & collaborate',
         items: [
           { href: '/blog', label: 'Blog Platform', icon: '✍️' },
-          { href: '/news', label: 'News Feed', icon: '📰' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
           { href: '/forum', label: 'Discussion Forum', icon: '💬' },
           { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],

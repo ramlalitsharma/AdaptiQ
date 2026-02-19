@@ -212,7 +212,7 @@ function ToolCard({ tool }: { tool: typeof TOOLS[0] }) {
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
       whileHover={{ y: -6 }}
-      className={`group relative rounded-3xl border border-white/[0.07] bg-white/[0.03] backdrop-blur-sm overflow-hidden transition-all duration-300 shadow-2xl ${tool.glowColor} ${tool.borderGlow}`}
+      className={`group relative rounded-3xl border border-black/[0.07] dark:border-white/[0.07] bg-white dark:bg-white/[0.03] backdrop-blur-sm overflow-hidden transition-all duration-300 shadow-2xl ${tool.glowColor} ${tool.borderGlow}`}
     >
       {/* Gradient background on hover */}
       <div className={`absolute inset-0 bg-gradient-to-br ${tool.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -232,10 +232,10 @@ function ToolCard({ tool }: { tool: typeof TOOLS[0] }) {
         </div>
 
         {/* Name + tagline */}
-        <h3 className="text-lg font-black text-white mb-1.5 group-hover:text-white transition-colors">
+        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1.5 group-hover:text-foreground transition-colors">
           {tool.name}
         </h3>
-        <p className="text-sm text-slate-500 mb-5 leading-relaxed">{tool.tagline}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-500 mb-5 leading-relaxed">{tool.tagline}</p>
 
         {/* Rating */}
         <div className="flex items-center gap-2 mb-5">
@@ -251,7 +251,7 @@ function ToolCard({ tool }: { tool: typeof TOOLS[0] }) {
         {/* Features */}
         <ul className="space-y-2.5 mb-7">
           {tool.features.map((feat) => (
-            <li key={feat} className="flex items-center gap-2.5 text-sm text-slate-400">
+            <li key={feat} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
               {feat}
             </li>
@@ -259,15 +259,15 @@ function ToolCard({ tool }: { tool: typeof TOOLS[0] }) {
         </ul>
 
         {/* Price + CTA */}
-        <div className="flex items-center justify-between pt-5 border-t border-white/[0.06]">
+        <div className="flex items-center justify-between pt-5 border-t border-black/[0.06] dark:border-white/[0.06]">
           <div>
             {isFree ? (
               <span className="text-2xl font-black text-emerald-400">Free</span>
             ) : (
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-white">${tool.price.amount}</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-white">${tool.price.amount}</span>
                 {tool.price.period && (
-                  <span className="text-sm text-slate-500">{tool.price.period}</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-500">{tool.price.period}</span>
                 )}
               </div>
             )}
@@ -303,12 +303,12 @@ export default function ForgeShopPage() {
     : TOOLS.filter(t => t.category === activeCategory);
 
   return (
-    <div className="min-h-screen bg-[#060812] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
       {/* ════ HERO ════ */}
       <section ref={heroRef} className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
         {/* Animated grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000010_1px,transparent_1px),linear-gradient(to_bottom,#00000010_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:64px_64px]" />
 
         {/* Radial glows */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-violet-600/10 blur-[140px] pointer-events-none" />
@@ -348,7 +348,7 @@ export default function ForgeShopPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed"
+            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed"
           >
             AI agents, automation pipelines, and elite developer tools — engineered to accelerate your mission from $0 to production in hours.
           </motion.p>
@@ -386,7 +386,7 @@ export default function ForgeShopPage() {
                   <Icon className="w-4 h-4 text-violet-400" />
                 </div>
                 <div className="text-left">
-                  <div className="text-base font-black text-white leading-tight">{value}</div>
+                  <div className="text-base font-black text-slate-900 dark:text-white leading-tight">{value}</div>
                   <div className="text-xs text-slate-500 font-medium">{label}</div>
                 </div>
               </div>
@@ -404,10 +404,10 @@ export default function ForgeShopPage() {
 
           {/* Section header */}
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-4">
+            <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
               The Full Arsenal
             </h2>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto">
+            <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl mx-auto">
               Pick a tool. Deploy in minutes. Scale without limits.
             </p>
           </div>
@@ -465,7 +465,7 @@ export default function ForgeShopPage() {
               <h2 className="text-3xl md:text-5xl font-black text-white mb-5">
                 Need something custom?
               </h2>
-              <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
                 Our Forge engineers build bespoke AI agents, automation suites, and enterprise integrations tailored to your exact requirements.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
