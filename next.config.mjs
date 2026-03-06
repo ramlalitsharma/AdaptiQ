@@ -5,6 +5,12 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  async redirects() {
+    return [
+      { source: '/news', destination: '/en/news', permanent: false },
+      { source: '/news/:path*', destination: '/en/news/:path*', permanent: false },
+    ];
+  },
   images: {
     remotePatterns: [
       {
@@ -67,6 +73,54 @@ const nextConfig = {
         protocol: "https",
         hostname: "**.duckduckgo.com",
       },
+      {
+        protocol: "https",
+        hostname: "img1.hscicdn.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.hscicdn.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.independent.co.uk",
+      },
+      {
+        protocol: "https",
+        hostname: "static.independent.co.uk",
+      },
+      {
+        protocol: "https",
+        hostname: "**.reuters.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.theguardian.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cnn.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.abcnews.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.apnews.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.nytimes.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.bloomberg.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.aljazeera.net",
+      },
     ],
   },
   typescript: {
@@ -77,6 +131,27 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "1gb",
     },
+  },
+  async headers() {
+    return [
+      {
+        source: "/admin/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
   },
 };
 
