@@ -90,7 +90,6 @@ export async function GET() {
         },
         sources: [],
         updates: [],
-        partySignals: [],
         error: error?.message || "Failed to fetch Nepal election live feed",
       },
       { status: 500 }
