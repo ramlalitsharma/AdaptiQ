@@ -57,11 +57,10 @@ export const FabricPdfEditor: React.FC<FabricPdfEditorProps> = ({
         // Load background image
         FabricImage.fromURL(imageUrl, { crossOrigin: 'anonymous' }).then((img) => {
             img.set({
-                selectable: false,
-                evented: false,
+                scaleX: width / img.width!,
+                scaleY: height / img.height!,
             });
-            canvas.add(img);
-            canvas.sendObjectToBack(img);
+            canvas.set({ backgroundImage: img });
             canvas.renderAll();
         }).catch(err => console.error("Fabric image load error:", err));
 

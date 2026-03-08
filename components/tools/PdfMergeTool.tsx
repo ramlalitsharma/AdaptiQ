@@ -136,9 +136,14 @@ function HighResEditorWrapper({
                 await pdfPage.render({ canvasContext: ctx, viewport: vp }).promise;
 
                 if (isMounted) {
-                    setRenderedUrl(canvas.toDataURL());
-                    setDims({ width: canvas.width, height: canvas.height });
-                    setLoading(false);
+                    canvas.toBlob((blob) => {
+                        if (blob && isMounted) {
+                            const url = URL.createObjectURL(blob);
+                            setRenderedUrl(url);
+                            setDims({ width: canvas.width, height: canvas.height });
+                            setLoading(false);
+                        }
+                    }, 'image/png');
                 }
             } catch (err) {
                 console.error("HighRes Render Error:", err);
@@ -146,7 +151,10 @@ function HighResEditorWrapper({
             }
         };
         renderToBlob();
-        return () => { isMounted = false; };
+        return () => {
+            isMounted = false;
+            if (renderedUrl) URL.revokeObjectURL(renderedUrl);
+        };
     }, [page, sources]);
 
     const runOcr = async () => {
