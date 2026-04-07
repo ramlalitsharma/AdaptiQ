@@ -4,9 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/lib/navigation";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import {
+  Activity,
+  BarChart3,
   Book,
   BookOpen,
+  Bot,
   ChevronDown,
+  Layers,
   LayoutDashboard,
   Library,
   Newspaper,
@@ -14,17 +18,19 @@ import {
   Search,
   Shield,
   ShoppingBag,
+  Trophy,
   Zap,
 } from "lucide-react";
+
 import { useSearchParams } from "next/navigation";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
-import { Trophy } from "lucide-react";
 
 type NavLabels = {
+
   home: string;
   world: string;
   more: string;
@@ -251,6 +257,54 @@ export function NewsNavbar() {
                 </div>
               </li>
 
+              {(userRole === "superadmin" || userRole === "admin") && (
+                <li className="relative group/admin h-full flex items-center">
+                  <button
+                    className="flex items-center gap-1 px-4 h-full text-slate-500 dark:text-gray-400 hover:text-[#f08821] transition-colors border-b-[3px] border-transparent"
+                    style={{ marginBottom: "-1px" }}
+                  >
+                    <Shield size={14} className="mr-1" />
+                    Administration <ChevronDown size={14} className="mt-0.5" />
+                  </button>
+                  <div className="absolute top-full left-0 mt-0 w-64 max-h-[480px] overflow-y-auto bg-white dark:bg-[#111111] border border-gray-200 dark:border-gray-800 shadow-2xl py-3 opacity-0 invisible group-hover/admin:opacity-100 group-hover/admin:visible transition-all z-[111]">
+                    <div className="px-5 py-2 mb-2">
+                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">System Management</span>
+                    </div>
+                    {userRole === "superadmin" && (
+                      <Link href="/admin/super" className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#f08821] transition-colors text-[13px]">
+                        <Trophy size={14} className="text-amber-500" />
+                        <span className="font-bold">Super Console</span>
+                      </Link>
+                    )}
+                    <Link href="/admin" className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#f08821] transition-colors text-[13px]">
+                      <Shield size={14} className="text-blue-500" />
+                      <span className="font-medium">Admin Panel</span>
+                    </Link>
+                    <Link href="/admin/users" className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#f08821] transition-colors text-[13px]">
+                      <Bot size={14} className="text-purple-500" />
+                      <span className="font-medium">User Management</span>
+                    </Link>
+                    <Link href="/admin/courses" className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#f08821] transition-colors text-[13px]">
+                      <Layers size={14} className="text-emerald-500" />
+                      <span className="font-medium">Course Management</span>
+                    </Link>
+                    <Link href="/admin/analytics" className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#f08821] transition-colors text-[13px]">
+                      <BarChart3 size={14} className="text-cyan-500" />
+                      <span className="font-medium">Analytics Dashboard</span>
+                    </Link>
+                    <Link href="/admin/logs" className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#f08821] transition-colors text-[13px]">
+                      <Activity size={14} className="text-slate-500" />
+                      <span className="font-medium">Activity Logs</span>
+                    </Link>
+                    <Link href="/admin/settings" className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-[#f08821] transition-colors text-[13px] border-t border-gray-100 dark:border-white/5 mt-2 pt-3">
+                      <Zap size={14} className="text-amber-500" />
+                      <span className="font-medium">System Settings</span>
+                    </Link>
+                  </div>
+                </li>
+              )}
+
+
               <li className="relative group/more h-full flex items-center">
                 <button
                   className={`flex items-center gap-1 px-4 h-full hover:text-[#f08821] transition-colors border-b-[3px] ${moreCategories.includes(currentCategory) ? "text-[#f08821] border-[#f08821]" : "border-transparent"}`}
@@ -460,6 +514,7 @@ export function NewsNavbar() {
           {mounted && (
             <SignedOut>
               <div className="hidden lg:flex items-center gap-2 shrink-0">
+
                 <SignInButton mode="modal">
                   <Button
                     variant="ghost"

@@ -1,32 +1,44 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { NetworkPulseSidebar } from '@/components/news/NetworkPulseSidebar';
-import { 
-  Activity, 
-  ArrowUpRight, 
-  BarChart3, 
-  Bot, 
-  CalendarClock, 
-  ChevronRight, 
-  Globe, 
-  Info, 
-  Layers, 
-  LayoutGrid, 
-  MessageSquare, 
-  Share2, 
-  ShieldCheck, 
-  Sparkles, 
-  Target, 
-  TrendingUp, 
-  Zap 
+import {
+  Activity,
+  ArrowUpRight,
+  BarChart3,
+  Book,
+  BookOpen,
+  Bot,
+  CalendarClock,
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  Info,
+  Layers,
+  LayoutDashboard,
+  LayoutGrid,
+  Library,
+  MessageSquare,
+  Newspaper,
+  PenSquare,
+  Search,
+  Share2,
+  Shield,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Trophy,
+  Zap
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { StrategicSignalSidebar } from '@/components/news/StrategicSignalSidebar';
-import { IPLStreamSidebar } from '@/components/news/IPLStreamSidebar';
-import { Trophy } from 'lucide-react';
+
+
 
 type NewsItem = {
   id: string;
@@ -69,8 +81,8 @@ interface NewsFeedClientProps {
   };
 }
 
-export default function NewsFeedClient({ 
-  initialItems, 
+export default function NewsFeedClient({
+  initialItems,
   initialTrending,
   initialEvents = [],
   category,
@@ -84,11 +96,21 @@ export default function NewsFeedClient({
   const [activeFilter, setActiveFilter] = useState(category);
   const [activeRegion, setActiveRegion] = useState(country);
 
+  // Sync state with props when the URL changes (e.g., via navbar interaction)
+  useEffect(() => {
+    setActiveFilter(category);
+  }, [category]);
+
+  useEffect(() => {
+    setActiveRegion(country);
+  }, [country]);
+
+
   const items = useMemo(() => {
     const base = initialItems || [];
     if (activeFilter === 'IPL-Live') {
-      return base.filter(item => 
-        (item.category || '').toLowerCase() === 'sports' || 
+      return base.filter(item =>
+        (item.category || '').toLowerCase() === 'sports' ||
         (item.tags || []).some(t => t.toLowerCase().includes('ipl') || t.toLowerCase().includes('cricket'))
       );
     }
@@ -121,7 +143,7 @@ export default function NewsFeedClient({
   const getFallbackImage = (category?: string, id?: string) => {
     const cat = (category || 'General').toLowerCase();
     const seed = id ? id.slice(-1) : '0';
-    
+
     const fallbacks: Record<string, string[]> = {
       technology: [
         'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070',
@@ -155,7 +177,7 @@ export default function NewsFeedClient({
     const avgImpact = items.length > 0
       ? items.reduce((acc, curr) => acc + (curr.impact_score || 50), 0) / items.length
       : 52;
-    
+
     let label = 'Neutral';
     let color = 'text-white';
     if (avgImpact > 75) { label = 'Volatile'; color = 'text-rose-500'; }
@@ -179,7 +201,7 @@ export default function NewsFeedClient({
         <Bot className="w-12 h-12 mb-4 opacity-20" />
         <h3 className="text-xl font-medium text-slate-200">No Intelligence Streams Found</h3>
         <p className="mt-2 text-sm">Adjust your filters or standby for live updates.</p>
-        <button 
+        <button
           onClick={() => { setActiveFilter('All'); setActiveRegion('All'); router.push('/news'); }}
           className="mt-6 px-6 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 rounded-full text-sm font-medium transition-colors"
         >
@@ -193,70 +215,94 @@ export default function NewsFeedClient({
     <div className="news-layout-grid grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* Primary Content Column */}
       <section className="news-primary-col lg:col-span-8 space-y-12">
-        
+
         {/* LIVE IPL STREAM TOP CONTAINER */}
         {activeFilter === 'IPL-Live' && (
-          <div className="glass-card-premium rounded-[2.5rem] overflow-hidden border-orange-500/20 shadow-[0_40px_100px_-15px_rgba(249,115,22,0.2)] animate-in fade-in slide-in-from-top-4 duration-1000">
-            <div className="px-8 py-5 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
-                  <Trophy className="text-white" size={20} />
-                </div>
-                <div>
-                  <h2 className="text-white font-black uppercase tracking-[0.2em] text-sm">Live Decrypted Relay: IPL 2024</h2>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[10px] text-white/80 font-bold uppercase tracking-widest">Signal Locked • 1080p Crystal</span>
+          <>
+            <div className="glass-card-premium rounded-[2.5rem] overflow-hidden border-orange-500/20 shadow-[0_40px_100px_-15px_rgba(249,115,22,0.2)] animate-in fade-in slide-in-from-top-4 duration-1000">
+              <div className="px-8 py-5 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                    <Trophy className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-white font-black uppercase tracking-[0.2em] text-sm">Live Decrypted Relay: IPL 2024</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px] text-white/80 font-bold uppercase tracking-widest">Signal Locked • 1080p Crystal</span>
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black text-white px-3 py-1 bg-white/10 rounded-full border border-white/20 uppercase tracking-widest">
+                    Sports Intelligence
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-white px-3 py-1 bg-white/10 rounded-full border border-white/20 uppercase tracking-widest">
-                  Sports Intelligence
-                </span>
+
+              <div className="relative aspect-video bg-black overflow-hidden group-hover:shadow-[inset_0_0_20px_rgba(249,115,22,0.3)] transition-shadow">
+                <iframe
+                  src="https://embed.crichd.tech/embed.php?id=ss1&autoplay=1&muted=1"
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  scrolling="no"
+                  allowFullScreen
+                  allow="autoplay; fullscreen"
+                  className="opacity-90 group-hover:opacity-100 transition-opacity w-full h-full"
+                />
+              </div>
+
+              <div className="px-8 py-6 bg-slate-950/60 backdrop-blur-3xl border-t border-white/5 flex items-center justify-between">
+                <p className="text-slate-400 text-xs font-medium max-w-2xl leading-relaxed italic">
+                  You are viewing a high-priority tactical relay. Sports telemetry and analysis are being aggregated below.
+                </p>
+                <button
+                  onClick={() => window.open('https://embed.crichd.tech/embed.php?id=ss1', '_blank')}
+                  className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  External Hub
+                </button>
               </div>
             </div>
-            
-            <div className="relative aspect-video bg-black">
-              <iframe 
-                src="https://embed.crichd.tech/embed.php?id=ss1" 
-                width="100%" 
-                height="100%" 
-                frameBorder="0" 
-                scrolling="no" 
-                allowFullScreen
-                className="w-full h-full"
-              />
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <IPLRankings />
+              <div className="glass-card-premium rounded-[2.5rem] p-8 border-cyan-500/10 flex flex-col justify-center bg-gradient-to-br from-cyan-500/5 to-transparent">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-6">
+                  <Target className="text-cyan-500" size={24} />
+                </div>
+                <h3 className="text-white font-black uppercase tracking-widest mb-4">Strategic Pulse</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                  The global sports sector is currently undergoing significant digital transformation. Our terminal aggregates real-time telemetry from over 150 official sources to provide you with high-authority intelligence.
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0a0d13] bg-slate-800" />)}
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">12K+ Nodes Analyzing</span>
+                </div>
+              </div>
             </div>
-            
-            <div className="px-8 py-6 bg-slate-950/60 backdrop-blur-3xl border-t border-white/5 flex items-center justify-between">
-              <p className="text-slate-400 text-xs font-medium max-w-2xl leading-relaxed italic">
-                You are viewing a high-priority tactical relay. Sports telemetry and analysis are being aggregated below.
-              </p>
-              <button 
-                onClick={() => window.open('https://embed.crichd.tech/embed.php?id=ss1', '_blank')}
-                className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-              >
-                External Hub
-              </button>
-            </div>
-          </div>
+          </>
         )}
-        
+
+
+
         {/* Lead Story: Refactored to avoid nested <a> tags */}
         {lead && (
-          <div 
+          <div
             className="group relative cursor-pointer"
             onClick={() => router.push(`/news/${lead.slug}`)}
           >
             <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-slate-900 shadow-2xl">
-              <img 
-                src={lead.image_url || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072'} 
+              <img
+                src={lead.image_url || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072'}
                 alt={lead.image_alt || lead.title}
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-              
+
               <div className="absolute bottom-0 left-0 p-8 md:p-12 w-full">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-widest rounded">
@@ -267,11 +313,11 @@ export default function NewsFeedClient({
                     {lead.published_at ? format(new Date(lead.published_at), 'MMM dd, HH:mm') : 'Live Now'}
                   </span>
                 </div>
-                
+
                 <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight max-w-4xl group-hover:text-indigo-300 transition-colors">
                   {lead.title}
                 </h1>
-                
+
                 <p className="text-slate-300 text-lg line-clamp-2 max-w-3xl mb-8 leading-relaxed">
                   {lead.summary || lead.content?.slice(0, 180)}...
                 </p>
@@ -283,9 +329,9 @@ export default function NewsFeedClient({
                     </div>
                     {lead.author_name || 'Terai Times Analyst'}
                   </div>
-                  
+
                   {lead.source_name && (
-                    <span 
+                    <span
                       role="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -300,7 +346,7 @@ export default function NewsFeedClient({
                 </div>
               </div>
             </div>
-            
+
             {/* Lead Meta Indicators */}
             <div className="absolute top-8 right-8 flex flex-col gap-3">
               {lead.impact_score && (
@@ -316,14 +362,14 @@ export default function NewsFeedClient({
         {/* Secondary Stories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {secondary.map((item) => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className="group cursor-pointer bg-slate-900/40 border border-white/5 rounded-xl overflow-hidden hover:bg-slate-900/60 transition-all duration-300 hover:border-indigo-500/30 flex flex-col"
               onClick={() => router.push(`/news/${item.slug}`)}
             >
               <div className="relative aspect-[16/10] overflow-hidden">
-                <img 
-                  src={item.image_url || getFallbackImage(item.category, item.id)} 
+                <img
+                  src={item.image_url || getFallbackImage(item.category, item.id)}
                   alt={item.title}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
@@ -376,17 +422,17 @@ export default function NewsFeedClient({
 
           <div className="space-y-4">
             {others.map((item) => (
-              <div 
+              <div
                 key={item.id}
                 className="group cursor-pointer flex gap-6 p-4 rounded-xl border border-white/0 hover:border-white/10 hover:bg-white/5 transition-all duration-300"
                 onClick={() => router.push(`/news/${item.slug}`)}
               >
                 <div className="relative h-32 w-48 flex-shrink-0 overflow-hidden rounded-lg bg-slate-900">
-                  <img 
-                  src={item.image_url || getFallbackImage(item.category, item.id)} 
-                  alt={item.title}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
+                  <img
+                    src={item.image_url || getFallbackImage(item.category, item.id)}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
                 </div>
                 <div className="flex flex-col justify-center gap-2">
                   <div className="flex items-center gap-3 overflow-hidden">
@@ -407,10 +453,9 @@ export default function NewsFeedClient({
                       {getIntegrityStatus(item.tags) === 'verified' ? 'Verified' : 'Relayed'}
                     </span>
                     {item.sentiment && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded leading-none ${
-                        item.sentiment === 'Bullish' ? 'bg-emerald-500/10 text-emerald-400' :
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded leading-none ${item.sentiment === 'Bullish' ? 'bg-emerald-500/10 text-emerald-400' :
                         item.sentiment === 'Bearish' ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-700/30 text-slate-400'
-                      }`}>
+                        }`}>
                         {item.sentiment}
                       </span>
                     )}
@@ -419,7 +464,7 @@ export default function NewsFeedClient({
               </div>
             ))}
           </div>
-          
+
           <button className="w-full py-4 mt-8 text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2 bg-slate-900/40 rounded-xl border border-white/5 hover:border-white/10 uppercase tracking-widest">
             Load Additional Signals
             <ChevronRight className="w-4 h-4" />
@@ -429,9 +474,10 @@ export default function NewsFeedClient({
 
       {/* Sidebar Section */}
       <aside className="news-sidebar lg:col-span-4 space-y-8">
-        
+
         {/* LIVE IPL RELAY SIDEBAR MONITOR */}
-        <IPLStreamSidebar />
+        {activeFilter === 'IPL-Live' && <IPLStreamSidebar />}
+
 
         {/* Newsletter / CTA */}
         <div className="relative overflow-hidden rounded-2xl bg-indigo-600 p-8 shadow-xl shadow-indigo-500/20">
@@ -441,12 +487,12 @@ export default function NewsFeedClient({
               Subscribe to our high-priority list for direct intelligence relayed to your inbox.
             </p>
             <div className="flex flex-col gap-3">
-              <input 
-                type="email" 
-                placeholder="Secure email address..." 
+              <input
+                type="email"
+                placeholder="Secure email address..."
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm transition-all"
               />
-              <button 
+              <button
                 onClick={() => router.push('/news/subscribe')}
                 className="w-full py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 text-sm transition-all active:scale-[0.98]"
               >
@@ -464,20 +510,19 @@ export default function NewsFeedClient({
             <Layers className="w-4 h-4 text-indigo-400" />
             Active Vectors
           </h4>
-          
+
           <div className="space-y-6">
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Region / Country</label>
               <div className="flex flex-wrap gap-2">
                 {['Global', ...(availableCountries.slice(0, 8))].map((c) => (
-                  <button 
+                  <button
                     key={c}
                     onClick={() => handleRegionChange(c)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeRegion === c 
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                        : 'bg-slate-900 border border-white/5 text-slate-400 hover:border-white/20 hover:text-white'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeRegion === c
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                      : 'bg-slate-900 border border-white/5 text-slate-400 hover:border-white/20 hover:text-white'
+                      }`}
                   >
                     {c}
                   </button>
@@ -489,14 +534,13 @@ export default function NewsFeedClient({
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Vertical / Category</label>
               <div className="flex flex-wrap gap-2">
                 {['All', ...(availableCategories.slice(0, 10))].map((cat) => (
-                  <button 
+                  <button
                     key={cat}
                     onClick={() => handleFilterChange(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeFilter === cat
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                        : 'bg-slate-900 border border-white/5 text-slate-400 hover:border-white/20 hover:text-white'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeFilter === cat
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                      : 'bg-slate-900 border border-white/5 text-slate-400 hover:border-white/20 hover:text-white'
+                      }`}
                   >
                     {cat}
                   </button>
@@ -514,8 +558,8 @@ export default function NewsFeedClient({
           </h4>
           <div className="space-y-6">
             {trending.map((item, idx) => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="group cursor-pointer flex gap-4"
                 onClick={() => router.push(`/news/${item.slug}`)}
               >
@@ -537,14 +581,14 @@ export default function NewsFeedClient({
         </div>
 
         {/* Strategic Signal Sidebar Component Integration */}
-        <StrategicSignalSidebar 
+        <StrategicSignalSidebar
           signals={trending.map(t => ({
             id: t.id,
             title: t.title,
             impact: t.impact_score || 50,
             sentiment: (t.sentiment as any) || 'Neutral',
             category: t.category || 'General'
-          }))} 
+          }))}
           entities={['IPL 2024', 'BCCI', 'Cricket Council', 'Global Sports']}
         />
 
@@ -578,14 +622,14 @@ export default function NewsFeedClient({
           <div className="mt-6 flex justify-center">
             <div className="flex items-center gap-1.5 h-8 items-end">
               {[12, 18, 14, 22, 16, 24, 18, 20, 14, 22, 16, 12].map((h, i) => (
-                <div 
-                  key={i} 
-                  className="w-1.5 rounded-full bg-indigo-500/40 animate-pulse-bar" 
-                  style={{ 
+                <div
+                  key={i}
+                  className="w-1.5 rounded-full bg-indigo-500/40 animate-pulse-bar"
+                  style={{
                     height: `${h}px`,
                     animationDelay: `${i * 0.1}s`,
                     animationDuration: '1.5s'
-                  }} 
+                  }}
                 />
               ))}
             </div>
