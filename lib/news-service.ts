@@ -60,7 +60,10 @@ export const NewsService = {
             .order('published_at', { ascending: false });
 
         if (filters?.country && filters.country !== 'All' && filters.country !== 'Global') {
-            query = query.eq('country', filters.country);
+            // Phase 44: Resilient Regional Filtering
+            // Priority 1: Exact column match
+            // Priority 2: Intelligence Tag match (Fuzzy fallback)
+            query = query.or(`country.eq.${filters.country},tags.cs.{"${filters.country}"}`);
         }
 
         if (filters?.category && filters.category !== 'All') {

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/lib/navigation";
+import { useLocale } from "next-intl";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import {
   Activity,
@@ -71,31 +72,6 @@ const REGIONS_MAP: Record<string, string[]> = {
 const NAV_COUNTRIES = Object.values(REGIONS_MAP).flat();
 const NAV_CATEGORIES = ["All", "Sports", "Finance", "Technology", "Politics", "Environment", "Health", "World", "Science"];
 
-const LOCALE_BY_COUNTRY: Record<string, string> = {
-  Nepal: "ne-NP",
-  India: "hi-IN",
-  USA: "en-US",
-  UK: "en-GB",
-  Australia: "en-AU",
-  Japan: "ja-JP",
-  China: "zh-CN",
-  France: "fr-FR",
-  Germany: "de-DE",
-  UAE: "ar-AE",
-  Global: "en-US",
-  All: "en-US",
-};
-
-function resolveLocale(country: string): string {
-  if (country && LOCALE_BY_COUNTRY[country]) return LOCALE_BY_COUNTRY[country];
-  if (typeof navigator !== "undefined" && navigator.language) return navigator.language;
-  return "en-US";
-}
-
-function baseLocale(locale: string): string {
-  return locale.split("-")[0].toLowerCase();
-}
-
 function buildNewsHref(category: string, country: string): string {
   const params = new URLSearchParams();
   if (category && category !== "All") params.set("category", category);
@@ -119,8 +95,8 @@ export function NewsNavbar() {
 
   const currentCategory = searchParams.get("category") || "All";
   const currentCountry = searchParams.get("country") || "All";
-  const locale = useMemo(() => resolveLocale(currentCountry), [currentCountry]);
-  const labels = useMemo(() => LABELS_BY_LOCALE[baseLocale(locale)] || LABELS_BY_LOCALE.en, [locale]);
+  const locale = useLocale();
+  const labels = useMemo(() => LABELS_BY_LOCALE[locale] || LABELS_BY_LOCALE.en, [locale]);
   const effectiveRole = userRole || "user";
 
   const activeName = user?.fullName || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";

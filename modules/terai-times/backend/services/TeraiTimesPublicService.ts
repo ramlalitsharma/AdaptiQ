@@ -78,7 +78,9 @@ export class TeraiTimesPublicService extends FeatureModule {
 
     if (automationStatus.autoPublishEnabled && this.shouldBackfill(initialItems, automationStatus)) {
       // Fire-and-forget background ingestion to keep the landing page fast and resilient
-      NewsAutomationService.ingestRoamingGlobalNews(Math.max(1, automationStatus.targetPerHour))
+      // If we have a specific country with no items, we prioritize it
+      const backfillCountry = (!initialItems.length && country !== 'All') ? country : undefined;
+      NewsAutomationService.ingestRoamingGlobalNews(Math.max(1, automationStatus.targetPerHour), backfillCountry)
         .catch(err => console.error('[PublicService] Background ingestion failed:', err));
     }
 

@@ -65,34 +65,48 @@ function isNoiseItem(item: DiscoveredTrend): boolean {
 }
 
 const RSS_FEEDS: { url: string; source: string; defaultCategory: NewsCategory }[] = [
-    // World & Global
+    // World & Global High-Fidelity Wires
     { url: 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en', source: 'Google News', defaultCategory: 'World' },
     { url: 'https://feeds.bbci.co.uk/news/rss.xml', source: 'BBC News', defaultCategory: 'World' },
     { url: 'https://www.aljazeera.com/xml/rss/all.xml', source: 'Al Jazeera', defaultCategory: 'World' },
     { url: 'https://www.theguardian.com/world/rss', source: 'The Guardian', defaultCategory: 'World' },
     { url: 'http://rss.cnn.com/rss/edition.rss', source: 'CNN International', defaultCategory: 'World' },
     { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', source: 'NY Times', defaultCategory: 'World' },
+    { url: 'https://www.reutersagency.com/feed/?best-topics=world-news&post_type=best', source: 'Reuters', defaultCategory: 'World' },
     
-    // Technology & AI
+    // Nepal Regional Intelligence (Targeted Priority)
+    { url: 'https://kathmandupost.com/rss', source: 'Kathmandu Post', defaultCategory: 'World' },
+    { url: 'https://thehimalayantimes.com/feed', source: 'Himalayan Times', defaultCategory: 'World' },
+    { url: 'https://nepalitimes.com/feed', source: 'Nepali Times', defaultCategory: 'World' },
+    { url: 'https://www.onlinekhabar.com/feed', source: 'Online Khabar', defaultCategory: 'World' },
+    
+    // Technology & AI Convergence
     { url: 'https://techcrunch.com/feed/', source: 'TechCrunch', defaultCategory: 'Technology' },
     { url: 'https://www.theverge.com/rss/index.xml', source: 'The Verge', defaultCategory: 'Technology' },
     { url: 'https://www.wired.com/feed/rss', source: 'WIRED', defaultCategory: 'Technology' },
     { url: 'https://arstechnica.com/feed/', source: 'Ars Technica', defaultCategory: 'Technology' },
     { url: 'https://www.zdnet.com/news/rss.xml', source: 'ZDNet', defaultCategory: 'Technology' },
     
-    // Business & Finance
+    // Business, Finance & Markets
     { url: 'https://www.forbes.com/business/feed/', source: 'Forbes', defaultCategory: 'Finance' },
     { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', source: 'CNBC Business', defaultCategory: 'Finance' },
     { url: 'https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml', source: 'Wall Street Journal', defaultCategory: 'Finance' },
     { url: 'https://www.economist.com/business/rss.xml', source: 'The Economist', defaultCategory: 'Finance' },
+    { url: 'https://economictimes.indiatimes.com/rssfeedstopstories.cms', source: 'Economic Times', defaultCategory: 'Finance' },
     
-    // Regional & Multilingual (International Context)
+    // Geopolitical & Analysis
     { url: 'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada', source: 'El País (ES)', defaultCategory: 'World' },
     { url: 'https://www.aajtak.in/rssfeed.xml', source: 'Aaj Tak (HI)', defaultCategory: 'World' },
     { url: 'http://www.xinhuanet.com/english/rss/world.xml', source: 'Xinhua (ZH)', defaultCategory: 'World' },
-    { url: 'https://economictimes.indiatimes.com/rssfeedstopstories.cms', source: 'Economic Times', defaultCategory: 'Finance' },
     { url: 'https://www.dawn.com/feeds/home/', source: 'DAWN', defaultCategory: 'World' },
-    { url: 'https://www.scmp.com/rss/31819/feed', source: 'SCMP', defaultCategory: 'World' }
+    { url: 'https://www.scmp.com/rss/31819/feed', source: 'SCMP', defaultCategory: 'World' },
+    
+    // Phase 45: Elite Global Resources
+    { url: 'https://www.bloomberg.com/feeds/bview/rss', source: 'Bloomberg Markets', defaultCategory: 'Finance' },
+    { url: 'https://www.sciencedaily.com/rss/all.xml', source: 'Science Daily', defaultCategory: 'Science' },
+    { url: 'https://foreignpolicy.com/feed/', source: 'Foreign Policy', defaultCategory: 'World' },
+    { url: 'https://www.newscientist.com/section/news/feed/', source: 'New Scientist', defaultCategory: 'Science' },
+    { url: 'https://www.zdnet.com/topic/security/rss.xml', source: 'ZDNet Security', defaultCategory: 'Technology' }
 ];
 
 

@@ -105,6 +105,16 @@ export default function NewsFeedClient({
   const pathname = usePathname();
   const [activeFilter, setActiveFilter] = useState(category);
   const [activeRegion, setActiveRegion] = useState(country);
+  const [isBackfilling, setIsBackfilling] = useState(false);
+
+  useEffect(() => {
+    // Phase 44: Regional Backfill Detection
+    if (!initialItems.length && activeRegion !== 'All' && activeRegion !== 'Global') {
+      setIsBackfilling(true);
+    } else {
+      setIsBackfilling(false);
+    }
+  }, [initialItems, activeRegion]);
 
   // Sync state with props when the URL changes (e.g., via navbar interaction)
   useEffect(() => {
@@ -406,6 +416,19 @@ export default function NewsFeedClient({
             </div>
 
             <div className="grid grid-cols-1 gap-1">
+              {/* Targeted Discovery Status */}
+              {isBackfilling && items.length === 0 && (
+                <div className="py-20 flex flex-col items-center justify-center text-center bg-white/[0.02] rounded-[3rem] border border-white/5 mb-12">
+                  <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 animate-pulse">
+                    <Database className="w-8 h-8 text-[#06b6d4]" />
+                  </div>
+                  <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tighter">Targeted Discovery In Progress</h3>
+                  <p className="text-white/40 text-xs max-w-sm font-medium uppercase tracking-wider">
+                    The autonomous desk is scanning international wires for {activeRegion} specific intelligence. Please standby for synchronization.
+                  </p>
+                </div>
+              )}
+
               {others.map((item) => (
                 <motion.div
                   variants={itemVariants}
@@ -481,6 +504,33 @@ export default function NewsFeedClient({
               <Zap className="w-5 h-5 text-[#fbbf24] transition-transform group-hover:scale-125" />
               Load Recent Updates
             </button>
+
+            {/* Pagination Controls - Always Visible for Navigation Transparency */}
+            {totalCount > 0 && (
+              <div className="mt-16 flex justify-center items-center gap-6 border-t border-white/5 pt-12">
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  className="p-4 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-300"
+                >
+                  <ChevronDown className="w-6 h-6 rotate-90" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Operational Slice</span>
+                  <span className="text-xl font-black text-white px-3 py-1 bg-white/5 rounded-lg border border-white/10 tabular-nums">
+                    {page}
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">of {Math.max(1, Math.ceil(totalCount / pageSize))}</span>
+                </div>
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= Math.ceil(totalCount / pageSize)}
+                  className="p-4 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-300"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </div>
+            )}
           </div>
           </motion.section>
 
