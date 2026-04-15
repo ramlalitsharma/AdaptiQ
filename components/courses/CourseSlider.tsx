@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { FallbackImage } from '@/components/ui/FallbackImage';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { BookOpen } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -97,16 +99,17 @@ export function CourseSlider({ courses }: CourseSliderProps) {
           <Link href={`/courses/${currentCourse.slug}`} className="block group">
             <div className="relative h-96 w-full overflow-hidden bg-gradient-to-br from-teal-500 to-emerald-500">
               {currentCourse.thumbnail ? (
-                <Image
+                <FallbackImage
                   src={currentCourse.thumbnail}
                   alt={currentCourse.title}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   priority
+                  unoptimized={currentCourse.thumbnail.startsWith('/uploads')}
                 />
               ) : (
                 <div className="h-full w-full bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-600 flex items-center justify-center">
-                  <div className="text-white text-6xl">📚</div>
+                  <BookOpen className="h-14 w-14 text-white" />
                 </div>
               )}
 
@@ -206,12 +209,14 @@ export function CourseSlider({ courses }: CourseSliderProps) {
                 e.preventDefault();
                 goToSlide(index);
               }}
-              className={`h-2 rounded-full transition-all ${index === currentIndex
-                ? 'w-8 bg-white'
-                : 'w-2 bg-white/50 hover:bg-white/75'
-                }`}
+              className="group relative h-4 w-4 flex items-center justify-center transition-all focus:outline-none"
               aria-label={`Go to slide ${index + 1}`}
-            />
+            >
+              <span className={`rounded-full transition-all ${index === currentIndex
+                ? 'h-2 w-8 bg-white'
+                : 'h-2 w-2 bg-white/50 group-hover:bg-white/75'
+                }`} />
+            </button>
           ))}
         </div>
       )}
@@ -229,15 +234,16 @@ export function CourseSlider({ courses }: CourseSliderProps) {
                 }`}
             >
               {course.thumbnail ? (
-                <Image
+                <FallbackImage
                   src={course.thumbnail}
                   alt={course.title}
                   fill
                   className="object-cover"
+                  unoptimized={course.thumbnail.startsWith('/uploads')}
                 />
               ) : (
-                <div className="h-full w-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white text-xl">
-                  📚
+                <div className="h-full w-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
+                  <BookOpen className="h-6 w-6 text-white" />
                 </div>
               )}
               {index === currentIndex && (

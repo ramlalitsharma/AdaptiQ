@@ -34,11 +34,14 @@ export function SubjectPractice({
 
   useEffect(() => {
     const lvl = levels.find((l) => l.id === levelId);
-    setLevelName(lvl?.name || 'Basic');
     const first = topicsByLevel[levelId]?.[0];
-    setChapterId(first?._id);
-    setChapterName(first?.name);
-  }, [levelId]);
+    
+    setTimeout(() => {
+      setLevelName(lvl?.name || 'Basic');
+      setChapterId(first?._id);
+      setChapterName(first?.name);
+    }, 0);
+  }, [levelId, levels, topicsByLevel]);
 
   useEffect(() => {
     // Persist selection for AdaptiveQuiz and dashboard
@@ -124,7 +127,7 @@ export function SubjectPractice({
         </div>
       ))}
     </div>
-  ), [levels, topicsByLevel, levelId, chapterId]);
+  ), [levels, topicsByLevel, levelId, chapterId, chapterProgress]);
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">

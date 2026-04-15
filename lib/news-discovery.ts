@@ -1,0 +1,350 @@
+import { NewsCategory } from './models/News';
+import { openai } from './openai';
+import { AdvancedScraperService } from './news-scraper';
+
+export interface DiscoveredTrend {
+    title: string;
+    link: string;
+    source: string;
+    pubDate: string;
+    category?: NewsCategory;
+    country?: import('./models/News').NewsCountry;
+    score?: number; // 0-100 viral potential
+}
+
+const NOISE_TITLE_PATTERNS = [
+    /terms of use/i,
+    /privacy policy/i,
+    /about us/i,
+    /about\b/i,
+    /contact us/i,
+    /cookie policy/i,
+    /cookie settings/i,
+    /sitemap/i,
+    /careers/i,
+    /jobs/i,
+    /subscribe/i,
+    /login/i,
+    /sign in/i,
+    /your\s+us\s+state\s+privacy\s+rights/i,
+    /book a trip/i,
+    /attend a live event/i,
+    /inspire your kids/i,
+    /travel/i,
+    /shop/i,
+    /gift/i,
+    /magazine/i,
+    /newsletter/i,
+    /podcast/i,
+    /watch/i,
+    /listen/i,
+    /quiz/i,
+    /games?/i,
+    /subscribe/i,
+    /sign up/i,
+];
+
+const NOISE_LINK_PATTERNS = [
+    /\/terms\b/i,
+    /\/privacy\b/i,
+    /\/about\b/i,
+    /\/contact\b/i,
+    /\/careers?\b/i,
+    /\/jobs?\b/i,
+    /\/sitemap\b/i,
+];
+
+function isNoiseItem(item: DiscoveredTrend): boolean {
+    const title = (item.title || '').trim();
+    const link = (item.link || '').trim();
+    if (!title || title.length < 6) return true;
+    if (title.split(/\s+/).length < 3) return true;
+    if (NOISE_TITLE_PATTERNS.some((re) => re.test(title))) return true;
+    if (link && NOISE_LINK_PATTERNS.some((re) => re.test(link))) return true;
+    return false;
+}
+
+const RSS_FEEDS: { url: string; source: string; defaultCategory: NewsCategory }[] = [
+    // World & Global High-Fidelity Wires
+    { url: 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en', source: 'Google News', defaultCategory: 'World' },
+    { url: 'https://feeds.bbci.co.uk/news/rss.xml', source: 'BBC News', defaultCategory: 'World' },
+    { url: 'https://www.aljazeera.com/xml/rss/all.xml', source: 'Al Jazeera', defaultCategory: 'World' },
+    { url: 'https://www.theguardian.com/world/rss', source: 'The Guardian', defaultCategory: 'World' },
+    { url: 'http://rss.cnn.com/rss/edition.rss', source: 'CNN International', defaultCategory: 'World' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', source: 'NY Times', defaultCategory: 'World' },
+    { url: 'https://www.reutersagency.com/feed/?best-topics=world-news&post_type=best', source: 'Reuters', defaultCategory: 'World' },
+    
+    // Nepal Regional Intelligence (Targeted Priority)
+    { url: 'https://kathmandupost.com/rss', source: 'Kathmandu Post', defaultCategory: 'World' },
+    { url: 'https://thehimalayantimes.com/feed', source: 'Himalayan Times', defaultCategory: 'World' },
+    { url: 'https://nepalitimes.com/feed', source: 'Nepali Times', defaultCategory: 'World' },
+    { url: 'https://www.onlinekhabar.com/feed', source: 'Online Khabar', defaultCategory: 'World' },
+    
+    // Technology & AI Convergence
+    { url: 'https://techcrunch.com/feed/', source: 'TechCrunch', defaultCategory: 'Technology' },
+    { url: 'https://www.theverge.com/rss/index.xml', source: 'The Verge', defaultCategory: 'Technology' },
+    { url: 'https://www.wired.com/feed/rss', source: 'WIRED', defaultCategory: 'Technology' },
+    { url: 'https://arstechnica.com/feed/', source: 'Ars Technica', defaultCategory: 'Technology' },
+    { url: 'https://www.zdnet.com/news/rss.xml', source: 'ZDNet', defaultCategory: 'Technology' },
+    
+    // Business, Finance & Markets
+    { url: 'https://www.forbes.com/business/feed/', source: 'Forbes', defaultCategory: 'Finance' },
+    { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', source: 'CNBC Business', defaultCategory: 'Finance' },
+    { url: 'https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml', source: 'Wall Street Journal', defaultCategory: 'Finance' },
+    { url: 'https://www.economist.com/business/rss.xml', source: 'The Economist', defaultCategory: 'Finance' },
+    { url: 'https://economictimes.indiatimes.com/rssfeedstopstories.cms', source: 'Economic Times', defaultCategory: 'Finance' },
+    
+    // Geopolitical & Analysis
+    { url: 'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada', source: 'El País (ES)', defaultCategory: 'World' },
+    { url: 'https://www.aajtak.in/rssfeed.xml', source: 'Aaj Tak (HI)', defaultCategory: 'World' },
+    { url: 'http://www.xinhuanet.com/english/rss/world.xml', source: 'Xinhua (ZH)', defaultCategory: 'World' },
+    { url: 'https://www.dawn.com/feeds/home/', source: 'DAWN', defaultCategory: 'World' },
+    { url: 'https://www.scmp.com/rss/31819/feed', source: 'SCMP', defaultCategory: 'World' },
+    
+    // Phase 45: Elite Global Resources
+    { url: 'https://www.bloomberg.com/feeds/bview/rss', source: 'Bloomberg Markets', defaultCategory: 'Finance' },
+    { url: 'https://www.sciencedaily.com/rss/all.xml', source: 'Science Daily', defaultCategory: 'Science' },
+    { url: 'https://foreignpolicy.com/feed/', source: 'Foreign Policy', defaultCategory: 'World' },
+    { url: 'https://www.newscientist.com/section/news/feed/', source: 'New Scientist', defaultCategory: 'Science' },
+    { url: 'https://www.zdnet.com/topic/security/rss.xml', source: 'ZDNet Security', defaultCategory: 'Technology' }
+];
+
+
+import Parser from 'rss-parser';
+
+export const NewsDiscoveryService = {
+    async getLiveTrends(): Promise<DiscoveredTrend[]> {
+        const discovered: DiscoveredTrend[] = [];
+        const parser = new Parser({
+            customFields: {
+                item: ['description', 'pubDate'],
+            }
+        });
+
+        const outputs = await Promise.allSettled(
+            RSS_FEEDS.map(async (feed) => {
+                try {
+                    const parsedFeed = await parser.parseURL(feed.url);
+                    return (parsedFeed.items || []).slice(0, 10).map(item => {
+                        const title = this.cleanText(item.title || '');
+                        const description = this.cleanText(item.description || '');
+
+                        // Phase 42: Intelligent Localization & Categorization
+                        let category = feed.defaultCategory;
+                        let country: any = 'Global';
+
+                        // If the category is a generic one like 'World' or 'Business', try to drill down
+                        if (category === 'World' || category === 'Business') {
+                            category = AdvancedScraperService.inferCategory(title, description);
+                        }
+                        
+                        // Always try to pinpoint the specific country
+                        const inferredCountry = AdvancedScraperService.inferCountry(title, description);
+                        if (inferredCountry !== 'Global') {
+                            country = inferredCountry;
+                        }
+
+                        return {
+                            title,
+                            link: item.link || '',
+                            source: feed.source,
+                            pubDate: item.pubDate || new Date().toISOString(),
+                            category,
+                            country
+                        };
+                    });
+                } catch (error) {
+                    console.error(`[Discovery] Failed to fetch feed ${feed.source}:`, error);
+                    return [];
+                }
+            })
+        );
+
+        outputs.forEach((result) => {
+            if (result.status === 'fulfilled') {
+                discovered.push(...result.value);
+            }
+        });
+
+        // 2. Fetch from Advanced Scrapers (Already enriched in AdvancedScraperService)
+        try {
+            const scrapedTrends = await AdvancedScraperService.scrapeTrends();
+            discovered.push(...scrapedTrends);
+        } catch (error) {
+            console.error('[Discovery] Scraping step failed:', error);
+        }
+
+        // Remove duplicates, filter noise, sort by date (newest first)
+        return discovered
+            .filter((item) => !isNoiseItem(item))
+            .filter((v, i, a) => a.findIndex(t => t.title === v.title) === i)
+            .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+            .slice(0, 50); // Increased pool size for intelligence hub
+    },
+
+    /**
+     * Elite Scoring via Free-Tier Switchboard (OpenRouter Logic)
+     * Preserves OpenAI quota by using free models for high-frequency discovery tasks.
+     */
+    async scoreAndFilterTrends(trends: DiscoveredTrend[]): Promise<DiscoveredTrend[]> {
+        if (trends.length === 0) return [];
+
+        const openRouterKey = process.env.OPENROUTER_API_KEY;
+        const openAiKey = process.env.OPENAI_API_KEY;
+        const prompt = `
+            Score the following news headlines from 0 to 100 based on:
+            1. Global viral potential (will people share this?)
+            2. Impact (does it change the world/industry?)
+            3. Recency/Urgency
+
+            Return a JSON object with a "scores" array containing objects with "title" and "score".
+            
+            Headlines:
+            ${trends.map(t => `- ${t.title}`).join('\n')}
+        `;
+
+        try {
+            let jsonResponse: any = null;
+
+            // 1. Try OpenRouter Free Models First
+            if (openRouterKey) {
+                console.log('[Discovery] Scoring via OpenRouter (Zero-Cost Optimization)...');
+                const orResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${openRouterKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://teraitimes.refectl.com',
+                        'X-Title': 'Terai Times Discovery Engine'
+                    },
+                    body: JSON.stringify({
+                        model: 'google/gemma-2-9b-it:free', // Default free king
+                        messages: [
+                            { role: 'system', content: 'You are an elite news editor. Output valid JSON only.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        response_format: { type: 'json_object' }
+                    })
+                });
+
+                if (orResponse.ok) {
+                    const data = await orResponse.json();
+                    jsonResponse = JSON.parse(data.choices[0]?.message?.content || '{"scores": []}');
+                }
+            }
+
+            // 2. Fallback to OpenAI if OpenRouter failed or no key
+            if (!jsonResponse && openai && openAiKey && !this.isOpenAiCoolingDown()) {
+                try {
+                    console.log('[Discovery] Falling back to OpenAI (Premium Segment)...');
+                    const resp = await openai.chat.completions.create({
+                        model: 'gpt-4o-mini',
+                        messages: [
+                            { role: 'system', content: 'You are an elite news editor.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        response_format: { type: 'json_object' }
+                    });
+                    jsonResponse = JSON.parse(resp.choices[0]?.message?.content || '{"scores": []}');
+                } catch (openaiError: any) {
+                    if (openaiError?.status === 429 || openaiError?.code === 'insufficient_quota') {
+                        console.warn('[Discovery] OpenAI Quota Exceeded. Entering automatic cooldown.');
+                        this.startOpenAiCooldown();
+                    } else {
+                        console.warn('[Discovery] OpenAI fallback failed:', openaiError.message || openaiError);
+                    }
+                }
+            }
+
+            // 3. Fallback to Gemini Flash (Google AI Switchboard) if others failed
+            const googleKey = process.env.GOOGLE_AI_API_KEY;
+            if (!jsonResponse && googleKey) {
+                try {
+                    console.log('[Discovery] Falling back to Gemini Flash (Google AI)...');
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${googleKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: 'You are an elite news editor. Output ONLY a valid JSON object. ' + prompt }] }],
+                            generationConfig: { response_mime_type: 'application/json' }
+                        })
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{"scores": []}';
+                        jsonResponse = JSON.parse(text);
+                    } else {
+                        console.warn('[Discovery] Gemini HTTP error:', response.status);
+                    }
+                } catch (geminiError: any) {
+                    console.warn('[Discovery] Gemini fallback failed:', geminiError.message || 'Unknown Error');
+                }
+            }
+
+            if (!jsonResponse || !jsonResponse.scores) {
+                console.warn('[Discovery] All intelligence providers failed or returned invalid data. Using baseline scoring.');
+                return trends.slice(0, 15).map(t => ({ ...t, score: 60 }));
+            }
+
+            const scores = jsonResponse.scores || [];
+            const scoredTrends = trends.map(t => {
+                const scoreItem = scores.find((s: any) => s.title === t.title);
+                return { ...t, score: scoreItem ? scoreItem.score : 50 };
+            });
+
+            return scoredTrends
+                .sort((a, b) => (b.score || 0) - (a.score || 0))
+                .slice(0, 12); // Return top 12 viral stars
+        } catch (error) {
+            console.error('[Discovery] Critical scoring failure:', error);
+            return trends.slice(0, 12).map(t => ({ ...t, score: 50 }));
+        }
+    },
+
+    openAiCooldownUntil: 0,
+    startOpenAiCooldown() {
+        this.openAiCooldownUntil = Date.now() + 6 * 60 * 60 * 1000;
+    },
+    isOpenAiCoolingDown() {
+        return Date.now() < this.openAiCooldownUntil;
+    },
+
+    parseRssItems(xml: string, source: string, defaultCategory: NewsCategory): DiscoveredTrend[] {
+        const items: DiscoveredTrend[] = [];
+        const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+        const titleRegex = /<title>([\s\S]*?)<\/title>/;
+        const linkRegex = /<link>([\s\S]*?)<\/link>/;
+        const dateRegex = /<pubDate>([\s\S]*?)<\/pubDate>/;
+
+        let match;
+        while ((match = itemRegex.exec(xml)) !== null) {
+            const content = match[1];
+            const titleMatch = titleRegex.exec(content);
+            const linkMatch = linkRegex.exec(content);
+            const dateMatch = dateRegex.exec(content);
+
+            if (titleMatch && linkMatch) {
+                items.push({
+                    title: this.cleanText(titleMatch[1]),
+                    link: linkMatch[1].trim(),
+                    source,
+                    pubDate: dateMatch ? dateMatch[1] : new Date().toISOString(),
+                    category: defaultCategory
+                });
+            }
+        }
+        return items;
+    },
+
+    cleanText(text: string): string {
+        return text
+            .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1') // Remove CDATA
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/<[^>]*>?/gm, '') // Remove any HTML tags
+            .trim();
+    }
+};

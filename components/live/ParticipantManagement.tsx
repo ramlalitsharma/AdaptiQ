@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import Image from 'next/image';
 
 interface ParticipantManagementProps {
   roomId: string;
@@ -14,16 +15,7 @@ export function ParticipantManagement({ roomId, jitsiApi }: ParticipantManagemen
   const [participants, setParticipants] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchParticipants();
-    }, 5000); // Refresh every 5 seconds
-
-    fetchParticipants();
-    return () => clearInterval(interval);
-  }, [roomId]);
-
-  const fetchParticipants = async () => {
+  const fetchParticipants = useCallback(async () => {
     try {
       const res = await fetch(`/api/live/participants?roomId=${roomId}`);
       const data = await res.json();
@@ -33,7 +25,15 @@ export function ParticipantManagement({ roomId, jitsiApi }: ParticipantManagemen
     } catch (error) {
       console.error('Failed to fetch participants:', error);
     }
-  };
+  }, [roomId]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchParticipants();
+    }, 5000);
+    fetchParticipants();
+    return () => clearInterval(interval);
+  }, [roomId, fetchParticipants]);
 
   const handleMute = async (targetUserId: string, mute: boolean) => {
     setLoading(true);
@@ -97,9 +97,12 @@ export function ParticipantManagement({ roomId, jitsiApi }: ParticipantManagemen
           >
             <div className="flex items-center gap-3 flex-1">
               {participant.userAvatar ? (
-                <img
+                <Image
                   src={participant.userAvatar}
                   alt={participant.userName}
+                  width={32}
+                  height={32}
+                  unoptimized
                   className="w-8 h-8 rounded-full"
                 />
               ) : (

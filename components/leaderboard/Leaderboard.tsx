@@ -33,55 +33,63 @@ export function Leaderboard({ entries = [] }: LeaderboardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <span className="text-2xl">🏆</span>
-          Leaderboard
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {!Array.isArray(entries) || entries.length === 0 ? (
-          <p className="text-sm text-gray-500">No leaderboard data yet. Start taking quizzes to appear here.</p>
-        ) : (
-          <div className="space-y-3">
-            {entries.map((entry) => (
-              <div
-                key={entry.rank}
-                className={`flex items-center justify-between p-3 rounded-lg border transition-all hover:shadow-md ${entry.rank <= 3 ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : 'bg-white border-gray-200'
-                  }`}
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className={`text-2xl font-bold w-10 text-center ${getRankColor(entry.rank)}`}>
-                    {getRankIcon(entry.rank)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{entry.name}</div>
-                    <div className="text-sm text-gray-500 flex items-center gap-4 mt-1">
-                      <span>{entry.quizzes} quizzes</span>
-                      {entry.streak > 0 && (
-                        <span className="flex items-center gap-1">
-                          🔥 {entry.streak} day streak
-                        </span>
-                      )}
-                    </div>
-                  </div>
+    <div className="glass-card-premium rounded-[2.5rem] p-8 border border-white/5 relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-elite-accent-purple/10 rounded-full blur-[80px] -mr-16 -mt-16 group-hover:scale-150 transition-all duration-700" />
+
+      <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
+        <div className="space-y-1">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Peer Benchmarking</h2>
+          <h3 className="text-xl font-black text-white uppercase tracking-widest">Neural Standings</h3>
+        </div>
+        <div className="text-3xl grayscale group-hover:grayscale-0 transition-all">🏆</div>
+      </div>
+
+      {!Array.isArray(entries) || entries.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">No neural data synchronized. Begin assessment cycle.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {entries.map((entry) => (
+            <div
+              key={entry.rank}
+              className={`flex items-center justify-between p-5 rounded-2xl border transition-all hover:translate-x-2 ${entry.rank === 1
+                  ? 'bg-elite-accent-cyan/10 border-elite-accent-cyan/20'
+                  : 'bg-white/5 border-white/5 hover:border-white/10'
+                }`}
+            >
+              <div className="flex items-center gap-6 flex-1">
+                <div className={`text-2xl font-black w-12 text-center ${getRankColor(entry.rank)} font-mono`}>
+                  {getRankIcon(entry.rank)}
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-blue-600">{entry.score}%</div>
-                  <Badge variant={entry.rank <= 3 ? 'success' : 'default'} size="sm">
-                    Rank {entry.rank}
-                  </Badge>
+                <div className="flex-1">
+                  <div className="font-black text-white uppercase text-sm tracking-widest">{entry.name}</div>
+                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-4 mt-2">
+                    <span>{entry.quizzes} Cycles</span>
+                    {entry.streak > 0 && (
+                      <span className="text-elite-accent-cyan">
+                        🔥 {entry.streak} Day Pulse
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>)}
-        <div className="mt-4 text-center">
-          <Link href="/leaderboard" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-            View Full Leaderboard →
-          </Link>
+              <div className="text-right">
+                <div className="text-xl font-black text-white font-mono">{entry.score}%</div>
+                <div className="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                  Sync Rank {entry.rank}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      <div className="mt-8 text-center pt-6 border-t border-white/5">
+        <Link href="/leaderboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-elite-accent-cyan hover:glow-cyan transition-all">
+          Expand Global Network →
+        </Link>
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bell, Trophy, Zap, Info } from 'lucide-react';
 
@@ -28,7 +28,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     const addToast = (toast: Omit<Toast, 'id'>) => {
-        const id = Math.random().toString(36).substr(2, 9);
+        const id = crypto.randomUUID();
         setToasts((prev) => [...prev, { ...toast, id }]);
 
         if (toast.duration !== 0) {

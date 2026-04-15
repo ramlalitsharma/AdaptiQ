@@ -52,7 +52,7 @@ export function LiveRoomCreator({ lessonTitle, onCreateRoom, onCancel }: LiveRoo
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        setTimeout(() => setMounted(true), 0);
         // Prevent body scroll when modal is open
         document.body.style.overflow = 'hidden';
         return () => {

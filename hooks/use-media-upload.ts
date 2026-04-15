@@ -31,7 +31,14 @@ export function useMediaUpload(): UseMediaUploadReturn {
             const data = await res.json();
             return data;
         } catch (err: any) {
-            setError(err.message);
+            console.error('Upload hook error:', err);
+            const msg = err.message || 'Upload failed';
+            // User-friendly mapping
+            if (msg.includes('File size')) {
+                setError('File is too large (Max 50MB).');
+            } else {
+                setError(`Upload Error: ${msg}`);
+            }
             throw err;
         } finally {
             setUploading(false);

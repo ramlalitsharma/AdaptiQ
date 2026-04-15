@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers';
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { getDatabase } from './mongodb';
 
@@ -74,12 +73,28 @@ export async function luciaCurrentUser() {
 
 async function createSession(userId: string): Promise<LuciaSession> {
   const db = await getDatabase();
-  const token = crypto.randomBytes(32).toString('hex');
+  const token = generateToken();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
   const session: LuciaSession = { token, userId, createdAt: now, expiresAt };
   await db.collection('sessions').insertOne(session as any);
   return session;
+}
+
+function generateToken() {
+  if (typeof globalThis.crypto !== 'undefined') {
+    if ('randomUUID' in globalThis.crypto) {
+      return (globalThis.crypto as Crypto).randomUUID().replace(/-/g, '');
+    }
+    const bytes = new Uint8Array(32);
+    (globalThis.crypto as Crypto).getRandomValues(bytes);
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  let s = '';
+  for (let i = 0; i < 64; i++) {
+    s += Math.floor(Math.random() * 16).toString(16);
+  }
+  return s;
 }
 
 async function getSessionToken() {

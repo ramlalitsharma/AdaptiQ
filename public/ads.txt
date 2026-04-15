@@ -1,1 +1,5 @@
+# AdSense Account Verification
 google.com, pub-8149507764464883, DIRECT, f08c47fec0942fa0
+
+# Fallback verification (if needed)
+google.com, pub-8149507764464883, RESELLER, f08c47fec0942fa0

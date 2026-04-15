@@ -61,5 +61,21 @@ export const EmailService = {
             subject: 'Your Weekly Learning Report 📊',
             html: EmailTemplates.weeklyReport(name, xp, quizzes)
         });
+    },
+
+    sendReferralSuccess: async (email: string, name: string, friendName: string) => {
+        return EmailService.send({
+            to: email,
+            subject: 'Your Referral was Successful! 🤝',
+            html: EmailTemplates.referralSuccess(name, friendName)
+        });
+    },
+
+    sendMarketingEmail: async (email: string, name: string, step: number) => {
+        return EmailService.send({
+            to: email,
+            subject: step === 1 ? 'Unlock Your Potential 🔓' : 'Pro Tip for Mastery 💡',
+            html: EmailTemplates.marketingSequence(name, step)
+        });
     }
 };

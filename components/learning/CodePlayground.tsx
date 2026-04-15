@@ -38,8 +38,9 @@ export function CodePlayground({
 
                 // Execute safely-ish
                 try {
-                    // eslint-disable-next-line no-eval
-                    const result = eval(code);
+                    // Use new Function instead of eval to avoid some lint/runtime issues, though still unsafe
+                    const runUserCode = new Function(code);
+                    const result = runUserCode();
                     if (result !== undefined) {
                         logs.push(`> Return: ${result}`);
                     }

@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 import { CourseOutlineEditor } from '@/components/admin/CourseOutlineEditor';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { CourseModeSelector } from '@/components/admin/CourseModeSelector';
+import { MediaLibrary } from '@/components/admin/MediaLibrary';
+import { Layout, Video, Radio, Library } from 'lucide-react';
 
 interface Course {
     _id: string;
@@ -24,10 +26,14 @@ interface Course {
     totalLessons?: number;
     totalSessions?: number;
     defaultLiveRoomId?: string;
+    price?: number;
+    currency?: string;
+    isPaid?: boolean;
+    paymentType?: 'free' | 'paid' | 'premium';
 }
 
 export function UnifiedContentStudio() {
-    const [activeTab, setActiveTab] = useState<'video' | 'live'>('video');
+    const [activeTab, setActiveTab] = useState<'video' | 'live' | 'media'>('video');
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
     const [courses, setCourses] = useState<Course[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
@@ -53,6 +59,8 @@ export function UnifiedContentStudio() {
         },
         slug: '',
         defaultLiveRoomId: '' as string | undefined,
+        price: 0,
+        currency: 'USD',
     });
     const [units, setUnits] = useState<any[]>([]);
 
@@ -313,7 +321,9 @@ export function UnifiedContentStudio() {
             mode: mode,
             seo: { title: '', description: '', keywords: [] },
             slug: '',
-            defaultLiveRoomId: ''
+            defaultLiveRoomId: '',
+            price: 0,
+            currency: 'USD',
         });
         setUnits([
             {
@@ -346,7 +356,9 @@ export function UnifiedContentStudio() {
             mode: course.mode || 'curriculum',
             seo: (course as any).seo || { title: '', description: '', keywords: [] },
             slug: course.slug || '',
-            defaultLiveRoomId: course.defaultLiveRoomId || ''
+            defaultLiveRoomId: course.defaultLiveRoomId || '',
+            price: course.price || 0,
+            currency: course.currency || 'USD',
         });
         setUnits(course.units || []);
     };
@@ -358,7 +370,9 @@ export function UnifiedContentStudio() {
                 units,
                 status,
                 type: activeTab === 'video' ? 'video-course' : 'live-course',
-                ...courseForm, // This will now include seo and slug
+                isPaid: courseForm.price > 0,
+                paymentType: courseForm.price === 0 ? 'free' : 'paid',
+                ...courseForm, // This will now include seo and slug, and price/currency
             };
 
             const endpoint = activeTab === 'video'
@@ -483,29 +497,29 @@ export function UnifiedContentStudio() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <h2 className="text-2xl font-black text-slate-900">
-                            {view === 'create' ? 'Create' : 'Edit'} {activeTab === 'video' ? 'Video' : 'Live'} Course
-                        </h2>
-                        <Badge
-                            variant={courseForm.mode === 'curriculum' ? 'default' : 'secondary'}
-                            className={courseForm.mode === 'curriculum' ? 'bg-blue-500' : 'bg-indigo-500'}
-                        >
-                            {courseForm.mode === 'curriculum' ? '📚 Curriculum-Based' : '💼 Professional'}
-                        </Badge>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h2 className="text-2xl font-black text-slate-900">
+                                {view === 'create' ? 'Create' : 'Edit'} {activeTab === 'video' ? 'Video' : 'Live'} Course
+                            </h2>
+                            <Badge
+                                variant={courseForm.mode === 'curriculum' ? 'default' : 'secondary'}
+                                className={courseForm.mode === 'curriculum' ? 'bg-blue-500' : 'bg-indigo-500'}
+                            >
+                                {courseForm.mode === 'curriculum' ? '📚 Curriculum-Based' : '💼 Professional'}
+                            </Badge>
+                        </div>
+                        <p className="text-slate-500">
+                            {courseForm.mode === 'curriculum'
+                                ? 'Build your structured curriculum'
+                                : 'Create skills-focused professional training'}
+                        </p>
                     </div>
-                    <p className="text-slate-500">
-                        {courseForm.mode === 'curriculum'
-                            ? 'Build your structured curriculum'
-                            : 'Create skills-focused professional training'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={() => setView('list')}>
+                            ← Back to Courses
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => setView('list')}>
-                        ← Back to Courses
-                    </Button>
-                </div>
-            </div>
 
                 <div className="grid lg:grid-cols-3 gap-6">
                     {/* Left: Course Metadata */}
@@ -705,6 +719,34 @@ export function UnifiedContentStudio() {
                                             className="h-8 text-sm font-mono text-slate-600"
                                         />
                                     </div>
+
+                                    <div className="pt-2 border-t border-slate-100 mt-2">
+                                        <label className="block text-xs font-medium text-slate-700 mb-2 font-bold">Pricing</label>
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={courseForm.currency}
+                                                onChange={(e) => setCourseForm({ ...courseForm, currency: e.target.value })}
+                                                className="w-20 rounded-md border border-slate-200 px-2 py-1 text-[10px]"
+                                            >
+                                                <option value="USD">USD</option>
+                                                <option value="EUR">EUR</option>
+                                                <option value="INR">INR</option>
+                                                <option value="GBP">GBP</option>
+                                            </select>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={courseForm.price}
+                                                onChange={(e) => setCourseForm({ ...courseForm, price: parseFloat(e.target.value) || 0 })}
+                                                placeholder="0.00"
+                                                className="h-7 text-xs flex-1"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 mt-1">
+                                            {courseForm.price === 0 ? '✓ Free for students' : `💰 Paid: ${courseForm.currency} ${courseForm.price.toFixed(2)}`}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -783,13 +825,11 @@ export function UnifiedContentStudio() {
                 <div>
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
+                            <Layout className="w-6 h-6 text-white" />
                         </div>
                         <div>
                             <h1 className="text-3xl font-black text-slate-900">Content Studio</h1>
-                            <p className="text-slate-500">Create and manage video and live courses</p>
+                            <p className="text-slate-500">Create and manage your course ecosystem</p>
                         </div>
                     </div>
 
@@ -797,29 +837,43 @@ export function UnifiedContentStudio() {
                     <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
                         <button
                             onClick={() => { setActiveTab('video'); setView('list'); }}
-                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'video'
+                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'video'
                                 ? 'bg-white text-blue-600 shadow-sm'
                                 : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
-                            📹 Video Courses
+                            <Video className="w-4 h-4" />
+                            Video Courses
                         </button>
                         <button
                             onClick={() => { setActiveTab('live'); setView('list'); }}
-                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'live'
+                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'live'
+                                ? 'bg-white text-rose-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            <Radio className="w-4 h-4" />
+                            Live Courses
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('media'); setView('list'); }}
+                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'media'
                                 ? 'bg-white text-indigo-600 shadow-sm'
                                 : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
-                            🎥 Live Courses
+                            <Library className="w-4 h-4" />
+                            Assets Library
                         </button>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button onClick={handleCreateCourse} className="rounded-2xl px-6 py-6 font-bold">
-                        + Create {activeTab === 'video' ? 'Video' : 'Live'} Course
-                    </Button>
-                </div>
+                {activeTab !== 'media' && (
+                    <div className="flex items-center gap-2">
+                        <Button onClick={handleCreateCourse} className="rounded-2xl px-6 py-6 font-bold">
+                            + Create {activeTab === 'video' ? 'Video' : 'Live'} Course
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Stats */}
@@ -858,8 +912,12 @@ export function UnifiedContentStudio() {
                 </Card>
             </div>
 
-            {/* Course List */}
-            {loading ? (
+            {/* Course List / Media Library */}
+            {activeTab === 'media' ? (
+                <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+                    <MediaLibrary />
+                </div>
+            ) : loading ? (
                 <div className="flex justify-center py-12">
                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
@@ -867,9 +925,7 @@ export function UnifiedContentStudio() {
                 <Card>
                     <CardContent className="p-12 text-center">
                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
+                            <Video className="w-8 h-8 text-slate-400" />
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">
                             No {activeTab} courses yet

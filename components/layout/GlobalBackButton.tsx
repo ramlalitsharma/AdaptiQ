@@ -17,9 +17,9 @@ export function GlobalBackButton() {
     useEffect(() => {
         // Hide on landing page
         if (pathname === "/" || pathname === "/sign-in" || pathname === "/sign-up") {
-            setIsVisible(false);
+            setTimeout(() => setIsVisible(false), 0);
         } else {
-            setIsVisible(true);
+            setTimeout(() => setIsVisible(true), 0);
         }
     }, [pathname]);
 

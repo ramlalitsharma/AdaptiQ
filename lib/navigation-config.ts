@@ -1,9 +1,9 @@
 /**
- * Role-Based Navigation Configuration
- * Defines navigation links and features for each user role
+ * Professional Role-Based Navigation Configuration
+ * Organized into logical semantic sections for better UX
  */
 
-export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'user';
+export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'content_writer' | 'news_writer' | 'student' | 'user' | 'guest';
 
 export interface NavLink {
   href: string;
@@ -16,6 +16,7 @@ export interface NavLink {
 export interface NavDropdown {
   label: string;
   icon?: string;
+  description?: string;
   items: NavLink[];
 }
 
@@ -26,44 +27,100 @@ export function isDropdown(item: NavItem): item is NavDropdown {
 }
 
 export interface RoleNavigationConfig {
+  // Primary navigation items shown in navbar
   primaryLinks: NavItem[];
+  // Dashboard/home link
   dashboardLink: { href: string; label: string };
+  // Admin console link (if applicable)
   consoleLink?: { href: string; label: string };
+  // Show admin badge indicator
   showAdminBadge: boolean;
+  // Show view-as role switcher
   showViewAs: boolean;
 }
 
+// This will be populated dynamically in the Navbar component to avoid circular dependencies
+// or we can use a basic structure here and enrich it in the client.
+export const UTILITIES_ITEMS: NavLink[] = [
+  { href: '/tools', label: 'All Utilities Hub', icon: '🚀' },
+];
+
+export const GAMES_LINK: NavLink = { href: '/games', label: 'Games', icon: '🎮' };
+
 export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
+  // 👑 Super Admin - Full platform access
   superadmin: {
     primaryLinks: [
-      { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/blog', label: 'Blogs', icon: '📰' },
+      // 📚 Learning Hub - Access all learning content
       {
-        label: 'Resources',
+        label: 'Learning',
         icon: '📚',
+        description: 'Browse all educational content',
         items: [
-          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
-          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/courses?type=video', label: 'Video Courses', icon: '🎞️' },
+          { href: '/courses?type=text', label: 'Text Courses', icon: '📄' },
+          { href: '/ebooks', label: 'E-Books Library', icon: '📘' },
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/subjects', label: 'All Subjects', icon: '🏷️' },
         ],
       },
+
+      // 🔗 Community - Connect & collaborate
       {
         label: 'Community',
-        icon: '💬',
+        icon: '🔗',
+        description: 'Share knowledge & connect',
         items: [
-          { href: '/live', label: 'Live Classes', icon: '🎥' },
-          { href: '/forum', label: 'Forum', icon: '💬' },
+          { href: '/blog', label: 'Blog Platform', icon: '✍️' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
+          { href: '/forum', label: 'Discussion Forum', icon: '💬' },
+          { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],
       },
+
+      // 🛒 Forge Shop - Premium tools & software
+      { href: '/shop', label: 'Forge Shop', icon: '🛒' },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
+      // 🎯 Practice Hub - Assessments & tests
       {
-        label: 'Admin',
-        icon: '🛡️',
+        label: 'Master',
+        icon: '🎯',
+        description: 'Practice & self-assessment',
         items: [
-          { href: '/admin/super', label: 'Super Admin', icon: '🛡️' },
-          { href: '/admin', label: 'Admin Panel', icon: '👨‍💼' },
-          { href: '/admin/users', label: 'Users', icon: '👥' },
-          { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
-          { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
+          { href: '/quizzes', label: 'Quiz Bank', icon: '📝' },
+          { href: '/exams', label: 'Exam Center', icon: '📊' },
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
         ],
+      },
+
+      // 🛡️ Administration - Full control
+      {
+        label: 'Administration',
+        icon: '🛡️',
+        description: 'System management & oversight',
+        items: [
+          { href: '/admin/super', label: 'Super Console', icon: '👑' },
+          { href: '/admin', label: 'Admin Panel', icon: '⚙️' },
+          { href: '/admin/users', label: 'User Management', icon: '👥' },
+          { href: '/admin/courses', label: 'Course Management', icon: '📚' },
+          { href: '/admin/analytics', label: 'Analytics Dashboard', icon: '📊' },
+          { href: '/admin/logs', label: 'Activity Logs', icon: '📋' },
+          { href: '/admin/compliance', label: 'Compliance', icon: '⚖️' },
+          { href: '/admin/proctoring', label: 'Proctoring Center', icon: '🔒' },
+          { href: '/admin/settings', label: 'System Settings', icon: '⚙️' },
+        ],
+      },
+
+      // 🛠️ Utilities - Support Tools
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Professional toolkits and calculators',
+        items: UTILITIES_ITEMS,
       },
     ],
     dashboardLink: { href: '/admin/super', label: 'Super Admin Console' },
@@ -71,36 +128,63 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
     showAdminBadge: true,
     showViewAs: true,
   },
+
+  // 👨‍💼 Admin - Platform administration
   admin: {
     primaryLinks: [
-      { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/blog', label: 'Blogs', icon: '📰' },
       {
-        label: 'Resources',
+        label: 'Learning',
         icon: '📚',
+        description: 'Browse educational content',
         items: [
-          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
-          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/courses?type=video', label: 'Video Courses', icon: '🎞️' },
+          { href: '/courses?type=text', label: 'Text Courses', icon: '📄' },
+          { href: '/ebooks', label: 'E-Books Library', icon: '📘' },
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/subjects', label: 'All Subjects', icon: '🏷️' },
         ],
       },
+
       {
         label: 'Community',
-        icon: '💬',
+        icon: '🔗',
+        description: 'Manage community features',
         items: [
-          { href: '/live', label: 'Live Classes', icon: '🎥' },
-          { href: '/forum', label: 'Forum', icon: '💬' },
+          { href: '/blog', label: 'Blog Platform', icon: '✍️' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
+          { href: '/forum', label: 'Discussion Forum', icon: '💬' },
+          { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],
       },
+
+      // 🛒 Forge Shop - Premium tools & software
+      { href: '/shop', label: 'Forge Shop', icon: '🛒' },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
       {
-        label: 'Admin',
-        icon: '👨‍💼',
+        label: 'Administration',
+        icon: '🛡️',
+        description: 'Platform management',
         items: [
-          { href: '/admin', label: 'Admin Panel', icon: '👨‍💼' },
-          { href: '/admin/users', label: 'Users', icon: '👥' },
-          { href: '/admin/courses', label: 'Manage Courses', icon: '📚' },
-          { href: '/admin/analytics', label: 'Analytics', icon: '📊' },
-          { href: '/admin/videos', label: 'Videos', icon: '🎥' },
+          { href: '/admin', label: 'Admin Panel', icon: '⚙️' },
+          { href: '/admin/users', label: 'User Management', icon: '👥' },
+          { href: '/admin/courses', label: 'Course Management', icon: '📚' },
+          { href: '/admin/analytics', label: 'Analytics Dashboard', icon: '📊' },
+          { href: '/admin/logs', label: 'Activity Logs', icon: '📋' },
+          { href: '/admin/compliance', label: 'Compliance', icon: '⚖️' },
+          { href: '/admin/proctoring', label: 'Proctoring Center', icon: '🔒' },
         ],
+      },
+
+      // 🛠️ Utilities
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Professional toolkits',
+        items: UTILITIES_ITEMS,
       },
     ],
     dashboardLink: { href: '/admin/dashboard', label: 'Admin Dashboard' },
@@ -108,100 +192,348 @@ export const ROLE_NAVIGATION: Record<UserRole, RoleNavigationConfig> = {
     showAdminBadge: true,
     showViewAs: false,
   },
+
+  // 👨‍🏫 Teacher - Course creation & student management
   teacher: {
     primaryLinks: [
-      { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/blog', label: 'Blogs', icon: '📰' },
       {
-        label: 'Resources',
+        label: 'Learning',
         icon: '📚',
+        description: 'Access learning content',
         items: [
-          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
-          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/courses?type=video', label: 'Video Courses', icon: '🎞️' },
+          { href: '/courses?type=text', label: 'Text Courses', icon: '📄' },
+          { href: '/ebooks', label: 'E-Books Library', icon: '📘' },
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/subjects', label: 'All Subjects', icon: '🏷️' },
         ],
       },
+
       {
         label: 'Community',
-        icon: '💬',
+        icon: '🔗',
+        description: 'Engage with community',
         items: [
-          { href: '/live', label: 'Live Classes', icon: '🎥' },
-          { href: '/forum', label: 'Forum', icon: '💬' },
+          { href: '/blog', label: 'Blog Platform', icon: '✍️' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
+          { href: '/forum', label: 'Discussion Forum', icon: '💬' },
+          { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],
       },
+
+      // 🛒 Forge Shop - Premium tools & software
+      { href: '/shop', label: 'Forge Shop', icon: '🛒' },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
       {
-        label: 'Teaching',
-        icon: '👨‍🏫',
+        label: 'Teaching Studio',
+        icon: '🎓',
+        description: 'Create & manage content',
         items: [
-          { href: '/teacher/dashboard', label: 'Teacher Dashboard', icon: '👨‍🏫' },
+          { href: '/teacher/dashboard', label: 'Teacher Dashboard', icon: '📊' },
           { href: '/admin/studio/courses', label: 'Create Course', icon: '➕' },
           { href: '/admin/studio/blogs', label: 'Write Blog', icon: '✍️' },
+          { href: '/admin/studio/ebooks', label: 'Create E-Book', icon: '📚' },
           { href: '/admin/studio/questions', label: 'Create Quiz', icon: '❓' },
-          { href: '/admin/courses', label: 'My Courses', icon: '📚' },
+          { href: '/admin/courses', label: 'My Courses', icon: '🎯' },
         ],
+      },
+
+      {
+        label: 'Master',
+        icon: '🎯',
+        description: 'Assessments & practice',
+        items: [
+          { href: '/quizzes', label: 'Quiz Bank', icon: '📝' },
+          { href: '/exams', label: 'Exam Center', icon: '📊' },
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
+        ],
+      },
+
+      // 🛠️ Utilities
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Support tools',
+        items: UTILITIES_ITEMS,
       },
     ],
     dashboardLink: { href: '/teacher/dashboard', label: 'Teacher Dashboard' },
     showAdminBadge: false,
     showViewAs: false,
   },
-  student: {
+
+  // ✍️ Content Writer - Create news & blogs
+  content_writer: {
     primaryLinks: [
-      { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/blog', label: 'Blogs', icon: '📰' },
-      {
-        label: 'Resources',
-        icon: '📚',
-        items: [
-          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
-          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
-        ],
-      },
-      {
-        label: 'Community',
-        icon: '💬',
-        items: [
-          { href: '/live', label: 'Live Classes', icon: '🎥' },
-          { href: '/forum', label: 'Forum', icon: '💬' },
-          { href: '/contact', label: 'Contact', icon: '📧' },
-        ],
-      },
       {
         label: 'Learning',
-        icon: '📖',
+        icon: '📚',
+        description: 'Access content',
+        items: [
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/ebooks', label: 'E-Books', icon: '📘' },
+          { href: '/subjects', label: 'Subjects', icon: '🏷️' },
+        ],
+      },
+
+      {
+        label: 'Creation Studio',
+        icon: '✨',
+        description: 'Create & manage content',
+        items: [
+          { href: '/admin/studio/news', label: 'News Studio', icon: '📰' },
+          { href: '/admin/studio/blogs', label: 'Blog Studio', icon: '✍️' },
+          { href: '/admin/studio/ebooks', label: 'E-Book Studio', icon: '📚' },
+        ],
+      },
+
+      {
+        label: 'Community',
+        icon: '🔗',
+        description: 'View published content',
+        items: [
+          { href: '/blog', label: 'Blog Platform', icon: '✍️' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
+          { href: '/forum', label: 'Forums', icon: '💬' },
+        ],
+      },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
+      // 🛠️ Utilities
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Support tools',
+        items: UTILITIES_ITEMS,
+      },
+    ],
+    dashboardLink: { href: '/admin/studio/news', label: 'News Studio' },
+    showAdminBadge: true,
+    showViewAs: false,
+  },
+
+  // 📰 News Writer - Create news articles
+  news_writer: {
+    primaryLinks: [
+      {
+        label: 'Learning',
+        icon: '📚',
+        description: 'Access content',
+        items: [
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/ebooks', label: 'E-Books', icon: '📘' },
+          { href: '/subjects', label: 'Subjects', icon: '🏷️' },
+        ],
+      },
+
+      {
+        label: 'Creation Studio',
+        icon: '✨',
+        description: 'Create & manage content',
+        items: [
+          { href: '/admin/studio/news', label: 'News Studio', icon: '📰' },
+          { href: '/admin/studio/blogs', label: 'Blog Studio', icon: '✍️' },
+        ],
+      },
+
+      {
+        label: 'Community',
+        icon: '🔗',
+        description: 'View published content',
+        items: [
+          { href: '/blog', label: 'Blog Platform', icon: '✍️' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
+          { href: '/forum', label: 'Forums', icon: '💬' },
+        ],
+      },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
+      // 🛠️ Utilities
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Support tools',
+        items: UTILITIES_ITEMS,
+      },
+    ],
+    dashboardLink: { href: '/admin/studio/news', label: 'News Studio' },
+    showAdminBadge: true,
+    showViewAs: false,
+  },
+
+  // 📖 Student - Learning focused
+  student: {
+    primaryLinks: [
+      {
+        label: 'Learning Hub',
+        icon: '📚',
+        description: 'Your learning path',
         items: [
           { href: '/dashboard', label: 'My Dashboard', icon: '📊' },
-          { href: '/my-learning', label: 'My Learning', icon: '📖' },
-          { href: '/subjects', label: 'Subjects', icon: '📚' },
+          { href: '/my-learning', label: 'My Courses', icon: '📖' },
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/courses?type=video', label: 'Video Courses', icon: '🎞️' },
+          { href: '/courses?type=text', label: 'Text Courses', icon: '📄' },
+          { href: '/ebooks', label: 'E-Books', icon: '📘' },
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/subjects', label: 'All Subjects', icon: '🏷️' },
         ],
+      },
+
+      {
+        label: 'Master',
+        icon: '🎯',
+        description: 'Practice & assessment',
+        items: [
+          { href: '/quizzes', label: 'Quiz Bank', icon: '📝' },
+          { href: '/exams', label: 'Exam Center', icon: '📊' },
+          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
+        ],
+      },
+
+      {
+        label: 'Community',
+        icon: '🔗',
+        description: 'Connect & collaborate',
+        items: [
+          { href: '/blog', label: 'Blog Platform', icon: '✍️' },
+          { href: '/news', label: 'Terai Times', icon: '📰' },
+          { href: '/forum', label: 'Discussion Forum', icon: '💬' },
+          { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+        ],
+      },
+
+      // 🛒 Forge Shop - Premium tools & software
+      { href: '/shop', label: 'Forge Shop', icon: '🛒' },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
+      // 🛠️ Utilities
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Support toolkits',
+        items: UTILITIES_ITEMS,
       },
     ],
     dashboardLink: { href: '/dashboard', label: 'My Dashboard' },
     showAdminBadge: false,
     showViewAs: false,
   },
+
+  // 👤 Regular User - Guest/Free user
   user: {
     primaryLinks: [
-      { href: '/courses', label: 'Courses', icon: '📚' },
-      { href: '/blog', label: 'Blogs', icon: '📰' },
       {
-        label: 'Resources',
+        label: 'Learning',
         icon: '📚',
+        description: 'Explore courses',
         items: [
-          { href: '/question-bank', label: 'Question Bank', icon: '🗂️' },
-          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/courses?type=video', label: 'Video Courses', icon: '🎞️' },
+          { href: '/courses?type=text', label: 'Text Courses', icon: '📄' },
+          { href: '/ebooks', label: 'E-Books', icon: '📘' },
+          { href: '/live', label: 'Live Classes', icon: '🎥' },
+          { href: '/subjects', label: 'Subjects', icon: '🏷️' },
         ],
       },
+
       {
         label: 'Community',
-        icon: '💬',
+        icon: '🔗',
+        description: 'Connect with others',
         items: [
-          { href: '/live', label: 'Live Classes', icon: '🎥' },
-          { href: '/forum', label: 'Forum', icon: '💬' },
+          { href: '/blog', label: 'Blog', icon: '✍️' },
+          { href: '/news', label: 'News', icon: '📰' },
+          { href: '/forum', label: 'Forums', icon: '💬' },
+          { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
         ],
       },
-      { href: '/subjects', label: 'Subjects', icon: '📚' },
+
+      {
+        label: 'Practice',
+        icon: '🎯',
+        description: 'Test yourself',
+        items: [
+          { href: '/quizzes', label: 'Quizzes', icon: '📝' },
+          { href: '/exams', label: 'Practice Exams', icon: '📊' },
+        ],
+      },
+
+      // 🛒 Forge Shop - Premium tools & software
+      { href: '/shop', label: 'Forge Shop', icon: '🛒' },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
+      // 🛠️ Utilities
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Support toolkits',
+        items: UTILITIES_ITEMS,
+      },
     ],
     dashboardLink: { href: '/dashboard', label: 'My Dashboard' },
+    showAdminBadge: false,
+    showViewAs: false,
+  },
+
+  // 👁️ Guest - Unauthenticated user
+  guest: {
+    primaryLinks: [
+      {
+        label: 'Explore',
+        icon: '🔭',
+        description: 'Browse courses',
+        items: [
+          { href: '/courses', label: 'All Courses', icon: '📚' },
+          { href: '/ebooks', label: 'E-Books', icon: '📘' },
+          { href: '/subjects', label: 'Subjects', icon: '🏷️' },
+        ],
+      },
+
+      {
+        label: 'Discover',
+        icon: '✨',
+        description: 'Learn more',
+        items: [
+          { href: '/blog', label: 'Blog', icon: '✍️' },
+          { href: '/news', label: 'News', icon: '📰' },
+        ],
+      },
+
+      // 🎮 Games - Play online
+      GAMES_LINK,
+
+      // 🛠️ Utilities
+      {
+        label: 'Utilities',
+        icon: '🛠️',
+        description: 'Free toolkits',
+        items: UTILITIES_ITEMS,
+      },
+
+      {
+        label: 'Start Learning',
+        icon: '👑',
+        description: 'Join our community',
+        items: [
+          { href: '/pricing', label: 'Browse Plans', icon: '💎' },
+          { href: '/shop', label: 'Shop', icon: '' },
+        ],
+      },
+    ],
+    dashboardLink: { href: '/', label: 'Welcome' },
     showAdminBadge: false,
     showViewAs: false,
   },

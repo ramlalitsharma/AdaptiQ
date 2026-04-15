@@ -6,22 +6,23 @@ import { twMerge } from 'tailwind-merge';
 const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-colors transition-transform active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
+  'ui-animate inline-flex items-center justify-center rounded-xl text-sm font-semibold tracking-[0.01em] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)] disabled:opacity-50 disabled:pointer-events-none',
   {
     variants: {
       variant: {
-        default: 'bg-teal-600 text-white hover:bg-teal-700 focus-visible:ring-teal-500',
-        outline: 'border border-slate-300 text-slate-700 hover:bg-slate-100 focus-visible:ring-teal-500',
-        ghost: 'text-slate-600 hover:bg-slate-100',
-        inverse: 'bg-white text-teal-600 hover:bg-slate-50 focus-visible:ring-teal-400',
-        destructive: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
+        default: 'bg-[var(--color-accent)] text-white shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)] hover:brightness-110',
+        outline: 'border border-[var(--color-border)] text-[var(--foreground)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-surface-2)]',
+        ghost: 'text-[var(--color-muted-strong)] hover:text-[var(--foreground)] hover:bg-[var(--color-surface-2)]',
+        inverse: 'bg-[var(--color-surface)] text-[var(--color-accent)] border border-[var(--color-border)] hover:bg-[var(--color-surface-2)]',
+        destructive: 'bg-[var(--color-error)] text-white shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)]',
+        secondary: 'bg-[var(--color-surface-2)] text-[var(--foreground)] hover:bg-[var(--color-surface-3)]',
       },
       size: {
-        default: 'px-4 py-2',
-        sm: 'px-3 py-1.5 text-sm',
-        xs: 'px-2 py-1 text-xs',
-        lg: 'px-6 py-3 text-base',
-        icon: 'p-2 rounded-full h-10 w-10',
+        default: 'px-5 py-2.5',
+        sm: 'px-4 py-2 text-xs',
+        xs: 'px-3 py-1.5 text-[10px] uppercase tracking-wider',
+        lg: 'px-8 py-4 text-base',
+        icon: 'p-2 rounded-xl h-10 w-10',
       },
     },
     defaultVariants: {

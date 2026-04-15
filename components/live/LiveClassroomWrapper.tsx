@@ -59,7 +59,7 @@ export function LiveClassroomWrapper({
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [roomId, status, isInstructor, router]);
+  }, [roomId, status, isInstructor, router, addToast]);
 
   const handleStartClass = async () => {
     setIsStarting(true);
@@ -78,7 +78,7 @@ export function LiveClassroomWrapper({
         title: 'Class Started',
         message: 'Class started successfully.',
       });
-    } catch (error) {
+    } catch {
       addToast({
         type: 'warning',
         title: 'Error',
@@ -105,7 +105,7 @@ export function LiveClassroomWrapper({
       
       setStatus('ended');
       router.refresh(); // Will trigger the server-side "ended" view
-    } catch (error) {
+    } catch {
       addToast({
         type: 'warning',
         title: 'Error',

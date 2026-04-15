@@ -1,73 +1,84 @@
 'use client';
 
-import { Component, ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './Card';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from './Button';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    // Log error to console
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
 
-  render() {
+  handleReset = (): void => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
       return (
-        <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
-          <CardHeader>
-            <CardTitle className="text-red-900 dark:text-red-100">Something went wrong</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-700 dark:text-red-300 mb-4">
-              {this.state.error?.message || 'An unexpected error occurred. Please try again.'}
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+          <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 text-center">
+            <div className="text-6xl mb-4">😕</div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+              Something went wrong
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
+              We're sorry, but something unexpected happened. Our team has been notified.
             </p>
-            <div className="flex gap-2">
-              <Button
-                variant="inverse"
-                onClick={() => {
-                  this.setState({ hasError: false, error: undefined });
-                  window.location.reload();
-                }}
-              >
-                Reload Page
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  this.setState({ hasError: false, error: undefined });
-                }}
-              >
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mb-4 text-left">
+                <summary className="cursor-pointer text-sm text-slate-500 mb-2">
+                  Error Details (Development Only)
+                </summary>
+                <pre className="text-xs bg-slate-100 dark:bg-slate-900 p-3 rounded overflow-auto max-h-40">
+                  {this.state.error.message}
+                  {'\n'}
+                  {this.state.error.stack}
+                </pre>
+              </details>
+            )}
+            <div className="flex gap-3 justify-center">
+              <Button onClick={this.handleReset} variant="default">
                 Try Again
               </Button>
+              <Button onClick={() => window.location.href = '/'} variant="outline">
+                Go Home
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       );
     }
 
     return this.props.children;
   }
 }
-

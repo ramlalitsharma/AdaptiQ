@@ -1,39 +1,66 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
+
+import { useSearchParams } from "next/navigation";
+import { Link, useRouter, usePathname } from "@/lib/navigation";
+import { useTranslations } from "next-intl";
 import { SignedIn, SignedOut, UserButton, SignInButton } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  Book,
+  BookOpen,
+  LayoutDashboard,
+  Library,
+  Newspaper,
+  PenSquare,
+  ShoppingBag,
+  Shield,
+  Target,
+  Users,
+  Zap,
+} from "lucide-react";
 import { SiteBrand } from "./SiteBrand";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ViewAsSwitcher } from "@/components/admin/ViewAsSwitcher";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { getNavigationForRole, type UserRole } from "@/lib/navigation-config";
+import { TOOLS, CATEGORIES } from "@/lib/tools-registry";
 
 export function Navbar() {
+  const t = useTranslations('Common');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isPro, setIsPro] = useState(false);
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openDesktopDropdown, setOpenDesktopDropdown] = useState<number | null>(null);
+  const [isCondensed, setIsCondensed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const desktopNavRef = useRef<HTMLDivElement | null>(null);
+  const hubRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
 
-    fetch("/api/admin/status")
+    fetch("/api/admin/status", { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         if (!mounted) return;
         setIsSuperAdmin(Boolean(data?.isSuperAdmin || data?.role === "superadmin"));
+        setIsPro(Boolean(data?.isPro));
 
         // Set user role
-        if (data?.role && ['superadmin', 'admin', 'teacher', 'student', 'user'].includes(data.role)) {
+        if (data?.role && ['superadmin', 'admin', 'teacher', 'content_writer', 'news_writer', 'student', 'user', 'guest'].includes(data.role)) {
           setUserRole(data.role as UserRole);
         } else {
           setUserRole('user');
@@ -42,18 +69,20 @@ export function Navbar() {
       .catch(() => {
         if (mounted) {
           setIsSuperAdmin(false);
+          setIsPro(false);
           setUserRole('user');
         }
       });
 
     return () => {
       mounted = false;
+      controller.abort();
     };
-  }, [searchParams]);
+  }, [pathname]);
 
   const viewAsRole: UserRole | null = (() => {
     const p = searchParams?.get('viewAs');
-    return p && ['admin', 'teacher', 'student'].includes(p) ? (p as UserRole) : null;
+    return p && ['admin', 'teacher', 'student', 'news_writer', 'guest'].includes(p) ? (p as UserRole) : null;
   })();
 
   useEffect(() => {
@@ -90,14 +119,51 @@ export function Navbar() {
   const isViewingAs = viewAsRole && viewAsRole !== userRole;
 
   useEffect(() => {
-    setMounted(true);
+    setTimeout(() => setMounted(true), 0);
+  }, []);
+
+  useEffect(() => {
+    const onClickAway = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (hubRef.current && !hubRef.current.contains(target)) {
+        setActionsOpen(false);
+      }
+      if (desktopNavRef.current && !desktopNavRef.current.contains(target)) {
+        setOpenDesktopDropdown(null);
+      }
+    };
+
+    const onEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActionsOpen(false);
+        setMobileOpen(false);
+        setOpenDesktopDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", onClickAway);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onClickAway);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setIsCondensed(window.scrollY > 20);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <header className="sticky top-0 z-[1000] bg-teal-700 text-white shadow-xl overflow-visible">
+    <header className={`sticky top-0 z-[1000] bg-gradient-to-r from-slate-50/95 via-slate-100/95 to-slate-50/95 dark:from-elite-bg/95 dark:via-elite-bg/95 dark:to-elite-bg/95 backdrop-blur-2xl backdrop-saturate-150 border-b border-slate-200/90 dark:border-white/[0.06] transition-all duration-300 supports-[backdrop-filter]:from-slate-50/85 supports-[backdrop-filter]:via-slate-100/85 supports-[backdrop-filter]:to-slate-50/85 dark:supports-[backdrop-filter]:from-elite-bg/80 dark:supports-[backdrop-filter]:via-elite-bg/80 dark:supports-[backdrop-filter]:to-elite-bg/80 ${isCondensed ? "shadow-[0_18px_45px_rgba(15,23,42,0.10)] dark:shadow-xl" : "shadow-[0_24px_60px_rgba(15,23,42,0.12)] dark:shadow-2xl"}`}>
       {!isOnline && (
         <div className="bg-red-500 text-white text-xs font-medium py-1.5 px-4 text-center">
-          ⚠️ You appear to be offline.
+          <AlertTriangle className="inline-block h-3.5 w-3.5 mr-1 align-[-2px]" />
+          You appear to be offline.
           <button
             onClick={() => router.push('/offline')}
             className="ml-2 underline hover:text-white/90"
@@ -115,56 +181,227 @@ export function Navbar() {
         </div>
       )}
       {isViewingAs && (
-        <div className="bg-amber-500 text-amber-900 text-xs font-medium py-1.5 px-4 text-center">
-          👁️ Viewing as {viewAsRole === 'admin' ? 'Admin' : viewAsRole === 'teacher' ? 'Teacher' : 'Student'} •
-          <Link href="/admin/super" className="underline ml-1 hover:text-amber-950">
-            Exit View As
+        <div className="bg-elite-accent-cyan text-black text-[11px] font-black uppercase tracking-[0.2em] py-1.5 px-4 text-center">
+          Monitoring Protocol: Active Viewing as {viewAsRole} •
+          <Link href="/admin/super" className="underline ml-2 hover:text-slate-900/70 transition-colors">
+            Terminate Session
           </Link>
         </div>
       )}
-      <div className="container mx-auto px-4 py-3 flex flex-col gap-3 overflow-visible">
-        <div className="flex items-center justify-between gap-2 overflow-visible">
-          <div className="flex items-center gap-3">
-            <SiteBrand />
-            <nav className="hidden lg:flex items-center gap-0.5 text-sm font-medium">
+      <div className={`w-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 overflow-visible transition-all duration-300 ease-out ${isCondensed ? "py-1.5" : "py-2.5"}`}>
+        <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
+          {/* Left: Brand + Nav */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <SiteBrand className="shrink-0" />
+            <nav ref={desktopNavRef} className="hidden lg:flex items-center flex-nowrap gap-0.5 2xl:gap-1 flex-1 min-w-0 text-[11px] xl:text-xs font-black uppercase tracking-[0.08em] xl:tracking-[0.12em] py-0.5">
               {navConfig.primaryLinks.map((item, idx) => {
                 // Check if this is a dropdown menu
                 if ('items' in item) {
                   const dropdown = item as import('@/lib/navigation-config').NavDropdown;
+                  const isOpen = openDesktopDropdown === idx;
+                  const isLargeMenu = dropdown.items.length > 8;
+                  const isUtilityMenu = dropdown.label.toLowerCase().includes('utilit');
+                  const utilityGroups = isUtilityMenu
+                    ? CATEGORIES.map(cat => ({
+                      title: cat.title,
+                      icon: cat.icon,
+                      items: TOOLS.filter(t => t.category === cat.id && t.featured !== false).map(t => ({
+                        href: `/tools/${t.slug}`,
+                        label: t.title,
+                        description: t.shortDesc,
+                        icon: t.icon
+                      }))
+                    })).filter(g => g.items.length > 0)
+                    : [];
+                  const autoColumns = !isUtilityMenu && isLargeMenu ? Math.min(4, Math.max(2, Math.ceil(dropdown.items.length / 6))) : 1;
+                  const autoChunkSize = autoColumns > 1 ? Math.ceil(dropdown.items.length / autoColumns) : dropdown.items.length;
+                  const autoGroups =
+                    autoColumns > 1
+                      ? Array.from({ length: autoColumns }, (_, colIdx) => ({
+                        title: colIdx === 0 ? dropdown.label : `${dropdown.label} ${colIdx + 1}`,
+                        items: dropdown.items.slice(colIdx * autoChunkSize, (colIdx + 1) * autoChunkSize),
+                      })).filter((group) => group.items.length > 0)
+                      : [{ title: dropdown.label, items: dropdown.items }];
+                  const groups = isUtilityMenu ? utilityGroups : autoGroups;
+                  const gridColsClass =
+                    groups.length >= 4
+                      ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-4'
+                      : groups.length === 3
+                        ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                        : groups.length === 2
+                          ? 'grid-cols-1 md:grid-cols-2'
+                          : 'grid-cols-1';
                   return (
-                    <div key={idx} className="relative group">
+                    <div
+                      key={idx}
+                      className="relative group shrink-0"
+                      onMouseEnter={() => setOpenDesktopDropdown(idx)}
+                      onMouseLeave={() => setOpenDesktopDropdown((current) => (current === idx ? null : current))}
+                    >
                       <button
-                        className="px-2 py-1.5 rounded-full transition-colors hover:bg-white/10 flex items-center gap-1 text-white/80 hover:text-white text-sm"
+                        type="button"
+                        className={`px-2.5 xl:px-4 py-2 rounded-xl border transition-all duration-200 ease-out hover:-translate-y-[1px] flex items-center gap-1.5 xl:gap-2 ${
+                          isOpen
+                            ? "bg-white/85 dark:bg-white/10 text-slate-950 dark:text-white border-slate-300 dark:border-white/10 shadow-[0_8px_26px_rgba(15,23,42,0.10)] dark:shadow-[0_8px_26px_rgba(0,0,0,0.25)]"
+                            : "bg-transparent text-slate-600 dark:text-slate-400 border-transparent hover:bg-white/70 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/10"
+                        }`}
                         aria-haspopup="true"
-                        aria-expanded="false"
+                        aria-expanded={isOpen}
+                        aria-controls={`desktop-nav-dropdown-${idx}`}
+                        onFocus={() => setOpenDesktopDropdown(idx)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setOpenDesktopDropdown((current) => (current === idx ? null : idx));
+                          }
+                          if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setOpenDesktopDropdown(idx);
+                          }
+                          if (e.key === "Escape") {
+                            setOpenDesktopDropdown(null);
+                          }
+                        }}
                       >
-                        {dropdown.icon && <span>{dropdown.icon}</span>}
+                        {dropdown.icon && <span className="text-sm">{dropdown.icon}</span>}
                         <span>{dropdown.label}</span>
-                        <span className="text-xs transition-transform group-hover:rotate-180">▼</span>
+                        <span className="text-[10px] opacity-30 transition-transform duration-200 group-hover:rotate-180">▼</span>
                       </button>
-                      {/* Dropdown Menu */}
-                      <div className="absolute left-0 top-full mt-1 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[1001]">
-                        <div className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden backdrop-blur-sm">
-                          {dropdown.items.map((subItem) => {
-                            const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
-                            return (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                className={`block px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-slate-800 font-semibold text-teal-700 dark:text-teal-400' : ''
-                                  }`}
-                              >
-                                {subItem.icon && <span className="text-base">{subItem.icon}</span>}
-                                <span className="text-sm">{subItem.label}</span>
-                              </Link>
-                            );
-                          })}
+                      {/* Enhanced Dropdown Menu with Description */}
+                      <div
+                        id={`desktop-nav-dropdown-${idx}`}
+                        className={`absolute top-full mt-3 transition-all duration-200 ease-out z-[1001] max-w-[calc(100vw-2rem)] ${idx <= 1 ? "left-0" : idx >= navConfig.primaryLinks.length - 2 ? "right-0" : "left-1/2 -translate-x-1/2"} ${isOpen
+                          ? "opacity-100 visible translate-y-0"
+                          : "opacity-0 invisible translate-y-2 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0"
+                          } ${groups.length >= 4 ? "w-[min(1140px,96vw)]" : groups.length === 3 ? "w-[min(1000px,94vw)]" : "w-[min(600px,92vw)]"}`}
+                      >
+                        <div className="rounded-[1.75rem] border border-slate-200/90 dark:border-white/10 overflow-hidden shadow-[0_34px_90px_rgba(15,23,42,0.14)] dark:shadow-[0_34px_90px_rgba(0,0,0,0.72)] bg-gradient-to-br from-white via-slate-50/95 to-slate-100/95 dark:from-[#0a0d13]/96 dark:via-[#0a0d13]/96 dark:to-[#05070b]/96 backdrop-blur-2xl ring-1 ring-slate-200/60 dark:ring-white/5">
+                          {/* Dropdown Header with Description */}
+                          {(dropdown.description || isUtilityMenu) && (
+                            <div className="px-8 py-6 bg-gradient-to-r from-slate-200/90 via-white/60 to-transparent dark:from-white/[0.04] border-b border-slate-200 dark:border-white/10">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-start gap-3">
+                                  <div className="w-10 h-10 rounded-2xl bg-white/90 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-inner">
+                                    <Zap className="h-5 w-5 text-elite-accent-cyan animate-pulse-slow" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-900 dark:text-white flex items-center gap-2">
+                                      {dropdown.label}
+                                      <span className="h-1 w-1 rounded-full bg-elite-accent-cyan"></span>
+                                      <span className="text-elite-accent-cyan/60 text-[10px]">v2.0 Elite</span>
+                                    </div>
+                                    <div className="text-[13px] text-slate-600 dark:text-slate-400 font-medium mt-0.5 tracking-tight line-clamp-1">
+                                      {isUtilityMenu ? "Next-generation professional toolkits & algorithmic utilities" : dropdown.description}
+                                    </div>
+                                  </div>
+                                </div>
+                                {isUtilityMenu && (
+                                  <div className="hidden xl:flex items-center gap-4 px-4 py-2 rounded-xl bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/5 shadow-[0_8px_30px_rgba(148,163,184,0.14)] dark:shadow-none">
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Global Index</span>
+                                      <span className="text-[11px] font-black text-elite-accent-cyan">500+ Tools</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className={`${isLargeMenu || isUtilityMenu ? "max-h-[72vh] overflow-auto custom-scrollbar" : ""}`}>
+                            {isUtilityMenu && (
+                              <div className="px-8 py-5 bg-gradient-to-r from-slate-100/90 to-white/70 dark:from-white/[0.02] dark:to-transparent border-b border-slate-200 dark:border-white/5">
+                                <Link
+                                  href="/tools"
+                                  className="group/all w-full flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-elite-accent-cyan/8 to-white/80 dark:from-elite-accent-cyan/5 dark:to-transparent hover:bg-elite-accent-cyan/10 border border-elite-accent-cyan/20 hover:border-elite-accent-cyan/40 transition-all duration-500 shadow-[0_12px_34px_rgba(15,23,42,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+                                  onClick={() => setOpenDesktopDropdown(null)}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-elite-accent-cyan/10 ring-1 ring-elite-accent-cyan/20">
+                                      <Library className="h-4 w-4 text-elite-accent-cyan group-hover/all:rotate-12 transition-transform" />
+                                    </div>
+                                    <div className="flex flex-col text-left">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[12px] font-black uppercase tracking-widest text-elite-accent-cyan">Access Elite Repository</span>
+                                        <span className="px-2 py-0.5 rounded-full bg-elite-accent-cyan text-black text-[9px] font-black uppercase">500+ Tools</span>
+                                      </div>
+                                      <span className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">Explore the world's largest collection of AI & Utility toolsets</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3 text-elite-accent-cyan">
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover/all:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0 whitespace-nowrap">Enter the Forge</span>
+                                    <Zap className="h-4 w-4 group-hover/all:scale-125 transition-transform" />
+                                  </div>
+                                </Link>
+                              </div>
+                            )}
+                            <div className={`grid ${gridColsClass} gap-0`}>
+                              {groups.map((group, groupIdx) => (
+                                <div
+                                  key={`${dropdown.label}-${group.title}-${groupIdx}`}
+                                  className={`px-6 py-6 ${groupIdx > 0 ? 'border-l border-slate-200/80 dark:border-white/[0.03]' : ''}`}
+                                >
+                                  {(isLargeMenu || isUtilityMenu) && (
+                                    <div className="flex items-center gap-2.5 mb-5 group/cat">
+                                      <div className="p-1.5 rounded-lg bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-elite-accent-cyan group-hover/cat:bg-elite-accent-cyan/10 transition-colors">
+                                        {(() => {
+                                          const CatIcon = group.icon;
+                                          if (!CatIcon) return null;
+                                          return typeof CatIcon === 'string' ? CatIcon : <CatIcon className="h-3.5 w-3.5" />;
+                                        })()}
+                                      </div>
+                                      <div className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-500 dark:text-slate-500 group-hover/cat:text-slate-700 dark:group-hover/cat:text-slate-300 transition-colors">
+                                        {group.title}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="space-y-2">
+                                    {group.items.map((subItem) => {
+                                      const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
+                                      const Icon = subItem.icon;
+                                      return (
+                                        <Link
+                                          key={subItem.href}
+                                          href={subItem.href}
+                                          className={`group/item flex items-start gap-3.5 p-2.5 -mx-2 rounded-2xl transition-all duration-300 ease-out ${isActive
+                                            ? 'bg-gradient-to-r from-elite-accent-cyan/10 via-elite-accent-cyan/5 to-transparent border border-elite-accent-cyan/30 shadow-[0_10px_28px_rgba(6,182,212,0.08)]'
+                                            : 'hover:bg-white/75 dark:hover:bg-white/[0.04] border border-transparent hover:border-slate-300 dark:hover:border-white/10 hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)] dark:hover:shadow-none'
+                                            }`}
+                                          onClick={() => setOpenDesktopDropdown(null)}
+                                        >
+                                          <div className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border ${isActive
+                                            ? 'bg-elite-accent-cyan/20 border-elite-accent-cyan/30 text-elite-accent-cyan'
+                                            : 'bg-white/70 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 group-hover/item:text-slate-900 dark:group-hover/item:text-white group-hover/item:bg-elite-accent-cyan/10 group-hover/item:border-elite-accent-cyan/30 group-hover/item:scale-110'
+                                            }`}>
+                                            {Icon && (
+                                              <span className="text-sm">
+                                                {typeof Icon === 'string' ? Icon : <Icon className="h-4 w-4" />}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex flex-col min-w-0 py-0.5">
+                                            <span className={`text-[13px] font-bold tracking-tight transition-colors ${isActive ? 'text-elite-accent-cyan' : 'text-slate-700 dark:text-slate-200 group-hover/item:text-slate-900 dark:group-hover/item:text-white'}`}>
+                                              {subItem.label}
+                                            </span>
+                                            {(isUtilityMenu || subItem.description) && (
+                                              <span className="text-[11px] text-slate-500 leading-tight mt-0.5 line-clamp-2 group-hover/item:text-slate-400 transition-colors">
+                                                {subItem.description || "Professional toolset utility"}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Bottom CTA moved to top */}
+                          </div>
                         </div>
                       </div>
                     </div>
                   );
                 }
-
                 // Regular link
                 const link = item as import('@/lib/navigation-config').NavLink;
                 const isActive = pathname?.startsWith(link.href.split("?")[0]);
@@ -172,16 +409,19 @@ export function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-2 py-1.5 rounded-full transition-colors hover:bg-white/10 flex items-center gap-1 whitespace-nowrap text-sm ${isActive ? "bg-white/15 text-white" : "text-white/80 hover:text-white"
+                    className={`relative shrink-0 px-2.5 lg:px-3 xl:px-3.5 2xl:px-4 py-2 rounded-xl transition-all duration-200 ease-out hover:-translate-y-[1px] flex items-center gap-1.5 xl:gap-2 whitespace-nowrap ${isActive ? "bg-gradient-to-r from-white to-slate-100 dark:from-white/10 dark:to-white/5 text-slate-950 dark:text-white border border-slate-300 dark:border-white/10 shadow-[0_10px_30px_rgba(15,23,42,0.10)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.22)]" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/70 dark:hover:bg-white/5 border border-transparent hover:border-slate-300 dark:hover:border-white/10"
                       }`}
                     title={link.label}
                   >
-                    {link.icon && <span>{link.icon}</span>}
+                    {link.icon && <span className="text-sm">{link.icon}</span>}
                     <span>{link.label}</span>
                     {link.badge && (
-                      <span className="ml-1 text-xs bg-white/20 px-1.5 py-0.5 rounded">
+                      <span className="ml-1 text-[9px] xl:text-[10px] bg-elite-accent-cyan/20 text-elite-accent-cyan px-1.5 xl:px-2 py-0.5 rounded-full font-black">
                         {link.badge}
                       </span>
+                    )}
+                    {isActive && (
+                      <span className="absolute left-2 right-2 -bottom-[1px] h-[2px] rounded-full bg-gradient-to-r from-transparent via-elite-accent-cyan/90 to-transparent" />
                     )}
                   </Link>
                 );
@@ -189,108 +429,220 @@ export function Navbar() {
             </nav>
           </div>
 
-          {/* Desktop Search */}
-          <div className="hidden xl:block flex-1 max-w-md mx-2 min-w-0">
-            <div className="bg-white/95 text-slate-600 rounded-2xl border border-white/40 shadow-sm h-10 flex items-center overflow-visible">
-              <div className="w-full">
-                <GlobalSearch />
-              </div>
+          {/* Right: Search, Actions, Auth */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Desktop Search */}
+            <div className="hidden md:block shrink-0">
+              <GlobalSearch />
             </div>
-          </div>
 
-          <div className="flex items-center gap-1.5 overflow-visible">
             <button
+              type="button"
               aria-label="Open menu"
-              className="lg:hidden inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 p-2"
+              aria-expanded={mobileOpen}
+              className="inline-flex lg:!hidden touch-target items-center justify-center rounded-xl bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 active:bg-slate-300 dark:active:bg-white/30 transition-all duration-200 p-2.5 sm:p-3 shrink-0"
               onClick={() => setMobileOpen((v) => !v)}
             >
-              <span className="text-lg">☰</span>
+              <svg
+                className="w-6 h-6 text-slate-900 dark:text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
             </button>
+
             {showViewAs && (
-              <ViewAsSwitcher
-                currentRole={userRole || 'student'}
-                isSuperAdmin={isSuperAdmin}
-              />
-            )}
-            {navConfig.showAdminBadge && (
-              <span className={`hidden xl:inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider border ${effectiveRole === 'superadmin' ? 'bg-purple-100/10 text-purple-200 border-purple-400/30' :
-                effectiveRole === 'admin' ? 'bg-blue-100/10 text-blue-200 border-blue-400/30' :
-                  effectiveRole === 'teacher' ? 'bg-emerald-100/10 text-emerald-200 border-emerald-400/30' :
-                    'bg-white/20 text-white border-white/30'
-                }`}>
-                {effectiveRole === 'superadmin' ? "🛡️ Super" : effectiveRole === 'admin' ? "🛡️ Admin" : effectiveRole === 'teacher' ? "👨‍🏫 Teacher" : effectiveRole}
-              </span>
+              <div className="hidden 2xl:flex items-center gap-2 shrink-0">
+                <ViewAsSwitcher
+                  currentRole={userRole || 'student'}
+                  isSuperAdmin={isSuperAdmin}
+                />
+
+                {navConfig.showAdminBadge && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-all ${effectiveRole === 'superadmin' ? 'bg-elite-accent-purple/20 text-elite-accent-purple border-elite-accent-purple/30 glow-purple' :
+                    effectiveRole === 'admin' ? 'bg-elite-accent-cyan/20 text-elite-accent-cyan border-elite-accent-cyan/30 glow-cyan' :
+                      effectiveRole === 'teacher' ? 'bg-elite-accent-emerald/20 text-elite-accent-emerald border-elite-accent-emerald/30 glow-emerald' :
+                        'bg-slate-200/70 dark:bg-white/5 text-slate-500 dark:text-white/50 border-slate-200 dark:border-white/10'
+                    }`}>
+                    <span className="relative flex h-1.5 w-1.5 mr-1">
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${effectiveRole === 'superadmin' ? 'bg-elite-accent-purple' : effectiveRole === 'admin' ? 'bg-elite-accent-cyan' : 'bg-elite-accent-emerald'}`}></span>
+                      <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${effectiveRole === 'superadmin' ? 'bg-elite-accent-purple' : effectiveRole === 'admin' ? 'bg-elite-accent-cyan' : 'bg-elite-accent-emerald'}`}></span>
+                    </span>
+                    {effectiveRole} node
+                  </span>
+                )}
+              </div>
             )}
 
-            {/* Actions Menu - Consolidated */}
-            <div className="relative hidden lg:block z-[1002]">
+            {/* Refectl Hub - Unified Dropdown */}
+            <div ref={hubRef} className="relative hidden xl:block z-[1002] shrink-0">
               <button
+                type="button"
                 onClick={() => setActionsOpen((v) => !v)}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors text-white"
-                aria-label="Actions"
+                aria-expanded={actionsOpen}
+                className={`flex items-center gap-2 px-3 xl:px-4 2xl:px-5 py-2.5 rounded-2xl transition-all duration-200 ease-out text-slate-900 dark:text-white border hover:border-elite-accent-cyan/30 hover:shadow-lg hover:shadow-elite-accent-cyan/10 hover:-translate-y-[1px] active:scale-95 group ${
+                  actionsOpen
+                    ? "bg-gradient-to-r from-white to-slate-100 dark:from-white/10 dark:to-white/5 border-slate-300 dark:border-white/10 shadow-[0_10px_30px_rgba(15,23,42,0.10)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+                    : "bg-white/70 dark:bg-white/5 hover:bg-white/90 dark:hover:bg-white/10 border-slate-200 dark:border-white/5"
+                }`}
+                aria-label="Refectl Hub"
+                title="Refectl Hub"
               >
-                <span className="text-lg">⚡</span>
+                <Zap className="h-4 w-4 text-elite-accent-cyan group-hover:scale-110 transition-transform duration-500 shrink-0" />
+                <span className="hidden 2xl:inline text-[11px] font-black uppercase tracking-[0.16em]">Relay Hub</span>
+                <span className={`text-[10px] opacity-30 transition-transform duration-200 ${actionsOpen ? 'rotate-180' : ''}`}>▼</span>
               </button>
+
               {actionsOpen && (
                 <div
-                  className="fixed mt-12 w-64 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl border border-slate-200 dark:border-slate-700 z-[9999] overflow-y-auto max-h-[85vh] custom-scrollbar animate-in fade-in zoom-in-95 duration-200"
+                  className="fixed mt-6 w-96 rounded-[2.5rem] bg-gradient-to-br from-white via-slate-50/95 to-slate-100/95 dark:from-elite-bg/95 dark:via-elite-bg/95 dark:to-[#07090d]/95 text-slate-900 dark:text-white shadow-[0_30px_100px_-15px_rgba(15,23,42,0.18)] dark:shadow-[0_30px_100px_-15px_rgba(0,0,0,0.8)] border border-slate-200 dark:border-white/10 z-[9999] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 backdrop-blur-3xl ring-1 ring-slate-200/70 dark:ring-white/5 max-h-[85vh] overflow-y-auto custom-scrollbar"
                   style={{
                     right: 'max(1rem, calc((100vw - 1280px) / 2 + 1rem))',
-                    top: '3.5rem'
+                    top: isCondensed ? '4rem' : '4.5rem'
                   }}
                 >
                   {!userRole ? (
                     <div className="px-4 py-8 text-center">
                       <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                      <p className="text-xs text-slate-500 font-medium">Loading your tools...</p>
+                      <p className="text-xs text-slate-500 font-medium">Loading your Hub...</p>
                     </div>
                   ) : (
                     <div className="flex flex-col">
-                      {/* Admin/Superadmin Specific */}
-                      {(effectiveRole === 'superadmin' || effectiveRole === 'admin') && (
-                        <div className="p-2 border-b dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
-                          <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Administration</div>
-                          <Link href="/admin/users" className="block px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all mb-1" onClick={() => setActionsOpen(false)}>👥 User Control</Link>
-                          <Link href="/admin/enrollments" className="block px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all" onClick={() => setActionsOpen(false)}>💳 Enrollment Ops</Link>
+                      {/* 🚀 Creation Studio Section */}
+                      <div className="p-6 border-b border-slate-200 dark:border-white/5 bg-slate-100/70 dark:bg-white/5">
+                        <div className="flex items-center justify-between px-2 mb-4">
+                          <span className="text-[11px] uppercase font-black text-slate-500 tracking-[0.35em]">Creation Studio</span>
                         </div>
-                      )}
-
-                      {/* Content Creation tools - Available to Students (Blogs/Practice), Teacher, Admin */}
-                      <div className="p-2 border-b dark:border-slate-700">
-                        <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Creation Studio</div>
-
-                        {/* Higher roles can create courses */}
-                        {(effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
-                          <Link href="/admin/studio/courses" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>📚 Create Course</Link>
-                        )}
-
-                        {/* Blogs are for everyone, Practice Quizzes are for students only */}
-                        {(effectiveRole === 'student' || effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin' || effectiveRole === 'user') && (
-                          <Link href="/admin/studio/blogs" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>📝 Write Blog</Link>
-                        )}
-
-                        {effectiveRole === 'student' && (
-                          <Link href="/admin/studio/practice" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors mb-1" onClick={() => setActionsOpen(false)}>🎯 Self Practice Quiz</Link>
-                        )}
-
-                        {(effectiveRole !== 'user' && effectiveRole !== 'student') && (
-                          <Link href="/admin/studio/questions?mode=quiz" className="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" onClick={() => setActionsOpen(false)}>❓ Create Quiz Instance</Link>
-                        )}
+                        <div className="grid gap-2">
+                          {(effectiveRole === 'teacher' || effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
+                            <Link href="/admin/studio/courses" className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all group" onClick={() => setActionsOpen(false)}>
+                              <div className="w-10 h-10 rounded-xl bg-elite-accent-cyan/10 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                                <BookOpen className="h-5 w-5 text-elite-accent-cyan" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Course Architect</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Design new curricula</span>
+                              </div>
+                            </Link>
+                          )}
+                          {(effectiveRole === 'content_writer' || effectiveRole === 'news_writer' || effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
+                            <Link href="/admin/studio/news" className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all group" onClick={() => setActionsOpen(false)}>
+                              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                                <Newspaper className="h-5 w-5 text-red-500" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[11px] font-black uppercase tracking-widest text-red-600 dark:text-red-500">Elite Bulletin</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Global newsroom desk</span>
+                              </div>
+                            </Link>
+                          )}
+                          <Link href="/admin/studio/blogs" className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all group" onClick={() => setActionsOpen(false)}>
+                            <div className="w-10 h-10 rounded-xl bg-elite-accent-purple/10 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                              <PenSquare className="h-5 w-5 text-elite-accent-purple" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[11px] font-black uppercase tracking-widest text-elite-accent-purple">Blog Studio</span>
+                              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Share your thoughts</span>
+                            </div>
+                          </Link>
+                          {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher' || effectiveRole === 'news_writer') && (
+                            <Link href="/admin/studio/ebooks" className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all group" onClick={() => setActionsOpen(false)}>
+                              <div className="w-10 h-10 rounded-xl bg-elite-accent-emerald/10 flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                                <Book className="h-5 w-5 text-elite-accent-emerald" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[11px] font-black uppercase tracking-widest text-elite-accent-emerald">Ebook Studio</span>
+                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Create rich resources</span>
+                              </div>
+                            </Link>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Quick Navigation / Dashboards */}
-                      <div className="p-2 bg-slate-50/30 dark:bg-slate-900/10">
-                        <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">Personal Dashboard</div>
-                        {effectiveRole === 'superadmin' && (
-                          <Link href="/admin/super" className="block px-3 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 shadow-sm transition-all mb-2 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>🛡️ SUPER ADMIN CONSOLE</Link>
-                        )}
-                        {(effectiveRole === 'admin' || effectiveRole === 'superadmin') && (
-                          <Link href="/admin/dashboard" className="block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-all mb-1 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>📊 ADMIN DASHBOARD</Link>
-                        )}
-                        {effectiveRole === 'teacher' && (
-                          <Link href="/teacher/dashboard" className="block px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all mb-1 text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>👨‍🏫 TEACHER DASHBOARD</Link>
-                        )}
-                        <Link href="/dashboard" className="block px-3 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-all text-center text-xs font-bold" onClick={() => setActionsOpen(false)}>📊 MY DASHBOARD</Link>
+                      {/* 🛒 Elite Marketplace Section */}
+                      <div className="p-6 border-b border-slate-200 dark:border-white/5">
+                        <div className="flex items-center justify-between px-2 mb-4">
+                          <span className="text-[11px] uppercase font-black text-slate-500 tracking-[0.35em]">Elite Marketplace</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Link href="/shop" className="flex flex-col gap-2 p-4 rounded-3xl bg-slate-100/80 dark:bg-white/5 hover:bg-elite-accent-cyan/10 border border-slate-200 dark:border-white/5 hover:border-elite-accent-cyan/30 transition-all group" onClick={() => setActionsOpen(false)}>
+                            <ShoppingBag className="h-6 w-6 text-elite-accent-cyan group-hover:scale-110 transition-transform" />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Forge Shop</span>
+                              <span className="text-[10px] text-slate-500 uppercase font-bold">Premium Software</span>
+                            </div>
+                          </Link>
+                          <Link href="/ebooks" className="flex flex-col gap-2 p-4 rounded-3xl bg-slate-100/80 dark:bg-white/5 hover:bg-elite-accent-emerald/10 border border-slate-200 dark:border-white/5 hover:border-elite-accent-emerald/30 transition-all group" onClick={() => setActionsOpen(false)}>
+                            <Library className="h-6 w-6 text-elite-accent-emerald group-hover:scale-110 transition-transform" />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Resources</span>
+                              <span className="text-[10px] text-slate-500 uppercase font-bold">Digital Assets</span>
+                            </div>
+                          </Link>
+                        </div>
+                      </div>
+
+                      {/* ⚙️ Preferences Section */}
+                      <div className="p-6 border-b border-slate-200 dark:border-white/5">
+                        <div className="px-2 mb-4 text-[11px] uppercase font-black text-slate-500 tracking-[0.35em]">Preferences</div>
+                        <div className="flex items-center justify-between gap-4 px-2">
+                          <div className="flex-1">
+                            <LanguageSwitcher />
+                          </div>
+                          <div className="flex-shrink-0">
+                            <ThemeToggle />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 🔔 Notifications Section */}
+                      <div className="p-6 border-b border-slate-200 dark:border-white/5 bg-slate-100/70 dark:bg-white/5">
+                        <div className="px-2 mb-4 flex items-center justify-between">
+                          <span className="text-[11px] uppercase font-black text-slate-500 tracking-[0.35em]">Intelligence Alerts</span>
+                          <NotificationBell />
+                        </div>
+                      </div>
+
+                      {/* 👤 My Account Section */}
+                      <div className="p-6 bg-elite-accent-cyan/5">
+                        <div className="px-2 mb-4 text-[11px] uppercase font-black text-slate-500 tracking-[0.35em]">My Account</div>
+                        <div className="grid gap-2">
+                          {effectiveRole === 'superadmin' && (
+                            <Link href="/admin/super" className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-elite-accent-purple text-black hover:bg-white transition-all text-xs font-black uppercase tracking-widest shadow-xl shadow-elite-accent-purple/20 mb-2" onClick={() => setActionsOpen(false)}>
+                              <Shield className="h-4 w-4" />
+                              Command Console
+                            </Link>
+                          )}
+                          <Link href="/dashboard" className="flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all group" onClick={() => setActionsOpen(false)}>
+                            <div className="w-10 h-10 rounded-xl bg-slate-200/70 dark:bg-white/5 flex items-center justify-center text-lg group-hover:rotate-12 transition-transform">
+                              <LayoutDashboard className="h-5 w-5 text-slate-900 dark:text-white" />
+                            </div>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white">Universal Dashboard</span>
+                          </Link>
+                        </div>
+                        <div className="mt-6 flex items-center justify-between px-5 py-4 bg-slate-100/80 dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/10 shadow-inner">
+                          <div className="flex items-center gap-4">
+                            <UserButton afterSignOutUrl="/" />
+                            <div className="flex flex-col">
+                              <span className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">Active Node</span>
+                              <span className="text-[10px] text-elite-accent-cyan font-black uppercase tracking-[0.18em]">{effectiveRole}</span>
+                            </div>
+                          </div>
+                          {!isPro && !isSuperAdmin && (
+                            <Link href="/pricing" onClick={() => setActionsOpen(false)}>
+                              <button className="text-[11px] font-black text-black bg-elite-accent-cyan px-3 py-1.5 rounded-xl hover:scale-105 transition-transform uppercase tracking-widest shadow-lg shadow-elite-accent-cyan/20">
+                                Evolve
+                              </button>
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -298,116 +650,335 @@ export function Navbar() {
               )}
             </div>
 
-            <div className="hidden xl:block">
-              <ThemeToggle />
+            <div className="hidden xl:flex items-center gap-2">
+              {/* Individual items removed as they are now in the Hub */}
             </div>
             {mounted && (
               <SignedIn>
-                <div className="flex items-center gap-2" suppressHydrationWarning={true}>
-                  <NotificationBell />
+                {!isPro && !isSuperAdmin && userRole !== 'admin' && userRole !== 'teacher' && (
+                  <Link href="/pricing" className="shrink-0">
+                    <Button
+                      size="sm"
+                      className="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold border-0 shadow-lg animate-pulse whitespace-nowrap hidden xl:flex items-center gap-1.5"
+                    >
+                      <span className="text-sm">👑 Upgrade to Pro</span>
+                    </Button>
+                  </Link>
+                )}
+                <div className="hidden xl:flex items-center ml-2">
                   <UserButton afterSignOutUrl="/" />
                 </div>
               </SignedIn>
             )}
-            <SignedOut>
-              <SignInButton mode="modal">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-white text-white hover:bg-white/10"
-                >
-                  Sign In
-                </Button>
-              </SignInButton>
-              <SignInButton mode="modal">
-                <Button variant="inverse" size="sm">
-                  Get Started
-                </Button>
-              </SignInButton>
-            </SignedOut>
+            {mounted && (
+              <SignedOut>
+                <div className="hidden lg:flex items-center gap-2 shrink-0">
+                  <SignInButton mode="modal">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 whitespace-nowrap hidden xl:flex"
+                    >
+                      {t('login')}
+                    </Button>
+                  </SignInButton>
+                  <SignInButton mode="modal">
+                    <Button variant="outline" size="sm" className="whitespace-nowrap xl:hidden border-slate-200 dark:border-white text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10">
+                      {t('login')}
+                    </Button>
+                  </SignInButton>
+                  <SignInButton mode="modal">
+                    <Button variant="inverse" size="sm" className="whitespace-nowrap bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white/90">
+                      {t('signup')}
+                    </Button>
+                  </SignInButton>
+                </div>
+              </SignedOut>
+            )}
           </div>
         </div>
 
-        {mobileOpen && (
-          <div className="lg:hidden fixed inset-0 z-[2000] bg-teal-900/60 backdrop-blur">
-            <div className="absolute top-0 right-0 w-80 max-w-[75vw] h-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-xl p-4 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Menu</span>
-                <button className="text-slate-600 dark:text-slate-400" onClick={() => setMobileOpen(false)}>✕</button>
-              </div>
-              <div className="flex flex-col gap-2">
-                {navConfig.primaryLinks.map((item, idx) => {
-                  // Check if this is a dropdown menu
-                  if ('items' in item) {
-                    const dropdown = item as import('@/lib/navigation-config').NavDropdown;
-                    return (
-                      <div key={idx}>
-                        <div className="px-3 py-2 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide flex items-center gap-2">
-                          {dropdown.icon && <span>{dropdown.icon}</span>}
-                          {dropdown.label}
-                        </div>
-                        {dropdown.items.map((subItem) => {
-                          const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
-                          return (
-                            <Link
-                              key={subItem.href}
-                              href={subItem.href}
-                              className={`pl-6 pr-3 py-2 rounded-lg flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                                }`}
-                              onClick={() => setMobileOpen(false)}
-                            >
-                              {subItem.icon && <span className="text-base">{subItem.icon}</span>}
-                              <span className="text-sm">{subItem.label}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    );
-                  }
 
-                  // Regular link
-                  const link = item as import('@/lib/navigation-config').NavLink;
-                  const isActive = pathname?.startsWith(link.href.split("?")[0]);
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={`px-3 py-2 rounded-lg flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                        }`}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {link.icon && <span className="mr-1">{link.icon}</span>}
-                      {link.label}
-                    </Link>
-                  );
-                })}
+        {mounted && mobileOpen && createPortal(
+          <div
+            className="lg:hidden fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          >
+            <div
+              className="absolute top-0 right-0 w-full max-w-sm h-full bg-slate-100 dark:bg-elite-bg text-slate-900 dark:text-white shadow-2xl flex flex-col border-l border-slate-200 dark:border-white/5 animate-in slide-in-from-right duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 dark:border-white/5 shrink-0">
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Menu</span>
+                <button
+                  className="touch-target text-slate-900 dark:text-white bg-slate-200 dark:bg-white/5 rounded-xl flex items-center justify-center hover:bg-slate-300 dark:hover:bg-white/10 active:bg-slate-300 dark:active:bg-white/15 transition-all"
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Close menu"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher' || effectiveRole === 'student') && (
-                <div className="mt-2 border-t pt-2">
-                  <div className="text-xs font-semibold text-slate-500 mb-2">Actions</div>
-                  <div className="flex flex-col gap-2">
-                    {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher') && (
-                      <Link href="/admin/studio/courses" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>📚 Create Course</Link>
-                    )}
-                    <Link href="/admin/studio/blogs" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>📝 Write Blog</Link>
-                    {effectiveRole === 'student' && (
-                      <Link href="/admin/studio/practice" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>🎯 Self Practice</Link>
-                    )}
-                    {(effectiveRole === 'superadmin' || effectiveRole === 'admin') && (
-                      <Link href="/admin/users" className="px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => setMobileOpen(false)}>👥 Manage Users</Link>
-                    )}
-                  </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+                {/* Primary Navigation */}
+                <div className="space-y-4">
+                  {navConfig.primaryLinks.map((item, idx) => {
+                    // Check if this is a dropdown menu
+                    if ('items' in item) {
+                      const dropdown = item as import('@/lib/navigation-config').NavDropdown;
+                      return (
+                        <div key={idx} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.03] overflow-hidden">
+                          {/* Category Header */}
+                          <div className="px-4 py-3 bg-slate-200/70 dark:bg-white/5 border-b border-slate-200 dark:border-white/5">
+                            <div className="flex items-start gap-3">
+                              {dropdown.icon && <span className="text-lg mt-0.5">{dropdown.icon}</span>}
+                              <div className="flex-1">
+                                <div className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">{dropdown.label}</div>
+                                {dropdown.description && (
+                                  <div className="text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-1">{dropdown.description}</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Category Items */}
+                          <div className="space-y-1 p-2">
+                            {isUtilityMenu && (
+                              <Link
+                                href="/tools"
+                                className="mb-3 flex items-center justify-between px-4 py-3 bg-elite-accent-cyan/10 text-elite-accent-cyan rounded-xl border border-elite-accent-cyan/20 active:scale-[0.98] transition-all"
+                                onClick={() => setMobileOpen(false)}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Library className="h-4 w-4" />
+                                  <span className="text-[11px] font-black uppercase tracking-widest">Global Repository</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[9px] font-black opacity-60">500+</span>
+                                  <Zap className="h-3 w-3" />
+                                </div>
+                              </Link>
+                            )}
+                            {isUtilityMenu ? (
+                              CATEGORIES.map(cat => {
+                                const catTools = TOOLS.filter(t => t.category === cat.id && t.featured !== false);
+                                if (catTools.length === 0) return null;
+                                return (
+                                  <div key={cat.id} className="mt-2 first:mt-0">
+                                    <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-200/70 dark:bg-white/5 rounded-lg mb-1 flex items-center gap-2">
+                                      {(() => {
+                                        const CatIcon = cat.icon;
+                                        if (!CatIcon) return null;
+                                        return typeof CatIcon === 'string' ? CatIcon : <CatIcon className="h-3 w-3" />;
+                                      })()}
+                                      {cat.title}
+                                    </div>
+                                    {catTools.map(t => {
+                                      const href = `/tools/${t.slug}`;
+                                      const isActive = pathname?.startsWith(href);
+                                      const Icon = t.icon;
+                                      return (
+                                        <Link
+                                          key={t.id}
+                                          href={href}
+                                          className={`touch-target px-4 py-3 rounded-lg flex items-center gap-3 transition-all ${isActive
+                                            ? 'bg-slate-200/90 dark:bg-white/10 font-black text-slate-900 dark:text-white border border-elite-accent-cyan/30'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10'
+                                            }`}
+                                          onClick={() => setMobileOpen(false)}
+                                        >
+                                          {Icon && (
+                                            <span className="text-lg">
+                                              {typeof Icon === 'string' ? Icon : <Icon className="h-4 w-4" />}
+                                            </span>
+                                          )}
+                                          <span className="text-sm font-medium">{t.title}</span>
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              dropdown.items.map((subItem) => {
+                                const isActive = pathname?.startsWith(subItem.href.split("?")[0]);
+                                return (
+                                  <Link
+                                    key={subItem.href}
+                                    href={subItem.href}
+                                    className={`touch-target px-4 py-3 rounded-lg flex items-center gap-3 transition-all ${isActive
+                                      ? 'bg-slate-200/90 dark:bg-white/10 font-black text-slate-900 dark:text-white border border-elite-accent-cyan/30'
+                                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10'
+                                      }`}
+                                    onClick={() => setMobileOpen(false)}
+                                  >
+                                    {subItem.icon && <span className="text-lg">{subItem.icon}</span>}
+                                    <span className="text-sm font-medium">{subItem.label}</span>
+                                    {subItem.badge && (
+                                      <span className="ml-auto text-[10px] bg-elite-accent-cyan/20 text-elite-accent-cyan px-2 py-0.5 rounded-full font-black">
+                                        {subItem.badge}
+                                      </span>
+                                    )}
+                                  </Link>
+                                );
+                              })
+                            )}
+                            {/* Mobile CTA moved to top */}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Regular link
+                    const link = item as import('@/lib/navigation-config').NavLink;
+                    const isActive = pathname?.startsWith(link.href.split("?")[0]);
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`touch-target px-4 py-3 rounded-xl flex items-center gap-3 transition-all border ${isActive
+                          ? 'bg-slate-200/90 dark:bg-white/10 font-black text-slate-900 dark:text-white border-elite-accent-cyan/30'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 border-transparent'
+                          }`}
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {link.icon && <span className="text-lg">{link.icon}</span>}
+                        <span className="text-sm font-medium uppercase tracking-wider">{link.label}</span>
+                        {link.badge && (
+                          <span className="ml-auto text-[11px] bg-elite-accent-cyan/20 text-elite-accent-cyan px-2 py-0.5 rounded-full font-black">
+                            {link.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
                 </div>
-              )}
+
+                {/* Relay Hub shortcut - shown when desktop Hub is hidden */}
+                <div className="xl:hidden pt-4 border-t border-slate-200 dark:border-white/5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.03] p-2">
+                  <div className="text-xs font-semibold text-slate-500 mb-3 px-3 uppercase tracking-wide">Hub</div>
+                  <Link
+                    href="/dashboard"
+                    className="touch-target px-4 py-3 rounded-xl hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-all"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Zap className="h-5 w-5 text-elite-accent-cyan" />
+                    <span className="text-sm">Relay Hub / Dashboard</span>
+                  </Link>
+                  <Link
+                    href="/shop"
+                    className="touch-target px-4 py-3 rounded-xl hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-all"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <ShoppingBag className="h-5 w-5 text-elite-accent-cyan" />
+                    <span className="text-sm">Forge Shop</span>
+                  </Link>
+                </div>
+
+                {/* Actions Section */}
+                {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher' || effectiveRole === 'student' || effectiveRole === 'content_writer' || effectiveRole === 'news_writer' || effectiveRole === 'guest') && (
+                  <div className="pt-4 border-t border-slate-200 dark:border-white/5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.03] p-2">
+                    <div className="text-xs font-semibold text-slate-500 mb-3 px-3 uppercase tracking-wide">Quick Actions</div>
+                    <div className="space-y-1">
+                      {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'teacher') && (
+                        <Link
+                          href="/admin/studio/courses"
+                          className="touch-target px-4 py-3 rounded-xl hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-all"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <BookOpen className="h-5 w-5 text-elite-accent-cyan" />
+                          <span className="text-sm">Create Course</span>
+                        </Link>
+                      )}
+                      {(effectiveRole === 'superadmin' || effectiveRole === 'admin' || effectiveRole === 'content_writer') && (
+                        <Link
+                          href="/admin/studio/news"
+                          className="touch-target px-4 py-3 rounded-xl hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-all"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <Newspaper className="h-5 w-5 text-red-500" />
+                          <span className="text-sm">Terai Times Studio</span>
+                        </Link>
+                      )}
+                      <Link
+                        href="/admin/studio/blogs"
+                        className="touch-target px-4 py-3 rounded-xl hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-all"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <PenSquare className="h-5 w-5 text-elite-accent-purple" />
+                        <span className="text-sm">Write Blog</span>
+                      </Link>
+                      {effectiveRole === 'student' && (
+                        <Link
+                          href="/admin/studio/practice"
+                          className="touch-target px-4 py-3 rounded-xl hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-all"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <Target className="h-5 w-5 text-emerald-400" />
+                          <span className="text-sm">Self Practice</span>
+                        </Link>
+                      )}
+                      {(effectiveRole === 'superadmin' || effectiveRole === 'admin') && (
+                        <Link
+                          href="/admin/users"
+                          className="touch-target px-4 py-3 rounded-xl hover:bg-slate-200/70 dark:hover:bg-white/5 active:bg-slate-200 dark:active:bg-white/10 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-all"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <Users className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+                          <span className="text-sm">Manage Users</span>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* Mobile Auth Buttons */}
+                <div className="pt-6 mt-6 border-t border-slate-200 dark:border-white/5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.03] p-3">
+                  <SignedOut>
+                    <div className="grid grid-cols-2 gap-3">
+                      <SignInButton mode="modal">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-center border-slate-200 dark:border-white text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10"
+                        >
+                          {t('login')}
+                        </Button>
+                      </SignInButton>
+                      <SignInButton mode="modal">
+                        <Button
+                          variant="inverse"
+                          className="w-full justify-center bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white/90"
+                        >
+                          {t('signup')}
+                        </Button>
+                      </SignInButton>
+                    </div>
+                  </SignedOut>
+                  <SignedIn>
+                    <div className="flex items-center gap-3 px-2">
+                      <UserButton afterSignOutUrl="/" />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">My Account</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">Manage your profile</span>
+                      </div>
+                    </div>
+                  </SignedIn>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+          , document.body)}
 
-        {/* Mobile/Tablet Search (Row 2) */}
-        <div className="xl:hidden bg-white/95 text-slate-600 rounded-2xl border border-white/40 shadow-sm">
-          <GlobalSearch />
+        {/* Mobile Search (Row 2) - below main navbar on small screens */}
+        <div className="md:hidden mt-2 -mx-1 px-1">
+          <div className="rounded-2xl border border-slate-200 bg-slate-100/90 dark:glass-card-premium dark:border-white/10 shadow-xl overflow-hidden">
+            <GlobalSearch />
+          </div>
         </div>
       </div>
-    </header>
+    </header >
   );
 }

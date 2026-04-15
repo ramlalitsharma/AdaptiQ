@@ -3,9 +3,11 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { MarkdownEditor } from '@/components/editor/MarkdownEditor';
+import { TipTapEditor } from '@/components/editor/TipTapEditor';
 import { MediaUploader } from '@/components/media/MediaUploader';
 import Image from 'next/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs-primitive";
+import { formatDistanceToNow } from 'date-fns';
 
 interface BlogSummary {
   id: string;
@@ -97,7 +99,20 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
   };
 
   const insertContent = (text: string) => {
+    // Insert at cursor position would be ideal, but for now we append.
     setForm(prev => ({ ...prev, markdown: prev.markdown + '\n' + text }));
+  };
+
+  const insertVideo = () => {
+    const url = prompt('Enter YouTube or Vimeo URL:');
+    if (!url) return;
+    // Simple embed logic
+    let embed = url;
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+      embed = `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="rounded-xl my-6"></iframe>`;
+    }
+    insertContent(`\n${embed}\n`);
   };
 
   const handleAssistFields = async () => {
@@ -179,7 +194,7 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
       if (res.ok && data.markdown) {
         insertContent('\n' + data.markdown + '\n');
       }
-    } catch {}
+    } catch { }
   };
 
   const handleSubmit = async (saveAsStatus?: string) => {
@@ -343,285 +358,359 @@ export function BlogCreatorStudio({ recentBlogs: initialBlogs }: BlogCreatorStud
   const seoTitle = form.seoTitle || `${form.title || form.topic || 'Blog'} | AdaptIQ Blog`;
   const seoDescription = form.seoDescription || form.callToAction || 'AI-enhanced blog';
 
-  return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">{editingSlug ? 'Editing Blog' : 'Blog Studio'}</h2>
-            <p className="text-sm text-slate-500">Generate editorial pieces with AI, optimize for SEO, and ship marketing CTAs.</p>
-          </div>
-          <div className="flex gap-2 text-sm">
-            {editingSlug ? (
-              <Button variant="outline" size="sm" onClick={resetForm}>Cancel Edit</Button>
-            ) : (
-              <>
-                <Button variant={mode === 'ai' ? 'inverse' : 'outline'} size="sm" onClick={() => setMode('ai')}>
-                  AI Article
-                </Button>
-                <Button variant={mode === 'manual' ? 'inverse' : 'outline'} size="sm" onClick={() => setMode('manual')}>
-                  Manual Markdown
-                </Button>
-              </>
-            )}
+  const recent24h = recentBlogs.filter(b => {
+    if (!b.createdAt) return false;
+    const date = new Date(b.createdAt);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    return diff < 24 * 60 * 60 * 1000;
+  });
 
-          </div>
+  return (
+    <div className="mx-auto max-w-7xl">
+      <Tabs defaultValue="write" className="w-full space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList className="grid w-[400px] grid-cols-2">
+            <TabsTrigger value="write">✍️ Writer Studio</TabsTrigger>
+            <TabsTrigger value="manage">📂 Manage All Blogs</TabsTrigger>
+          </TabsList>
+          {mode === 'ai' && !editingSlug && (
+            <Badge variant="secondary" className="bg-indigo-50 text-indigo-700">
+              ✨ AI Assistance Active
+            </Badge>
+          )}
         </div>
 
-        <div className="mt-6 grid gap-6 2xl:grid-cols-[minmax(0,0.85fr),minmax(0,1.15fr),minmax(0,0.9fr)]">
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-800">Editorial metadata</h3>
-            <div className="space-y-3">
-              <label className="space-y-1 text-sm text-slate-600">
-                Blog title
-                <input
-                  value={form.title}
-                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Why Adaptive Learning Outperforms Static Curricula"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                />
-              </label>
+        <TabsContent value="write" className="space-y-6">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              {/* AI / Manual Toggle */}
               {!editingSlug && (
-                <>
+                <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
+                  <button
+                    onClick={() => setMode('ai')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'ai' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                  >
+                    🤖 AI Auto-Draft
+                  </button>
+                  <button
+                    onClick={() => setMode('manual')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'manual' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                  >
+                    ✍️ Manual Write
+                  </button>
+                </div>
+              )}
+              <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+                <h3 className="text-sm font-semibold text-slate-800">Editorial metadata</h3>
+                <div className="space-y-3">
                   <label className="space-y-1 text-sm text-slate-600">
-                    AI topic focus
+                    Blog title
                     <input
-                      value={form.topic}
-                      onChange={(e) => setForm((prev) => ({ ...prev, topic: e.target.value }))}
-                      placeholder="Adaptive assessments for competitive exams"
+                      value={form.title}
+                      onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder="Why Adaptive Learning Outperforms Static Curricula"
                       className="w-full rounded-lg border border-slate-200 px-3 py-2"
                     />
-                    <div className="mt-2">
-                      <Button size="sm" variant="outline" onClick={handleAssistFields} disabled={assisting || !(form.topic.trim() || form.title.trim())}>
-                        {assisting ? 'Thinking…' : 'AI Auto-fill metadata'}
+                  </label>
+                  {!editingSlug && (
+                    <>
+                      <label className="space-y-1 text-sm text-slate-600">
+                        AI topic focus
+                        <input
+                          value={form.topic}
+                          onChange={(e) => setForm((prev) => ({ ...prev, topic: e.target.value }))}
+                          placeholder="Adaptive assessments for competitive exams"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        />
+                        <div className="mt-2">
+                          <Button size="sm" variant="outline" onClick={handleAssistFields} disabled={assisting || !(form.topic.trim() || form.title.trim())}>
+                            {assisting ? 'Thinking…' : 'AI Auto-fill metadata'}
+                          </Button>
+                        </div>
+                      </label>
+                      <label className="space-y-1 text-sm text-slate-600">
+                        Target audience
+                        <input
+                          value={form.audience}
+                          onChange={(e) => setForm((prev) => ({ ...prev, audience: e.target.value }))}
+                          placeholder="Heads of L&D, high school students, etc."
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        />
+                      </label>
+                      <label className="space-y-1 text-sm text-slate-600">
+                        Tone
+                        <input
+                          value={form.tone}
+                          onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
+                          placeholder="Thought leadership, conversational, data-driven"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        />
+                      </label>
+                      <label className="space-y-1 text-sm text-slate-600">
+                        Call to action
+                        <input
+                          value={form.callToAction}
+                          onChange={(e) => setForm((prev) => ({ ...prev, callToAction: e.target.value }))}
+                          placeholder="Invite readers to book a demo"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        />
+                      </label>
+                      <label className="space-y-1 text-sm text-slate-600">
+                        Keywords
+                        <input
+                          value={form.keywords}
+                          onChange={(e) => setForm((prev) => ({ ...prev, keywords: e.target.value }))}
+                          placeholder="adaptive learning, ai quiz, netlify"
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        />
+                      </label>
+                    </>
+                  )}
+
+                  {mode === 'ai' && !editingSlug && (
+                    <div className="pt-2">
+                      <Button
+                        onClick={handleGeneratePreview}
+                        disabled={generatingPreview || !form.topic.trim()}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all flex items-center justify-center gap-2 py-6"
+                      >
+                        {generatingPreview ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Generating High-Quality Draft...
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-lg">✨</span>
+                            Generate Professional AI Article
+                          </>
+                        )}
+                      </Button>
+                      <p className="mt-2 text-[10px] text-slate-500 text-center italic">
+                        AI will generate a 2,000+ word, SEO-optimized, and AdSense-compliant professional draft.
+                      </p>
+                    </div>
+                  )}
+
+                  <label className="space-y-1 text-sm text-slate-600">
+                    Tags
+                    <input
+                      value={form.tags}
+                      onChange={(e) => setForm((prev) => ({ ...prev, tags: e.target.value }))}
+                      placeholder="education, adaptive learning"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                    />
+                  </label>
+
+
+
+
+
+                  <label className="space-y-1 text-sm text-slate-600">
+                    Hero Image
+                    <div className="space-y-2">
+                      <MediaUploader
+                        accept="image/*"
+                        variant="dropzone"
+                        label="Upload Hero Image"
+                        onUploadComplete={(url: string) => setForm(prev => ({ ...prev, heroImage: url }))}
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">OR</span>
+                        <input
+                          value={form.heroImage}
+                          onChange={(e) => setForm((prev) => ({ ...prev, heroImage: e.target.value }))}
+                          placeholder="https://images..."
+                          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </label>
+
+                  <div className="pt-6 border-t border-slate-100">
+                    <label className="text-sm font-semibold text-slate-800 mb-2 block">Attached Resources</label>
+                    <div className="space-y-2">
+                      {resources.map((r, i) => (
+                        <div key={i} className="flex gap-2">
+                          <input
+                            className="flex-1 rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            placeholder="Label"
+                            value={r.label}
+                            onChange={e => {
+                              const newRes = [...resources];
+                              newRes[i].label = e.target.value;
+                              setResources(newRes);
+                            }}
+                          />
+                          <input
+                            className="flex-[2] rounded-md border border-slate-200 px-2 py-1 text-xs"
+                            placeholder="URL"
+                            value={r.url}
+                            onChange={e => {
+                              const newRes = [...resources];
+                              newRes[i].url = e.target.value;
+                              setResources(newRes);
+                            }}
+                          />
+                          <button onClick={() => setResources(resources.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500">×</button>
+                        </div>
+                      ))}
+                      <Button size="sm" variant="ghost" className="text-xs text-indigo-600 h-auto p-0 hover:bg-transparent" onClick={() => setResources([...resources, { label: '', url: '' }])}>
+                        + Add Resource
                       </Button>
                     </div>
-                  </label>
-                  <label className="space-y-1 text-sm text-slate-600">
-                    Target audience
-                    <input
-                      value={form.audience}
-                      onChange={(e) => setForm((prev) => ({ ...prev, audience: e.target.value }))}
-                      placeholder="Heads of L&D, high school students, etc."
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                  <label className="space-y-1 text-sm text-slate-600">
-                    Tone
-                    <input
-                      value={form.tone}
-                      onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
-                      placeholder="Thought leadership, conversational, data-driven"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                  <label className="space-y-1 text-sm text-slate-600">
-                    Call to action
-                    <input
-                      value={form.callToAction}
-                      onChange={(e) => setForm((prev) => ({ ...prev, callToAction: e.target.value }))}
-                      placeholder="Invite readers to book a demo"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                  <label className="space-y-1 text-sm text-slate-600">
-                    Keywords
-                    <input
-                      value={form.keywords}
-                      onChange={(e) => setForm((prev) => ({ ...prev, keywords: e.target.value }))}
-                      placeholder="adaptive learning, ai quiz, netlify"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                    />
-                  </label>
-                </>
-              )}
-
-              {mode === 'ai' && !editingSlug && (
-                <div className="pt-2">
-                  <Button
-                    onClick={handleGeneratePreview}
-                    disabled={generatingPreview || !form.topic.trim()}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all flex items-center justify-center gap-2 py-6"
-                  >
-                    {generatingPreview ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Generating High-Quality Draft...
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-lg">✨</span>
-                        Generate Professional AI Article
-                      </>
-                    )}
-                  </Button>
-                  <p className="mt-2 text-[10px] text-slate-500 text-center italic">
-                    AI will generate a 2,000+ word, SEO-optimized, and AdSense-compliant professional draft.
-                  </p>
+                  </div>
                 </div>
-              )}
+              </section>
 
-              <label className="space-y-1 text-sm text-slate-600">
-                Tags
-                <input
-                  value={form.tags}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tags: e.target.value }))}
-                  placeholder="education, adaptive learning"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                />
-              </label>
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold text-slate-800">Content editor</h3>
 
-
-
-
-
-              <label className="space-y-1 text-sm text-slate-600">
-                Hero Image
-                <div className="space-y-2">
+                <div className="flex gap-2 items-center flex-wrap border-b border-slate-100 pb-2">
+                  <span className="text-xs font-semibold text-slate-500 mr-2">Insert:</span>
                   <MediaUploader
+                    label="📷 Image"
                     accept="image/*"
-                    variant="dropzone"
-                    label="Upload Hero Image"
-                    onUploadComplete={(url: string) => setForm(prev => ({ ...prev, heroImage: url }))}
+                    onUploadComplete={async (url: string, name: string) => {
+                      insertContent(`![${name}](${url})`);
+                      await enhanceWithMedia('image', url, name);
+                    }}
                   />
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">OR</span>
-                    <input
-                      value={form.heroImage}
-                      onChange={(e) => setForm((prev) => ({ ...prev, heroImage: e.target.value }))}
-                      placeholder="https://images..."
-                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    />
-                  </div>
+                  <MediaUploader
+                    label="📄 PDF"
+                    accept="application/pdf"
+                    onUploadComplete={async (url: string, name: string) => {
+                      insertContent(`\n[PDF: ${name}](${url})\n`);
+                      await enhanceWithMedia('pdf', url, name);
+                    }}
+                  />
+                  <Button size="sm" variant="outline" onClick={insertVideo}>
+                    🎥 Video
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleImproveContent} disabled={improving || !form.markdown.trim()}>
+                    {improving ? 'Improving…' : 'Improve with AI'}
+                  </Button>
                 </div>
-              </label>
-            </div>
-          </section>
 
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-800">Content editor</h3>
-
-            <div className="flex gap-2 items-center flex-wrap border-b border-slate-100 pb-2">
-              <span className="text-xs font-semibold text-slate-500 mr-2">Insert:</span>
-              <MediaUploader
-                label="📷 Image"
-                accept="image/*"
-                onUploadComplete={async (url: string, name: string) => {
-                  insertContent(`![${name}](${url})`);
-                  await enhanceWithMedia('image', url, name);
-                }}
-              />
-              <MediaUploader
-                label="📄 PDF"
-                accept="application/pdf"
-                onUploadComplete={async (url: string, name: string) => {
-                  insertContent(`\n[PDF: ${name}](${url})\n`);
-                  await enhanceWithMedia('pdf', url, name);
-                }}
-              />
-              <Button size="sm" variant="outline" onClick={handleImproveContent} disabled={improving || !form.markdown.trim()}>
-                {improving ? 'Improving…' : 'Improve with AI'}
-              </Button>
-            </div>
-
-            <MarkdownEditor
-              value={form.markdown}
-              onChange={(next) => setForm((prev) => ({ ...prev, markdown: next }))}
-              height={500}
-              placeholder="Start writing your blog…"
-            />
-            {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
-            <div className="flex gap-3">
-              <Button onClick={() => handleSubmit('draft')} disabled={!canSubmit || loading} variant="outline">
-                {loading ? 'Saving…' : 'Save Draft'}
-              </Button>
-              <Button disabled={!canSubmit || loading} onClick={() => handleSubmit('published')}>
-                {editingSlug ? 'Update & Publish' : 'Publish'}
-              </Button>
-            </div>
-          </section>
-
-          <aside className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-700">Live preview</h3>
-              <div className="mt-3 space-y-2">
-                <div>
-                  <h4 className="text-lg font-semibold text-slate-900">{form.title || form.topic || 'Blog title'}</h4>
-                  <p className="text-xs text-slate-500">{form.audience || 'Audience TBD'} • {form.tone}</p>
+                <TipTapEditor
+                  value={form.markdown}
+                  onChange={(html) => setForm((prev) => ({ ...prev, markdown: html }))}
+                  height={500}
+                  placeholder="Start writing your blog…"
+                />
+                {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+                <div className="flex gap-3">
+                  <Button onClick={() => handleSubmit('draft')} disabled={!canSubmit || loading} variant="outline">
+                    {loading ? 'Saving…' : 'Save Draft'}
+                  </Button>
+                  <Button disabled={!canSubmit || loading} onClick={() => handleSubmit('published')}>
+                    {editingSlug ? 'Update & Publish' : 'Publish'}
+                  </Button>
                 </div>
-                {form.heroImage && (
-                  <div className="overflow-hidden rounded-lg border border-slate-200 relative h-32 w-full">
-                    {form.heroImage && (
-                      <Image src={form.heroImage} alt="Hero" fill className="object-cover" />
-                    )}
+              </section>
+            </div>
+
+            <aside className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-700">Live preview</h3>
+                <div className="mt-3 space-y-2">
+                  <div>
+                    <h4 className="text-lg font-semibold text-slate-900">{form.title || form.topic || 'Blog title'}</h4>
+                    <p className="text-xs text-slate-500">{form.audience || 'Audience TBD'} • {form.tone}</p>
                   </div>
-                )}
-                <p className="text-sm text-slate-600">
-                  {form.markdown.slice(0, 220) || 'Markdown preview will appear here once provided.'}
-                  {form.markdown.length > 220 && '…'}
-                </p>
-                <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-500">
-                  <div className="font-semibold text-slate-700">SEO Preview</div>
-                  <div className="text-slate-900">{seoTitle}</div>
-                  <div>{seoDescription}</div>
-                  <div className="text-slate-400">https://adaptiq.com/blog/{(form.title || form.topic || 'new-post').toLowerCase().replace(/[^a-z0-9]+/g, '-')}</div>
+                  {form.heroImage && (
+                    <div className="overflow-hidden rounded-lg border border-slate-200 relative h-32 w-full">
+                      {form.heroImage && (
+                        <Image src={form.heroImage} alt="Hero" fill className="object-cover" />
+                      )}
+                    </div>
+                  )}
+                  <p className="text-sm text-slate-600">
+                    {form.markdown.slice(0, 220) || 'Markdown preview will appear here once provided.'}
+                    {form.markdown.length > 220 && '…'}
+                  </p>
+                  <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-500">
+                    <div className="font-semibold text-slate-700">SEO Preview</div>
+                    <div className="text-slate-900">{seoTitle}</div>
+                    <div>{seoDescription}</div>
+                    <div className="text-slate-400">https://adaptiq.com/blog/{(form.title || form.topic || 'new-post').toLowerCase().replace(/[^a-z0-9]+/g, '-')}</div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Recent blogs</h3>
-              {recentBlogs.length === 0 ? (
-                <p className="mt-3 text-xs text-slate-500">No blog posts yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {recentBlogs.map((blog) => (
-                    <div
-                      key={blog.id}
-                      className={`
-                            rounded-lg border px-3 py-2 transition-colors
-                            ${blog.status === 'published'
-                          ? 'border-green-200 bg-green-50/50'
-                          : 'border-slate-100 hover:bg-slate-50'}
-                        `}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm font-medium text-slate-800 line-clamp-1" title={blog.title}>{blog.title}</div>
-                        <Badge variant={blog.status === 'published' ? 'success' : 'default'} size="sm">
-                          {blog.status || 'draft'}
-                        </Badge>
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="text-[10px] text-slate-400">
-                          {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : ''}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Recent (24h)</h3>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {recent24h.length === 0 ? (
+                    <p className="mt-3 text-xs text-slate-500">No blogs created today.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {recent24h.map((blog) => (
+                        <div
+                          key={blog.id}
+                          className={`rounded-lg border px-3 py-2 transition-colors cursor-pointer hover:bg-slate-50`}
+                          onClick={() => loadBlog(blog.slug!)}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="font-medium text-slate-900 text-xs truncate w-32">{blog.title}</div>
+                            <Badge variant={blog.status === 'published' ? 'success' : 'default'} size="sm" className="text-[10px] px-1 py-0 h-4">
+                              {blog.status}
+                            </Badge>
+                          </div>
+                          <div className="text-[10px] text-slate-400">{formatDistanceToNow(new Date(blog.createdAt || Date.now()), { addSuffix: true })}</div>
                         </div>
-                        <div className="flex gap-2">
-                          {blog.slug && (
-                            <>
-                              <button className="text-[10px] text-slate-500 hover:text-blue-600 underline" onClick={() => handleEdit(blog)}>
-                                Edit
-                              </button>
-                              <button
-                                className="text-[10px] text-slate-500 hover:text-purple-600 underline"
-                                onClick={() => handleToggleStatus(blog)}
-                              >
-                                {blog.status === 'published' ? 'Draft' : 'Publish'}
-                              </button>
-                              <button className="text-[10px] text-slate-500 hover:text-red-600 underline" onClick={() => handleDelete(blog.slug!)}>
-                                Delete
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+              </div>
+            </aside>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="manage" className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">All Blogs</h3>
+              <p className="text-sm text-slate-500">Manage, edit, and track all your content.</p>
             </div>
-          </aside>
-        </div>
-      </div>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {recentBlogs.map((blog) => (
+              <div key={blog.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className={`w-2 h-2 rounded-full ${blog.status === 'published' ? 'bg-green-500' : 'bg-slate-300'}`} />
+                  <div>
+                    <h4 className="font-medium text-slate-900">{blog.title}</h4>
+                    <div className="text-xs text-slate-500 flex gap-2">
+                      <span>/{blog.slug}</span>
+                      <span>• {new Date(blog.createdAt || '').toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a href={`/blog/${blog.slug}`} target="_blank" className="text-xs text-slate-500 hover:text-indigo-600 hover:underline px-2">View</a>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const trigger = document.querySelector('[value="write"]') as HTMLElement;
+                    if (trigger) trigger.click();
+                    handleEdit({ ...blog, id: blog.id || '' });
+                  }}>
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {recentBlogs.length === 0 && (
+            <div className="p-12 text-center text-slate-400">
+              No blogs found. Start writing!
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {result && !editingSlug && (
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-6 shadow-sm">

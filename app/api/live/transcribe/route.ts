@@ -6,9 +6,7 @@ import OpenAI from 'openai';
 import { ChatOpenAI } from '@langchain/openai';
 import { z } from 'zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,6 +35,8 @@ export async function POST(req: NextRequest) {
 
     const res = await fetch(recording.recordingUrl);
     const blob = await res.blob();
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const transcriptResp = await openai.audio.transcriptions.create({
       file: blob as any,

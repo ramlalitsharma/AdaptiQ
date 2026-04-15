@@ -1,5 +1,6 @@
 // Simple MongoDB connection test - no custom configuration
 require('dotenv').config({ path: '.env.local' });
+/* eslint-disable */
 const { MongoClient } = require('mongodb');
 
 console.log('=== MongoDB Connection Test ===');

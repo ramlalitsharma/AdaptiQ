@@ -26,6 +26,9 @@ export interface User {
     difficultyPreference: 'easy' | 'medium' | 'hard' | 'adaptive';
     language: string;
   };
+  referralCode?: string;
+  referredBy?: string;
+  referralCount?: number;
 }
 
 export interface UserProgress {

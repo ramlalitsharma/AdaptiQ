@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import Hls from 'hls.js';
 
 interface MuxVideoPlayerProps {
@@ -91,20 +92,22 @@ export function MuxVideoPlayer({
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support (Safari)
       video.src = hlsUrl;
-      setIsLoading(false);
+      video.addEventListener('canplay', () => setIsLoading(false));
       if (autoplay) {
         video.play().catch((e) => console.error('Autoplay failed:', e));
       }
     } else {
-      setError('HLS is not supported in this browser');
+      setTimeout(() => setError('HLS is not supported in this browser'), 0);
     }
-  }, [playbackId, autoplay, onProgress, onEnded]);
+  }, [playbackId, autoplay, onProgress, onEnded, baseUrl, provider]);
 
   if (error) {
     return (
       <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center">
         <div className="text-center text-white">
-          <p className="text-lg mb-2">⚠️</p>
+          <div className="flex justify-center mb-2">
+            <AlertTriangle className="h-6 w-6 text-red-400" />
+          </div>
           <p>{error}</p>
         </div>
       </div>
@@ -131,4 +134,3 @@ export function MuxVideoPlayer({
     </div>
   );
 }
-

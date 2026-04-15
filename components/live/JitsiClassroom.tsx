@@ -38,6 +38,7 @@ export function JitsiClassroom({
   const [joinStalled, setJoinStalled] = useState(false);
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
+  const joinedRef = useRef(false);
 
   useEffect(() => {
     // Load Jitsi Meet external API
@@ -135,6 +136,7 @@ export function JitsiClassroom({
 
         apiRef.current.addEventListener('videoConferenceJoined', () => {
           setIsJoined(true);
+          joinedRef.current = true;
           setJoinStalled(false);
           // Track attendance - user joined
           fetch('/api/live/attendance', {
@@ -158,7 +160,7 @@ export function JitsiClassroom({
     document.body.appendChild(script);
 
     const t = setTimeout(() => {
-      if (!isJoined) setJoinStalled(true);
+      if (!joinedRef.current) setJoinStalled(true);
     }, 8000);
 
     return () => {
@@ -421,7 +423,7 @@ export function JitsiClassroom({
       {showSidebar && (
         <div className="w-80">
           {isModerator ? (
-            <InstructorPanel roomId={roomName} jitsiApi={apiRef.current} />
+             jitsiApiInstance && <InstructorPanel roomId={roomName} jitsiApi={jitsiApiInstance} />
           ) : (
             <StudentSidebar roomId={roomName} isInstructor={false} />
           )}

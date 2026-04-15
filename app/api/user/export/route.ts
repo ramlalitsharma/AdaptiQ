@@ -1,46 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
-
-export const runtime = 'nodejs';
+import { ObjectId } from 'mongodb';
 
 export async function GET(req: NextRequest) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const db = await getDatabase();
-    
-    // Collect all user data (GDPR compliant export)
-    const [user, progress, bookmarks, completions] = await Promise.all([
-      db.collection('users').findOne({ $or: [{ clerkId: userId }, { _id: userId }] }),
-      db.collection('userProgress').find({ userId }).toArray(),
-      db.collection('bookmarks').find({ userId }).toArray(),
-      db.collection('courseCompletions').find({ userId }).toArray(),
-    ]);
-
-    // Remove sensitive data
-    if (user) {
-      delete (user as any).password;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const db = await getDatabase();
+
+    // Gather all user-related data
+    const [user, enrollments, stats, activity, paths] = await Promise.all([
+      db.collection('users').findOne({ clerkId: userId }),
+      db.collection('enrollments').find({ userId }).toArray(),
+      db.collection('userStats').findOne({ userId }),
+      db.collection('activityFeed').find({ userId }).limit(100).toArray(),
+      db.collection('learningPaths').find({ authorId: userId }).toArray()
+    ]);
+
     const exportData = {
-      user: user || {},
-      progress: progress || [],
-      bookmarks: bookmarks || [],
-      completions: completions || [],
-      exportedAt: new Date().toISOString(),
+      profile: {
+        id: user?.clerkId,
+        name: user?.name,
+        email: user?.email,
+        role: user?.role,
+        createdAt: user?.createdAt
+      },
+      learningHistory: {
+        totalEnrollments: enrollments.length,
+        courses: enrollments.map(e => ({
+          courseId: e.courseId,
+          progress: e.progress,
+          status: e.status,
+          joinedAt: e.createdAt
+        })),
+        stats: stats || {}
+      },
+      content: {
+        learningPathsCreated: paths.length,
+        recentActivity: activity.map(a => ({
+          type: a.type,
+          content: a.content,
+          date: a.createdAt
+        }))
+      },
+      exportTimestamp: new Date().toISOString(),
+      platform: "AdaptiQ LMS"
     };
 
-    // Return as JSON (can be converted to CSV/PDF on frontend)
     return NextResponse.json(exportData, {
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="adaptiq-data-export-${Date.now()}.json"`,
-      },
+        'Content-Disposition': `attachment; filename="adaptiq-data-export-${userId}.json"`,
+        'Content-Type': 'application/json'
+      }
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: 'Export failed', message: e.message }, { status: 500 });
+
+  } catch (error: any) {
+    console.error('GDPR Export Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to export data', message: error.message },
+      { status: 500 }
+    );
   }
 }
-

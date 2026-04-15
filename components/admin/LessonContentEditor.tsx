@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
+import { TipTapEditor } from '@/components/editor/TipTapEditor';
 
 interface LessonEditorProps {
     lesson: {
@@ -12,6 +13,7 @@ interface LessonEditorProps {
         videoUrl?: string;
         content?: string;
         documentUrl?: string;
+        videoChapters?: Array<{ title: string; time: number }>;
     };
     onChange: (field: string, value: any) => void;
     onClose: () => void;
@@ -51,8 +53,8 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                             <button
                                 onClick={() => handleContentTypeChange('video-upload')}
                                 className={`p-4 rounded-xl border-2 transition-all text-left ${contentType === 'video-upload'
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-slate-200 hover:border-blue-200'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-slate-200 hover:border-blue-200'
                                     }`}
                             >
                                 <div className="text-2xl mb-2">📤</div>
@@ -63,8 +65,8 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                             <button
                                 onClick={() => handleContentTypeChange('video-link')}
                                 className={`p-4 rounded-xl border-2 transition-all text-left ${contentType === 'video-link'
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-slate-200 hover:border-blue-200'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-slate-200 hover:border-blue-200'
                                     }`}
                             >
                                 <div className="text-2xl mb-2">🔗</div>
@@ -75,8 +77,8 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                             <button
                                 onClick={() => handleContentTypeChange('live-stream')}
                                 className={`p-4 rounded-xl border-2 transition-all text-left ${contentType === 'live-stream'
-                                        ? 'border-indigo-500 bg-indigo-50'
-                                        : 'border-slate-200 hover:border-indigo-200'
+                                    ? 'border-indigo-500 bg-indigo-50'
+                                    : 'border-slate-200 hover:border-indigo-200'
                                     }`}
                             >
                                 <div className="text-2xl mb-2">🎥</div>
@@ -87,8 +89,8 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                             <button
                                 onClick={() => handleContentTypeChange('text-entry')}
                                 className={`p-4 rounded-xl border-2 transition-all text-left ${contentType === 'text-entry'
-                                        ? 'border-emerald-500 bg-emerald-50'
-                                        : 'border-slate-200 hover:border-emerald-200'
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-slate-200 hover:border-emerald-200'
                                     }`}
                             >
                                 <div className="text-2xl mb-2">📝</div>
@@ -99,8 +101,8 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                             <button
                                 onClick={() => handleContentTypeChange('pdf-doc')}
                                 className={`p-4 rounded-xl border-2 transition-all text-left ${contentType === 'pdf-doc'
-                                        ? 'border-amber-500 bg-amber-50'
-                                        : 'border-slate-200 hover:border-amber-200'
+                                    ? 'border-amber-500 bg-amber-50'
+                                    : 'border-slate-200 hover:border-amber-200'
                                     }`}
                             >
                                 <div className="text-2xl mb-2">📄</div>
@@ -111,8 +113,8 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                             <button
                                 onClick={() => handleContentTypeChange('interactive-quiz')}
                                 className={`p-4 rounded-xl border-2 transition-all text-left ${contentType === 'interactive-quiz'
-                                        ? 'border-purple-500 bg-purple-50'
-                                        : 'border-slate-200 hover:border-purple-200'
+                                    ? 'border-purple-500 bg-purple-50'
+                                    : 'border-slate-200 hover:border-purple-200'
                                     }`}
                             >
                                 <div className="text-2xl mb-2">❓</div>
@@ -152,6 +154,77 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                             </div>
                         )}
 
+                        {/* Video Chapters Editor */}
+                        {(contentType === 'video-upload' || contentType === 'video-link') && (
+                            <div className="mt-8 pt-6 border-t border-slate-100">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h4 className="font-bold text-slate-900">Video Chapters</h4>
+                                        <p className="text-xs text-slate-500">Help students navigate through specific topics in your video.</p>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            const current = lesson.videoChapters || [];
+                                            onChange('videoChapters', [...current, { title: '', time: 0 }]);
+                                        }}
+                                    >
+                                        + Add Chapter
+                                    </Button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {(lesson.videoChapters || []).map((chapter, idx) => (
+                                        <div key={idx} className="flex gap-3 items-start group">
+                                            <div className="flex-1">
+                                                <Input
+                                                    value={chapter.title}
+                                                    onChange={(e) => {
+                                                        const newChapters = [...(lesson.videoChapters || [])];
+                                                        newChapters[idx].title = e.target.value;
+                                                        onChange('videoChapters', newChapters);
+                                                    }}
+                                                    placeholder="Chapter Title (e.g., Introduction)"
+                                                    className="h-9"
+                                                />
+                                            </div>
+                                            <div className="w-24">
+                                                <Input
+                                                    type="number"
+                                                    value={chapter.time}
+                                                    onChange={(e) => {
+                                                        const newChapters = [...(lesson.videoChapters || [])];
+                                                        newChapters[idx].time = parseInt(e.target.value) || 0;
+                                                        onChange('videoChapters', newChapters);
+                                                    }}
+                                                    placeholder="Sec"
+                                                    className="h-9"
+                                                />
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => {
+                                                    const newChapters = (lesson.videoChapters || []).filter((_, i) => i !== idx);
+                                                    onChange('videoChapters', newChapters);
+                                                }}
+                                            >
+                                                ✕
+                                            </Button>
+                                        </div>
+                                    ))}
+
+                                    {(!lesson.videoChapters || lesson.videoChapters.length === 0) && (
+                                        <div className="py-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
+                                            <p className="text-sm text-slate-400">No chapters defined yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {contentType === 'live-stream' && (
                             <div className="space-y-4">
                                 <label className="block text-sm font-medium text-slate-700">Live Session Details</label>
@@ -175,14 +248,13 @@ export function LessonContentEditor({ lesson, onChange, onClose }: LessonEditorP
                         {contentType === 'text-entry' && (
                             <div className="space-y-4">
                                 <label className="block text-sm font-medium text-slate-700">Lesson Content</label>
-                                <textarea
+                                <TipTapEditor
                                     value={lesson.content || ''}
-                                    onChange={(e) => onChange('content', e.target.value)}
-                                    placeholder="Write your lesson content here... (Markdown supported)"
-                                    rows={10}
-                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-sm"
+                                    onChange={(next) => onChange('content', next)}
+                                    height={300}
+                                    placeholder="Write your lesson content here..."
                                 />
-                                <p className="text-xs text-slate-500">Supports Markdown formatting</p>
+                                <p className="text-xs text-slate-500">Rich text editor enabled</p>
                             </div>
                         )}
 

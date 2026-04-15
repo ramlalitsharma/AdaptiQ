@@ -12,47 +12,35 @@ export async function generateBlogMarkdownAI(params: GenerateBlogParams) {
   const { topic, audience, tone, callToAction, keywords } = params;
   if (!openai) throw new Error('OPENAI_API_KEY not configured');
 
-  const systemPrompt = `You are an expert professional blog writer. Your task is to write high-quality, comprehensive, and engaging blog articles that are AdSense compliant (long-form, original, valuable content).
-    - Write in pure Markdown format.
-    - DO NOT include YAML frontmatter (--- title: ... ---).
-    - DO NOT wrap the output in markdown code blocks like \`\`\`markdown.
-    - The output should be the raw markdown content only.`;
+  const systemPrompt = `You are a world-class editorial AI, akin to a senior editor at The Atlantic, Wired, or Harvard Business Review. Your goal is to produce deep, authoritative, and brilliantly structured articles that captivate readers and rank highly on search engines.
+    - Write in rich, semantic Markdown.
+    - DO NOT include YAML frontmatter.
+    - DO NOT use generic AI tropes (e.g., "In today's fast-paced world").
+    - Prioritize unique insights, data-driven arguments, and compelling storytelling.`;
 
-  const prompt = `Write a comprehensive, professional, and high-authority blog article optimized for search engines (SEO) and AdSense compliance.
+  const prompt = `Write a premium-quality, long-form feature article.
 
 Topic: ${topic}
-${audience ? `Target Audience: ${audience}
-` : ''}${tone ? `Tone: ${tone} (Authoritative, Insightful, and Engaging)
-` : ''}${callToAction ? `Call to Action: ${callToAction}
-` : ''}${keywords && keywords.length ? `Keywords: ${keywords.join(', ')}
+${audience ? `Target Audience: High-level stakeholders, ${audience}
+` : ''}${tone ? `Tone: ${tone} (Sophisticated, Authoritative, yet Accessible)
+` : ''}${callToAction ? `Strategic Goal: ${callToAction}
+` : ''}${keywords && keywords.length ? `SEO Keywords: ${keywords.join(', ')}
 ` : ''}
 
-STRUCTURE & REQUIREMENTS:
-1. Length: Minimum 2,000 words. Provide deeply researched, original content.
-2. EEAT Principles: Demonstrate Expertise, Experience, Authoritativeness, and Trustworthiness.
-3. Content Outline:
-   - # [Main Title]
-   - **Table of Contents** (Quick navigation)
-   - **Executive Summary/Key Takeaways** (Highlights for the reader)
-   - ## Introduction (Include a hook and context)
-   - ## [Major Section 1: Foundations/Definitions]
-   - ## [Major Section 2: In-Depth Analysis & Strategies]
-   - ## Case Studies / Real-World Applications
-   - ## Future Trends and expert Insights
-   - ## Conclusion & Next Steps
-   - ## Frequently Asked Questions (H2, with 5 specific, high-value questions)
-4. Formatting:
-   - Use H1 (#) for title only.
-   - Use H2 (##) for main chapters.
-   - Use H3 (###) for detailed sub-topics.
-   - Use bold text for emphasis and bullet points for lists.
-   - Use short paragraphs (max 3 sentences) to ensure mobile-friendliness.
-5. AdSense Compliance:
-   - Focus on original value (no generic filler).
-   - Maintain professional journalistic standards.
-   - Ensure the content is helpful, reliable, and people-first.
+STRUCTURE & QUALITY REQUIREMENTS:
+1. **Title**: Create a compelling, click-worthy (but not clickbait) H1 title.
+2. **Executive Summary**: A TL;DR block at the start (use blockquote >).
+3. **Introduction**: Start with a story, a startling statistic, or a contrarian take. NO fluff.
+4. **Body**:
+   - Use H2 for major sections and H3 for subsections.
+   - Include specific real-world examples, metaphors, and analogies.
+   - Use short, punchy paragraphs mixed with deeper analysis.
+   - **Crucial**: Include a "Key Takeaway" box at the end of each major section (use bold or italics).
+5. **Conclusion**: Don't just summarize. Provide a forward-looking perspective or a call to innovation.
+6. **FAQ**: 5 high-value questions that answer specific user intent (Schema-ready).
 
-IMPORTANT: Return ONLY the raw markdown content. Do NOT include frontmatter or code fences.`;
+Ensure the content is AdSense compliant: High value, original, and safe.
+Return ONLY raw markdown.`;
 
   const resp = await openai.chat.completions.create({
     model: 'gpt-4o-mini',

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -226,10 +227,12 @@ function CourseCard({ course }: { course: any }) {
     <Link href={`/courses/${course.slug}`}>
       <div className="group relative space-y-6">
         <div className="aspect-[4/5] bg-[#161b22] rounded-[2.5rem] overflow-hidden border border-white/5 relative">
-          <img
+          <Image
             src={course.thumbnail || "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070"}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80"
             alt={course.title}
+            fill
+            unoptimized
+            className="object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-transparent to-transparent"></div>
 

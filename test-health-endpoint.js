@@ -1,6 +1,7 @@
 // Test script for health endpoint
 // Run with: node test-health-endpoint.js
 
+/* eslint-disable */
 const http = require('http');
 
 const options = {
