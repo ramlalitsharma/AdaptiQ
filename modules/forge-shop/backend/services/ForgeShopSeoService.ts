@@ -16,4 +16,8 @@ export class ForgeShopSeoService extends SeoModule {
       },
     };
   }
+
+  buildPageMetadata(params: Record<string, any>): Metadata {
+    return this.buildShopIndexMetadata(params.locale || 'en');
+  }
 }

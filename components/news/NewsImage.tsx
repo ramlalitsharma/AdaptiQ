@@ -25,22 +25,29 @@ export function NewsImage({
     (imageSrc.startsWith('/uploads') || /^https?:\/\//i.test(imageSrc));
 
   return (
-    <div className={`relative overflow-hidden bg-slate-900/10 ${className || ''}`}>
+    <div className={`relative overflow-hidden bg-[#0a0a0b] group ${className || ''}`}>
       <Image
         src={imageSrc}
         alt={alt || 'News Image'}
         fill
-        className={`object-cover transition-opacity duration-500 ${error ? 'opacity-40' : 'opacity-100'}`}
+        className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${error ? 'opacity-50 grayscale' : 'opacity-100'}`}
         onError={() => {
-          console.warn(`[NewsImage] Failed to load: ${src}. Rolling back to placeholder.`);
+          console.warn(`[NewsImage] Image recovery initiated for: ${src}`);
           setError(true);
         }}
         unoptimized={shouldSkipOptimization}
         {...props}
       />
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none">
-          <span className="text-[8px] font-black uppercase tracking-tighter text-white/40">Source Offline</span>
+      
+      {/* Premium Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+      
+      {error && !src?.startsWith('data:image/') && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/40 backdrop-blur-[2px]">
+          <div className="w-8 h-[1px] bg-zinc-700 mb-2" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+            Terai Bureau
+          </span>
         </div>
       )}
     </div>

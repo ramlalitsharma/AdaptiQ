@@ -42,6 +42,7 @@ export async function NewsLandingPage({
       maintenanceMode: 'degraded' as 'healthy' | 'degraded',
     },
     networkAnalytics: undefined as any,
+    availableCountries: [],
     availableCategories: [],
     totalCount: 0,
     page: 1,

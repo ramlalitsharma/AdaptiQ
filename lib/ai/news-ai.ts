@@ -203,44 +203,48 @@ export const NewsAIService = {
         const hash = headline.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         
         const summaryTemplates = [
-            `Key developments are emerging in ${params.region} regarding ${headline}, as local and international sources provide new insights into the evolving situation.`,
-            `${headline} has become a focal point of recent updates from the ${params.region} desk, indicating a significant shift in the regional landscape.`,
-            `Reports from across ${params.region} highlight critical updates in ${headline}, providing a clearer picture of the current state of affairs and potential future directions.`,
-            `As major events unfold in ${params.region}, the situation regarding ${headline} continues to draw attention from regional analysts and global observers alike.`
+            `Current reporting from ${params.region} indicates significant developments regarding ${headline}, as the situation continues to evolve with incoming data.`,
+            `The regional desk in ${params.region} has highlighted ${headline} as a priority event, following a series of verified updates from local observers.`,
+            `Strategic analysis from ${params.region} suggests a major shift in the climate surrounding ${headline}, with long-term implications for the sector.`,
+            `As events in ${params.region} accelerate, the focus remains on ${headline}, bringing clearer perspective to the multifaceted nature of these recent reports.`
         ];
 
         const subheadlineTemplates = [
-            `Global desk dispatch from the ${params.region} region.`,
-            `Primary situational briefing: ${params.region} news desk.`,
-            `Recent developments and analysis from ${params.region}.`,
-            `Verified updates consolidated from ${params.region} field sources.`
+            `Analytical briefing from the ${params.region} desk.`,
+            `Regional intelligence report: ${params.region}.`,
+            `Developments and sectoral analysis from ${params.region}.`,
+            `Verified briefing consolidated from regional intelligence streams.`
         ];
 
         const executive_summary = summaryTemplates[hash % summaryTemplates.length];
         const subheadline = subheadlineTemplates[hash % subheadlineTemplates.length];
 
-        // Phase 27: Smart Neural Scrubber (Improved Parsing)
-        let sanitizedBody = 'Developments currently unfolding.';
+        // Phase 27: Smart Neural Scrubber (Improved Parsing for [SOURCE:] format)
+        let sanitizedBody = '<p>Developments currently unfolding.</p>';
         const raw = params.sourceMaterial || '';
 
-        if (raw.includes('TARGETED NEWS BRIEFING')) {
-            // Extract the core briefing block
-            const blocks = raw.split('---').map(b => b.trim()).filter(b => b.includes('Title:'));
+        if (raw.includes('[SOURCE:')) {
+            // Extract the core briefing blocks (split by \n\n---\n\n)
+            const blocks = raw.split('\n\n---\n\n').map(b => b.trim()).filter(b => b.includes('[SOURCE:'));
             if (blocks.length > 0) {
-                sanitizedBody = blocks.map((block, idx) => {
-                    const titleMatch = block.match(/Title:\s*(.*)/);
-                    const sourceMatch = block.match(/Source:\s*(.*)/);
-                    const contextMatch = block.match(/Context:\s*([\s\S]*)/);
+                sanitizedBody = blocks.map((block) => {
+                    // Modern format: [SOURCE: X] Title\nContext: Content\nIntelligence Snapshot: Y
+                    const sourceMatch = block.match(/\[SOURCE:\s*(.*?)\]/);
+                    const titleMatch = block.match(/\]\s*(.*)\nContext:/);
+                    const contextMatch = block.match(/Context:\s*([\s\S]*?)(?:\nIntelligence Snapshot:|$)/);
 
-                    const title = titleMatch ? titleMatch[1].trim() : 'Factual Vector';
                     const source = sourceMatch ? sourceMatch[1].trim() : 'Verified Wire';
-                    const context = contextMatch ? contextMatch[1].trim().replace(/Context:\s*/, '') : '';
+                    const title = titleMatch ? titleMatch[1].trim() : 'Factual Vector';
+                    const context = contextMatch ? contextMatch[1].trim() : '';
 
-                    return `### ${idx === 0 ? 'Primary Lead: ' : ''}${title}\n**Source:** ${source}\n\n${AdvancedScraperService.scrubMetadata(context)}`;
-                }).join('\n\n---\n\n');
+                    return `
+                        <h3>${title}</h3>
+                        <p><strong>Intelligence Source (via ${source}):</strong> ${AdvancedScraperService.scrubMetadata(context)}</p>
+                    `.trim();
+                }).join('\n');
             }
         } else if (raw.length > 100) {
-            sanitizedBody = AdvancedScraperService.scrubMetadata(raw.slice(0, 1500)) + '... [Intelligence Truncated]';
+            sanitizedBody = `<p>${AdvancedScraperService.scrubMetadata(raw.slice(0, 1500))}</p>`;
         }
 
         return {
@@ -248,7 +252,7 @@ export const NewsAIService = {
             digital_headline: `Strategic Report: ${headline}`,
             subheadline,
             executive_summary,
-            body: `## Intelligence Briefing\n\n${sanitizedBody}\n\n*Journalistic Note: This report was synthesized using the Terai Times Deterministic Sanitizer protocol due to high-traffic intelligence filtering.*`,
+            body: `${sanitizedBody}`.trim(),
             suggested_tier: 'Standard'
         };
     },

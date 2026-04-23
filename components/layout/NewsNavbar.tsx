@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { Link } from "@/lib/navigation";
 import { useLocale } from "next-intl";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
@@ -80,7 +80,8 @@ function buildNewsHref(category: string, country: string): string {
   return query ? `/news?${query}` : "/news";
 }
 
-export function NewsNavbar() {
+// Inner component that uses useSearchParams — must be inside <Suspense>
+function NewsNavbarInner() {
   const searchParams = useSearchParams();
   const { user } = useUser();
 
@@ -578,5 +579,15 @@ export function NewsNavbar() {
         </ul>
       </div>
     </header>
+  );
+}
+
+export function NewsNavbar() {
+  return (
+    <Suspense fallback={
+      <header className="relative z-40 bg-white border-b border-gray-200 dark:border-gray-800 dark:bg-[#111111] font-sans h-16" />
+    }>
+      <NewsNavbarInner />
+    </Suspense>
   );
 }

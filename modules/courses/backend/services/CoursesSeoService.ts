@@ -50,4 +50,15 @@ export class CoursesSeoService extends SeoModule {
       },
     };
   }
+
+  buildPageMetadata(params: Record<string, any>): Metadata {
+    if (params.slug) {
+      return this.buildDetailMetadata({ 
+        slug: params.slug, 
+        title: params.title, 
+        description: params.description 
+      });
+    }
+    return this.buildIndexMetadata(params.locale || 'en');
+  }
 }

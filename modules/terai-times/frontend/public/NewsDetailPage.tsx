@@ -163,9 +163,7 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
             <NewsImage src={heroImage.src} alt={news.title} className="w-full h-full" />
           </div>
           <div className="nda-hero-scrim" />
-          <div className="nda-hero-caption">
-            {cleanPresentationText(heroImage.credit)}{heroImage.caption ? ` • ${cleanPresentationText(heroImage.caption)}` : ''}
-          </div>
+          <div className="nda-hero-caption" />
         </section>
       )}
 
@@ -191,9 +189,8 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
               {news.author_id?.includes('bot') || !news.author_name ? (
                 <>
                   <span className="nda-kicker-dot" />
-                  <span className="nda-desk flex items-center gap-1.5 text-[#06b6d4]">
-                    <Bot size={12} className="animate-pulse" />
-                    Neural Intelligence
+                  <span className="nda-desk flex items-center gap-1.5 text-gray-500">
+                    Senior Bureau
                   </span>
                 </>
               ) : null}
@@ -201,7 +198,7 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
 
             <div className="flex flex-wrap items-center gap-4">
               <h1 className="nda-headline">{cleanPresentationText(news.title)}</h1>
-              {((news.tags || []).includes('multi_source_verified') || news.impact_score > 90) && (
+              {((news.tags || []).includes('multi_source_verified') || (news.impact_score && news.impact_score > 90)) && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]">
                   <ShieldCheck size={12} />
                   Verified
@@ -238,18 +235,7 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
               </div>
             </div>
 
-            {sourceLabel && (
-              <div className="nda-source-bar">
-                <span className="nda-source-label">Source</span>
-                {sourceHref ? (
-                  <a href={sourceHref} target="_blank" rel="noopener noreferrer" className="nda-source-link">
-                    {sourceLabel}
-                  </a>
-                ) : (
-                  <span className="nda-source-text">{sourceLabel}</span>
-                )}
-              </div>
-            )}
+
 
             {!heroImage.src && (
               <div className="nda-inline-cover">
@@ -258,37 +244,13 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
                   alt={news.title}
                   className="w-full h-full"
                 />
-                <div className="nda-hero-caption">
-                  {cleanPresentationText(heroImage.credit)}{heroImage.caption ? ` • ${cleanPresentationText(heroImage.caption)}` : ''}
-                </div>
+                <div className="nda-hero-caption" />
               </div>
             )}
 
-            {/* Primary Briefing Dispatch */}
-            {news.summary && (
-              <div className="nda-key-takeaways !mt-12 !mb-16 bg-white/[0.01] border border-white/5 p-8 rounded-[2rem]">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
-                  <div className="nda-key-head !mb-0 uppercase tracking-[0.3em] text-[10px] font-black text-gray-500">Dispatch Brief</div>
-                  <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
-                </div>
-                <ul>
-                  {news.summary
-                    .split('.')
-                    .map((s: string) => s.trim())
-                    .filter(Boolean)
-                    .slice(0, 3)
-                    .map((point: string, idx: number) => (
-                      <li key={`${point}-${idx}`}>{point}.</li>
-                    ))}
-                </ul>
-              </div>
-            )}
 
-            <div className="font-sans text-[#333333] dark:text-gray-300 mb-6">
-              <strong>{news.country ? `${news.country.toUpperCase()}` : 'GLOBAL'} (Terai Times) - </strong>
-              Intelligence relay established via the {countryLabel} desk.
-            </div>
+
+
 
             <AnimatedArticleBody 
               content={enhanceContentPresentation(news.content)}
@@ -313,7 +275,7 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
 
             {related.length > 0 && (
               <section className="nda-related-links">
-                <div className="nda-key-head">Related Intelligence</div>
+                <div className="nda-key-head">Related Coverage</div>
                 <ul>
                   {related.slice(0, 5).map((item: any) => (
                     <li key={item.id}>
@@ -324,11 +286,7 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
               </section>
             )}
 
-            <div className="nda-transparency">
-              <Link href={`/api/transparency/${news.id}`} target="_blank" rel="noopener noreferrer">
-                View Transparency Report
-              </Link>
-            </div>
+
 
             <CommentsGate slug={news.slug} />
           </article>

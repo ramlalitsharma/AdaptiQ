@@ -1,6 +1,6 @@
 export type NewsStatus = 'draft' | 'pending_approval' | 'published';
 
-export type NewsCategory = 'World' | 'Politics' | 'Technology' | 'Tech' | 'Finance' | 'Business' | 'Environment' | 'Culture' | 'Health' | 'Opinion' | 'Local' | 'Science';
+export type NewsCategory = 'World' | 'Politics' | 'Technology' | 'Tech' | 'Finance' | 'Business' | 'Environment' | 'Culture' | 'Health' | 'Opinion' | 'Local' | 'Science' | 'Sports' | 'Education';
 
 export type NewsCountry =
     | 'Global' | 'Nepal' | 'India' | 'USA' | 'UK'
@@ -21,6 +21,8 @@ export interface News {
     tags?: string[];
     status: NewsStatus;
     author_id: string;
+    author_name?: string;
+    author_image?: string;
     view_count: number;
     is_trending: boolean;
 

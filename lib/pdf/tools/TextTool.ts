@@ -7,9 +7,6 @@ export class TextTool extends AbstractPdfTool {
         this.canvas.defaultCursor = 'text';
     }
 
-    deactivate(): void {
-        this.canvas.defaultCursor = 'default';
-    }
 
     onMouseDown(e: TEvent): void {
         const pointer = this.canvas.getScenePoint(e.e);

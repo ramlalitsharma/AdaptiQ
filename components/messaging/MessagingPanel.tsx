@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +21,7 @@ interface Conversation {
   lastMessageAt: string;
 }
 
-export function MessagingPanel() {
+function MessagingPanelInner() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -218,3 +218,10 @@ export function MessagingPanel() {
   );
 }
 
+export function MessagingPanel() {
+  return (
+    <Suspense fallback={<div className="h-[600px] flex items-center justify-center text-slate-500">Loading messages...</div>}>
+      <MessagingPanelInner />
+    </Suspense>
+  );
+}

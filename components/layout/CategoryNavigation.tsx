@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 interface Category {
   name: string;
@@ -16,7 +17,7 @@ interface CategoryNavigationProps {
   basePath?: string;
 }
 
-export function CategoryNavigation({ categories, currentCategory, basePath = '/courses' }: CategoryNavigationProps) {
+function CategoryNavigationInner({ categories, currentCategory, basePath = '/courses' }: CategoryNavigationProps) {
   const searchParams = useSearchParams();
   const activeCategory = searchParams?.get('category') || currentCategory || null;
 
@@ -60,3 +61,10 @@ export function CategoryNavigation({ categories, currentCategory, basePath = '/c
   );
 }
 
+export function CategoryNavigation(props: CategoryNavigationProps) {
+  return (
+    <Suspense fallback={<div className="w-full h-10" />}>
+      <CategoryNavigationInner {...props} />
+    </Suspense>
+  );
+}

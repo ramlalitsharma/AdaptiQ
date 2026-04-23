@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Link, useRouter, usePathname } from "@/lib/navigation";
 import { useTranslations } from "next-intl";
 import { SignedIn, SignedOut, UserButton, SignInButton } from "@clerk/nextjs";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import {
   AlertTriangle,
   Book,
@@ -31,7 +31,8 @@ import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { getNavigationForRole, type UserRole } from "@/lib/navigation-config";
 import { TOOLS, CATEGORIES } from "@/lib/tools-registry";
 
-export function Navbar() {
+// Inner component — must be inside <Suspense> because it uses useSearchParams
+function NavbarInner() {
   const t = useTranslations('Common');
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -980,5 +981,15 @@ export function Navbar() {
         </div>
       </div>
     </header >
+  );
+}
+
+export function Navbar() {
+  return (
+    <Suspense fallback={
+      <header className="sticky top-0 z-[1000] bg-slate-50/95 dark:bg-elite-bg/95 border-b border-slate-200/90 dark:border-white/[0.06] h-16" />
+    }>
+      <NavbarInner />
+    </Suspense>
   );
 }

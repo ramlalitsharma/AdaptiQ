@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -14,7 +14,7 @@ interface ViewAsSwitcherProps {
   isSuperAdmin: boolean;
 }
 
-export function ViewAsSwitcher({ currentRole, isSuperAdmin }: ViewAsSwitcherProps) {
+function ViewAsSwitcherInner({ currentRole, isSuperAdmin }: ViewAsSwitcherProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const viewAsParam = searchParams?.get('viewAs');
@@ -206,3 +206,10 @@ export function ViewAsSwitcher({ currentRole, isSuperAdmin }: ViewAsSwitcherProp
   );
 }
 
+export function ViewAsSwitcher(props: ViewAsSwitcherProps) {
+  return (
+    <Suspense fallback={null}>
+      <ViewAsSwitcherInner {...props} />
+    </Suspense>
+  );
+}

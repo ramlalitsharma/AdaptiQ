@@ -12,10 +12,11 @@
  * - Conversion funnels
  */
 
-import { PostHog } from "posthog-js";
+import posthog from "posthog-js";
 
 // Initialize PostHog client
-let posthog: PostHog | null = null;
+// Use the default posthog instance
+const ph = posthog;
 
 /**
  * Initialize PostHog analytics
@@ -44,7 +45,7 @@ export function initializePostHog(
   }
 
   try {
-    posthog = new PostHog(apiKey, {
+    ph.init(apiKey, {
       api_host: options?.apiHost || "https://app.posthog.com",
       loaded: () => {
         console.log("PostHog loaded");
@@ -62,17 +63,17 @@ export function initializePostHog(
     return null;
   }
 
-  return posthog;
+  return ph;
 }
 
 /**
  * Get PostHog instance
  */
-export function getPostHog(): PostHog | null {
+export function getPostHog() {
   if (typeof window === "undefined") {
     return null;
   }
-  return posthog || (window as any).posthog;
+  return ph;
 }
 
 /**
@@ -588,7 +589,7 @@ export function getFeatureFlag(flagName: string): boolean | string | null {
   const ph = getPostHog();
   if (!ph) return null;
 
-  return ph.getFeatureFlag(flagName);
+  return (ph.getFeatureFlag(flagName) as any) || null;
 }
 
 /**

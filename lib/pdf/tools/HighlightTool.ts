@@ -8,6 +8,10 @@ export class HighlightTool extends AbstractPdfTool {
         this.applySettings();
     }
 
+    deactivate(): void {
+        this.canvas.defaultCursor = 'default';
+    }
+
     protected applySettings(): void {
         // No-op for now as we set on mousedown
     }

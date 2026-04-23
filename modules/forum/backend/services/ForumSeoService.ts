@@ -6,7 +6,8 @@ export class ForumSeoService extends SeoModule {
     super('forum-seo');
   }
 
-  buildPageMetadata(locale: string): Metadata {
+  buildPageMetadata(params: Record<string, any>): Metadata {
+    const locale = params.locale || 'en';
     return {
       title: 'Forum & Peer Learning | Refectl',
       description:

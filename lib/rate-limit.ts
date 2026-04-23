@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
+import { getDatabase } from "./mongodb";
 import { sanitizeString } from "./security";
 import { logger } from "./logger";
 

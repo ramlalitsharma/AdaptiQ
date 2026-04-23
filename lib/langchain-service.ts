@@ -50,7 +50,12 @@ export const LangChainService = {
      * Structured JSON output helper using LangChain
      */
     async generateStructuredJSON(systemPrompt: string, userPrompt: string, config?: LangChainConfig): Promise<any> {
-        const model = await this.getModel({ ...config, temperature: 0 }); // Usually 0 for structured data
+        const model = await this.getModel({ 
+            provider: config?.provider || 'openai',
+            modelName: config?.modelName || 'gpt-4o',
+            ...config, 
+            temperature: 0 
+        });
 
         const prompt = ChatPromptTemplate.fromMessages([
             ["system", systemPrompt],

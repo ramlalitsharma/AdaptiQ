@@ -35,6 +35,19 @@ export const NewsService = {
     },
 
     /**
+     * Helper to remove duplicated entries from a list by title
+     */
+    deduplicateItems(items: News[]): News[] {
+        const seen = new Set<string>();
+        return items.filter(item => {
+            const normalized = (item.title || '').trim().toLowerCase();
+            if (seen.has(normalized)) return false;
+            seen.add(normalized);
+            return true;
+        });
+    },
+
+    /**
      * Get all published news for public view with filtering and pagination
      */
     async getPublishedNews(filters?: { 
@@ -57,7 +70,7 @@ export const NewsService = {
             .select('*')
             .in('status', ['published', 'Published', 'live', 'Live', 'Active Relay', 'active relay'])
             .or(`expires_at.is.null,expires_at.gt.${now}`)
-            .order('published_at', { ascending: false });
+            .order('created_at', { ascending: false }); // Use created_at — published_at may be null
 
         if (filters?.country && filters.country !== 'All' && filters.country !== 'Global') {
             // Phase 44: Resilient Regional Filtering
@@ -89,6 +102,8 @@ export const NewsService = {
             const fallback = await client
                 .from('news')
                 .select('*')
+                .in('status', ['published', 'Published', 'live', 'Live', 'Active Relay', 'active relay'])
+                .or(`expires_at.is.null,expires_at.gt.${now}`)
                 .order('created_at', { ascending: false })
                 .range(from, to);
 
@@ -96,7 +111,7 @@ export const NewsService = {
                 data = fallback.data.filter((n: any) => {
                     const c = (n.country || '');
                     const cat = (n.category || '');
-                    const isPub = this.isPublishedStatus(n.status);
+                    // Status and expiry are now filtered in query
 
                     const matchCountry = !filters?.country || filters.country === 'All' || filters.country === 'Global' || c === filters.country;
                     const matchCategory = !filters?.category || filters.category === 'All' || cat === filters.category;
@@ -104,12 +119,14 @@ export const NewsService = {
                     const text = `${n.title || ''} ${n.summary || ''} ${n.content || ''}`.toLowerCase();
                     const matchQuery = !queryText || text.includes(queryText.toLowerCase());
 
-                    return isPub && matchCountry && matchCategory && matchQuery;
+                    return matchCountry && matchCategory && matchQuery;
                 });
             }
         }
 
-        return data.filter(item => this.isCleanArticle(item)).slice(0, filters?.limit || pageSize);
+        const filtered = data.filter(item => this.isCleanArticle(item));
+        const deduplicated = this.deduplicateItems(filtered);
+        return deduplicated.slice(0, filters?.limit || pageSize);
     },
 
     /**

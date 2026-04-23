@@ -16,7 +16,10 @@ const LOW_QUALITY_PATTERNS = [
   /^global news update$/i,
 ];
 
-function normalizeWhitespace(text: string): string {
+function normalizeWhitespace(text: string, options?: { preserveNewlines?: boolean }): string {
+  if (options?.preserveNewlines) {
+    return text.replace(/[ \t]+/g, ' ').trim();
+  }
   return text.replace(/\s+/g, ' ').trim();
 }
 
@@ -40,19 +43,56 @@ export const NewsRevenueMode = {
     return `${candidate.slice(0, 83).trim()}...`;
   },
 
-  formatForCommercialReadability(content: string, summary?: string): string {
-    const cleanSummary = normalizeWhitespace(summary || '');
-    const cleanBody = normalizeWhitespace(content || '');
+  aggressiveJournalisticSanitizer(text: string): string {
+    if (!text) return '';
+    
+    // Phase 55: Maximum De-robotization Protocol
+    const PATTERNS_TO_ERADICATE = [
+      /## Why This Matters/gi,
+      /Why This Matters:?/gi,
+      /## Intelligence Briefing/gi,
+      /Intelligence Briefing:?/gi,
+      /## Executive Brief/gi,
+      /Executive Brief:?/gi,
+      /## What To Watch Next/gi,
+      /What To Watch Next:?/gi,
+      /## Verified Source Material/gi,
+      /Verified Source Material:?/gi,
+      /Intelligence Source \(via.*?\):?/gi,
+      /Intelligence Source:?/gi,
+      /Intelligence Snapshot:?/gi,
+      /TARGETED NEWS BRIEFING FOR.*?\n/gi,
+      /\[SOURCE:.*?\]/gi,
+      /Context:.*?\n/gi,
+      /Image Briefing.*?Link Copied!/gi,
+    ];
 
-    const lead = cleanSummary || cleanBody.slice(0, 220);
-    const body = cleanBody || 'Verified details are being compiled by the newsroom.';
+    let cleaned = text;
+    PATTERNS_TO_ERADICATE.forEach(pattern => {
+      cleaned = cleaned.replace(pattern, '');
+    });
+
+    return cleaned.trim();
+  },
+
+  formatForCommercialReadability(content: string, summary?: string): string {
+    // 1. Scrub robotic debris first
+    const scrubbed = this.aggressiveJournalisticSanitizer(content || '');
+    
+    // 2. Normalize whitespace
+    const cleanBody = normalizeWhitespace(scrubbed, { preserveNewlines: true });
+
+    // Ensure the body is wrapped in a clean container but without artificial headers
+    const bodyContent = (cleanBody.includes('<p>') || cleanBody.includes('<h2>')) 
+      ? cleanBody 
+      : `<p>${cleanBody.replace(/^[# ]+/gm, '').replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
 
     return `
-      <p><strong>Executive Brief:</strong> ${lead}</p>
-      <h2>Why This Matters</h2>
-      <p>${body}</p>
-      <h2>What To Watch Next</h2>
-      <p>Our editorial desk is monitoring verified updates and will refresh this report as new facts are confirmed.</p>
+      <div class="news-article-view news-paper-theme">
+        <div class="journalistic-body">
+          ${bodyContent}
+        </div>
+      </div>
     `.trim();
   },
 

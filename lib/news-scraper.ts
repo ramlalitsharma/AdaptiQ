@@ -61,6 +61,17 @@ export const AdvancedScraperService = {
                             country = this.inferCountry(title, description);
                         }
 
+                        // Extract image from media:content or media:thumbnail
+                        let imageUrl = '';
+                        const mediaContent = (item as any)['media:content'];
+                        const mediaThumbnail = (item as any)['media:thumbnail'];
+
+                        if (mediaContent && mediaContent.$ && mediaContent.$.url) {
+                            imageUrl = mediaContent.$.url;
+                        } else if (mediaThumbnail && mediaThumbnail.$ && mediaThumbnail.$.url) {
+                            imageUrl = mediaThumbnail.$.url;
+                        }
+
                         return {
                             title,
                             link: item.link || '',
@@ -68,6 +79,7 @@ export const AdvancedScraperService = {
                             pubDate: item.pubDate || new Date().toISOString(),
                             category,
                             country,
+                            imageUrl,
                             score: this.calculateVectorScore(title)
                         } as DiscoveredTrend & { score: number };
                     });
@@ -122,7 +134,7 @@ export const AdvancedScraperService = {
     inferCategory(title: string, content: string): NewsCategory {
         const text = `${title} ${content}`.toLowerCase();
         
-        const KEYWORDS: Record<NewsCategory, string[]> = {
+        const KEYWORDS: Partial<Record<NewsCategory, string[]>> = {
             'Finance': ['market', 'stock', 'inflation', 'trade', 'bank', 'finance', 'economy', 'gdp', 'fed', 'rate', 'dollar', 'crypto', 'btc', 'budget', 'earnings', 'quarterly'],
             'Sports': ['cricket', 'match', 'ipl', 'football', 'fifa', 'league', 'score', 'match', 'trophy', 'stadium', 'athlete', 'olympics', 'nba', 'tennis', 'tournament', 'world cup'],
             'Technology': ['ai', 'tech', 'software', 'app', 'gadget', 'silicon', 'cyber', 'meta', 'google', 'apple', 'startup', 'openai', 'llm', 'chip', 'robotics'],
@@ -179,7 +191,22 @@ export const AdvancedScraperService = {
 
     cleanHtml(text: string): string {
         if (!text) return '';
-        return text
+        
+        let cleaned = text
+            // 1. STRIP MARKDOWN AND SYSTEM MARKERS FIRST (while newlines exist)
+            .replace(/^#+ /gm, '') 
+            .replace(/## Intelligence Briefing/gi, '')
+            .replace(/## Executive Brief/gi, '')
+            .replace(/Executive Brief:/gi, '')
+            .replace(/Primary Lead:/gi, '')
+            .replace(/\*\*Source:\*\*/gi, '')
+            .replace(/--- #+/g, '')
+            .replace(/\*\*/g, '') // Strip bold markdown
+            .replace(/\[Intelligence Truncated\]/gi, '')
+            .replace(/\*Journalistic Note:[\s\S]*?\*/gi, '');
+
+        // 2. CLEAN HTML ENTITIES
+        cleaned = cleaned
             .replace(/\\u0027/g, "'")
             .replace(/&amp;/g, '&')
             .replace(/&quot;/g, '"')
@@ -187,37 +214,18 @@ export const AdvancedScraperService = {
             .replace(/&nbsp;/g, ' ')
             .replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>')
-            // Aggressive JSON/Object detection (balanced-like approach for nested structures)
+            // Aggressive JSON/Object detection
             .replace(/\{"[\s\S]*?"uri"[\s\S]*?\}/gi, '')
             .replace(/\{"[\s\S]*?"url"[\s\S]*?\}/gi, '')
-            .replace(/\{"[\s\S]*?"title"[\s\S]*?\}/gi, '')
-            .replace(/\{"[\s\S]*?[\{\[][\s\S]*?[\}\]][\s\S]*?\}/g, '') // Nested objects
+            .replace(/\{"[\s\S]*?[\{\[][\s\S]*?[\}\]][\s\S]*?\}/g, '')
             .replace(/\{"[\s\S]*?"\}/g, '')
-            .replace(/\[\{[\s\S]*?\}\]/g, '')
-            // System Markers & Robotic Artifacts
-            .replace(/\[Intelligence Truncated\]/gi, '')
-            .replace(/\*Journalistic Note:[\s\S]*?\*/gi, '')
-            .replace(/## Intelligence Briefing/gi, '')
-            .replace(/## Executive Brief/gi, '')
-            .replace(/Executive Brief:/gi, '')
-            .replace(/Autonomous intelligence gathering[\s\S]*?global sources\./gi, '')
-            .replace(/This synthesized report provides raw factual anchors[\s\S]*?sources\./gi, '')
-            .replace(/This report was synthesized using the Terai Times Deterministic Sanitizer protocol/gi, '')
-            // Media Credits & Attribution Bloat
-            .replace(/[A-Z][a-z]+\s[A-Z][a-z]+\/(Getty Images|AFP|Reuters|AP|CNN|BBC)/gi, '')
-            .replace(/(Getty Images|AFP|Reuters|AP|CNN|BBC)\sLive Updates/gi, '')
-            .replace(/By\s([A-Z][a-z]+\s?,?\s?){1,5},?\s?(and\s[A-Z][a-z]+\s[A-Z][a-z]+)?/gi, '')
-            .replace(/Live Updates[\s\S]*?En español/gi, '')
-            // Broken HTML attribute leaks & Nested JSON
-            .replace(/\{"[\s\S]*?"(uri|url|small|big|medium)"[\s\S]*?\}/gi, '')
-            .replace(/data-[a-z0-9-]+=".*?"/gi, '')
-            .replace(/data-[a-z0-9-]+='.*?'/gi, '')
-            .replace(/data-[a-z0-9-]+=[^\s>]*/gi, '')
-            .replace(/video-id=[^\s>]*/gi, '')
-            // Final pass: Remove remaining HTML tags
+            .replace(/\[\{[\s\S]*?\}\]/g, '');
+
+        // 3. FINAL TAG REMOVAL AND WHITESPACE
+        return cleaned
             .replace(/<[^>]*>?/gm, '')
-            // Collapse multiple spaces/newlines
-            .replace(/\s+/g, ' ')
+            .replace(/[ \t]+/g, ' ')
+            .replace(/\n\s*\n\s*\n+/g, '\n\n') 
             .trim();
     },
 
@@ -229,15 +237,15 @@ export const AdvancedScraperService = {
         return text
             .replace(/\\"/g, '"')
             .replace(/\\n/g, '\n')
-            // Target specific JSON leakage patterns observed in CNN/BBC RSS
-            .replace(/\{"big":\s*\{.*\}\}/gi, '')
-            .replace(/\{"small":\s*\{.*\}\}/gi, '')
+            // Aggressive UI Debris Removal (Menus, Watchlists, Sign-ins)
+            .replace(/LivestreamMenu|Make Itselect|USAINTLLivestream|Search quotes, news & videos|SIGN IN|Create free account|Watchlist|Investing ClubPRO/gi, '')
+            .replace(/MarketsBusinessInvestingTechPoliticsVideo/gi, '')
+            .replace(/Select your region|Newsletters|Podcasts|Log In/gi, '')
             .replace(/Image Briefing.*?Link Copied!/gi, '')
             .replace(/Source:\s*CNN/gi, '')
-            .replace(/Updated\s*\d+:\d+\s*[AP]M\s*EDT.*?Link\s*Copied!/gi, '')
             .replace(/\s*[A-Z0-9-]+\.jpg\?[a-z0-9=&_]+/gi, '')
-            .replace(/\s*([a-z0-9-]+)\s*:\s*{\s*"url"\s*:\s*".*?"\s*}/gi, '')
-            .replace(/\s+/g, ' ')
+            // Deep text hygiene
+            .replace(/[ \t]+/g, ' ')
             .trim();
     },
 
@@ -291,8 +299,13 @@ export const AdvancedScraperService = {
         ]);
 
         const imageRaw = this.extractMetaContent(normalized, [
+            /<meta[^>]+property=["']og:image:secure_url["'][^>]+content=["']([^"']+)["']/i,
             /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+            /<meta[^>]+name=["']twitter:image:src["'][^>]+content=["']([^"']+)["']/i,
             /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i,
+            /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i,
+            /<img[^>]+src=["']([^"']+)["'][^>]*class=["'][^"']*main[^"']*["'][^>]*>/i,
+            /<img[^>]+src=["']([^"']+)["'][^>]*class=["'][^"']*article[^"']*["'][^>]*>/i,
             /<img[^>]+src=["']([^"']+)["'][^>]*>/i,
         ]);
         const imageCredit = this.extractMetaContent(normalized, [
@@ -410,22 +423,13 @@ export const AdvancedScraperService = {
                     let desc = '';
                     if (descMatch) {
                         desc = descMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/, '$1');
-                        // Clean HTML from description
                         desc = this.cleanHtml(desc);
                     }
-                    const link = linkMatch?.[1]?.trim() || '';
                     const source = this.cleanHtml((sourceMatch?.[1] || '').replace(/<!\[CDATA\[(.*?)\]\]>/, '$1'));
-                    const publishedAt = this.cleanHtml(pubDateMatch?.[1] || '');
-                    const articleSnapshot = await this.extractArticleSnapshot(link);
+                    const articleSnapshot = await this.extractArticleSnapshot(linkMatch?.[1]?.trim() || '');
 
-                    items.push([
-                        `Title: ${title}`,
-                        source ? `Source: ${source}` : '',
-                        publishedAt ? `Published: ${publishedAt}` : '',
-                        link ? `URL: ${link}` : '',
-                        `Context: ${desc}`,
-                        articleSnapshot ? `Article Snapshot:\n${articleSnapshot}` : ''
-                    ].filter(Boolean).join('\n'));
+                    // Narrative synthesis format for AI
+                    items.push(`[SOURCE: ${source || 'Unknown'}] ${title}\nContext: ${desc}${articleSnapshot ? `\nIntelligence Snapshot: ${articleSnapshot.slice(0, 1000)}` : ''}`);
                     limit++;
                 }
             }

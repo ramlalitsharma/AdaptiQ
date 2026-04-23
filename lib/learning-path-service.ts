@@ -65,6 +65,6 @@ export const LearningPathService = {
             .sort({ createdAt: -1 })
             .toArray();
 
-        return paths.map(serializeLearningPath);
+        return (paths as any[]).map(serializeLearningPath);
     }
 };
