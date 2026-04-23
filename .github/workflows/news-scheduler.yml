@@ -1,0 +1,15 @@
+name: News Automation Scheduler
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Every 30 minutes
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  ping-news-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger News Generation
+        run: |
+          curl -X GET "https://refectl.com/api/news-publish-now?count=5" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
