@@ -19,8 +19,11 @@ export async function generateMetadata({
 
 export default async function NewsPage({
   searchParams,
+  params,
 }: {
   searchParams: Promise<Record<string, any>>;
+  params: Promise<{ locale: string }>;
 }) {
-  return <NewsLandingPage searchParams={searchParams} />;
+  const { locale } = await params;
+  return <NewsLandingPage searchParams={searchParams} locale={locale} />;
 }

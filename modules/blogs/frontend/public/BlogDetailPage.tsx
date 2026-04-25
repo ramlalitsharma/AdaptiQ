@@ -37,6 +37,7 @@ export async function BlogDetailPage({
   }
 
   const serializedPost = JSON.parse(JSON.stringify(post));
-  return <BlogPostClient post={serializedPost} slug={slug} content={post.markdown || ''} />;
+  const blogContent = post.markdown || post.content || '';
+  return <BlogPostClient post={serializedPost} slug={slug} content={blogContent} />;
 }
 

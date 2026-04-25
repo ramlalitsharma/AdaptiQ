@@ -24,18 +24,6 @@ export function AdSenseScript() {
                 strategy="afterInteractive"
                 crossOrigin="anonymous"
             />
-            <Script
-                id="adsense-auto-ads"
-                strategy="afterInteractive"
-                dangerouslySetInnerHTML={{
-                    __html: `
-                      (window.adsbygoogle = window.adsbygoogle || []).push({
-                        google_ad_client: "ca-pub-8149507764464883",
-                        enable_page_level_ads: true
-                      });
-                    `,
-                }}
-            />
         </>
     );
 }

@@ -16,10 +16,7 @@ const nextConfig = {
     return config;
   },
   async redirects() {
-    return [
-      { source: '/news', destination: '/en/news', permanent: false },
-      { source: '/news/:path*', destination: '/en/news/:path*', permanent: false },
-    ];
+    return [];
   },
   images: {
     remotePatterns: [

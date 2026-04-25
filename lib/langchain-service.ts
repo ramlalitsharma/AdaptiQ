@@ -1,9 +1,10 @@
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
 // Configuration for model providers
-export type AIProvider = 'openai' | 'anthropic' | 'google' | 'mock';
+export type AIProvider = 'openai' | 'google' | 'groq' | 'mistral' | 'huggingface' | 'mock';
 
 export interface LangChainConfig {
     provider: AIProvider;
@@ -13,28 +14,57 @@ export interface LangChainConfig {
 
 export const LangChainService = {
     /**
-     * Initialize a model based on the provider
+     * Initialize a model based on the provider with a high-fidelity swarm strategy
      */
-    async getModel(config: LangChainConfig = { provider: 'openai', modelName: 'gpt-4o' }) {
-        if (config.provider === 'openai') {
-            return new ChatOpenAI({
-                openAIApiKey: process.env.OPENAI_API_KEY,
-                modelName: config.modelName,
+    async getModel(config: LangChainConfig = { provider: 'google', modelName: 'gemini-1.5-flash' }) {
+        // 1. Google Gemini (Primary Free High-Fidelity)
+        if (config.provider === 'google' || (!process.env.OPENAI_API_KEY && process.env.GOOGLE_AI_API_KEY)) {
+            return new ChatGoogleGenerativeAI({
+                apiKey: process.env.GOOGLE_AI_API_KEY,
+                modelName: config.modelName || 'gemini-1.5-flash',
                 temperature: config.temperature ?? 0.7,
             });
         }
 
-        // Placeholder for other providers (Anthropic, Google)
-        // In a real scenario, we'd install @langchain/anthropic etc.
-        // For now, we fallback to OpenAI or throw if not configured
-        if (!process.env.OPENAI_API_KEY) {
-            throw new Error("AI provider configuration missing. Please set OPENAI_API_KEY.");
+        // 2. Groq (High Speed - Llama 3 / Mixtral)
+        if (config.provider === 'groq' && process.env.GROQ_API_KEY) {
+            return new ChatOpenAI({
+                apiKey: process.env.GROQ_API_KEY,
+                configuration: { baseURL: "https://api.groq.com/openai/v1" },
+                modelName: config.modelName || 'llama-3.1-70b-versatile',
+                temperature: config.temperature ?? 0.7,
+            });
         }
 
-        return new ChatOpenAI({
-            openAIApiKey: process.env.OPENAI_API_KEY,
-            modelName: 'gpt-3.5-turbo', // Safe fallback
-        });
+        // 3. Mistral AI (Specialized Analysis)
+        if (config.provider === 'mistral' && process.env.MISTRAL_API_KEY) {
+            return new ChatOpenAI({
+                apiKey: process.env.MISTRAL_API_KEY,
+                configuration: { baseURL: "https://api.mistral.ai/v1" },
+                modelName: config.modelName || 'mistral-large-latest',
+                temperature: config.temperature ?? 0.7,
+            });
+        }
+
+        // 4. OpenAI (Premium Fallback)
+        if (config.provider === 'openai' || process.env.OPENAI_API_KEY) {
+            return new ChatOpenAI({
+                openAIApiKey: process.env.OPENAI_API_KEY,
+                modelName: config.modelName || 'gpt-4o-mini',
+                temperature: config.temperature ?? 0.7,
+            });
+        }
+
+        // 5. Ultimate Fallback to Gemini if anything else fails but key exists
+        if (process.env.GOOGLE_AI_API_KEY) {
+            return new ChatGoogleGenerativeAI({
+                apiKey: process.env.GOOGLE_AI_API_KEY,
+                modelName: 'gemini-1.5-flash',
+                temperature: config.temperature ?? 0.7,
+            });
+        }
+
+        throw new Error("AI provider configuration missing. Please check your .env keys.");
     },
 
     /**

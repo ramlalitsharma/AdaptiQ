@@ -18,8 +18,10 @@ export async function generateNewsLandingMetadata({
 
 export async function NewsLandingPage({
   searchParams,
+  locale,
 }: {
   searchParams: Promise<Record<string, any>>;
+  locale?: string;
 }) {
   const resolvedParams = await searchParams;
   const category = (resolvedParams?.category as string) || undefined;
@@ -51,7 +53,13 @@ export async function NewsLandingPage({
 
   try {
     const service = new TeraiTimesPublicService();
-    payload = await service.getLandingPayload({ category, country, page, pageSize });
+    payload = await service.getLandingPayload({ 
+      category, 
+      country, 
+      page, 
+      pageSize,
+      locale
+    });
   } catch (error) {
     console.error('NewsLandingPage initial fetch error:', error);
   }

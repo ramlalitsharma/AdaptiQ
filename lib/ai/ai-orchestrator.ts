@@ -39,6 +39,7 @@ export const MultiAgentOrchestrator = {
                 - Focus on context, implications, human impact, and the broader geopolitical/economic stakes.
                 - Avoid any meta-commentary about "AI", "synthesis", or "briefings".
                 - The writing must feel first-hand, authoritative, and exclusively human-authored.
+                - CRITICAL: Always output the content in English, regardless of the source material's language. This is the primary global intelligence feed.
 
                 FORMATTING RULES (HTML ONLY):
                 - Use clean semantic HTML (<h2>, <h3>). 

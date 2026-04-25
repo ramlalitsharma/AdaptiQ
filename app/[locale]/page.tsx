@@ -10,11 +10,10 @@ import { CourseSlider } from '@/components/courses/CourseSlider';
 import { FallbackImage } from '@/components/ui/FallbackImage';
 import { CategorySearch } from '@/components/search/CategorySearch';
 import { BentoFeatures } from '@/components/home/BentoFeatures';
-import * as motion from 'framer-motion/client';
 import { BRAND_NAME } from '@/lib/brand';
 import { FadeIn } from '@/components/ui/Motion';
 import { setRequestLocale } from 'next-intl/server';
-import { TrendingUp, Zap, Target } from 'lucide-react';
+import { TrendingUp, Zap, Target, Globe2, Activity, Bot, Cpu, ShieldCheck } from 'lucide-react';
 import { EngineeredForExcellence, PathToExcellence } from '@/components/home/LandingV2';
 import { HomeEventsShowcase } from '@/components/home/HomeEventsShowcase';
 import type { Metadata } from 'next';
@@ -84,15 +83,17 @@ const getBadges = (tags: string[] = [], createdAt?: string) => {
   return badges;
 };
 
+import { supabaseAdmin } from '@/lib/supabase';
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   await params;
   const { getLatestKeywords } = await import('@/lib/seo');
   const kws = await getLatestKeywords();
   return {
-    title: `${BRAND_NAME} - Grow Your Skills, Build Your Future`,
+    title: `${BRAND_NAME} | AI-Powered Learning & Global Intelligence Platform`,
     description:
-      `Discover trending courses, live classes, and online batches on ${BRAND_NAME}. Start learning with AI - powered personalization today.`,
-    keywords: kws.length ? kws : undefined,
+      `Transform your future with ${BRAND_NAME}. Access AI-orchestrated courses, adaptive learning paths, and breaking global intelligence. Master the skills that matter with world-class precision.`,
+    keywords: kws.length ? kws : ['AI Learning', 'Adaptive Education', 'Global News', 'Skill Building', 'Refectl'],
   };
 }
 
@@ -103,7 +104,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const db = await getDatabase();
   const { userId } = await auth();
 
-  const [rawCourses, rawNeonCourses, rawSubjects] = await Promise.all([
+  const [rawCourses, rawNeonCourses, rawSubjects, rawNews] = await Promise.all([
     db
       .collection('courses')
       .find({ status: 'published' })
@@ -119,7 +120,18 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       .limit(6)
       .toArray()
       .catch(() => []),
+    // Phase 50: Fetch Live Trending News for Landing
+    supabaseAdmin
+      ? supabaseAdmin
+          .from('news')
+          .select('*')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(12)
+      : Promise.resolve({ data: [] }),
   ]);
+
+  const trendingNews = (rawNews as any)?.data || [];
 
   const neonCoursesConverted: Course[] = (rawNeonCourses as any[]).map(c => ({
     id: c.id,
@@ -148,9 +160,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     dbSource: 'mongo'
   }));
 
-  const courses = [...mongoCourses, ...neonCoursesConverted].sort((a, b) =>
-    new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-  );
+  const courses = [...mongoCourses, ...neonCoursesConverted]
+    .filter(c => !c.title.includes('dkn;lkfdf') && !c.title.includes('test')) // Filter out test data
+    .sort((a, b) =>
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
 
   // Get latest 6 courses for slider
   const latestCourses = courses.slice(0, 6);
@@ -291,69 +305,51 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-[1.2fr,1fr] gap-10 sm:gap-12 lg:gap-16 items-center">
-            {/* Left Column: Vision & Action */}
-            <div className="space-y-6 sm:space-y-8 lg:space-y-10 text-left">
-              <FadeIn>
-                <div className="inline-flex items-center gap-2 sm:gap-3 rounded-full border border-white/10 bg-white/5 pl-1.5 sm:pl-2 pr-4 sm:pr-6 py-1.5 sm:py-2 backdrop-blur-2xl">
-                  <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-elite-accent-cyan text-[9px] sm:text-[10px] font-black">AI</span>
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/70">
-                    Next-Gen Learning Platform
-                  </span>
+            {/* Left Column: Hero Content */}
+            <div className="space-y-10">
+              {/* Platform Telemetry Bar */}
+              <FadeIn className="hidden sm:block">
+                <div className="flex items-center gap-8 py-3 px-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8 max-w-fit">
+                   <div className="flex items-center gap-2">
+                      <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live News: <span className="text-white">Active</span></span>
+                   </div>
+                   <div className="w-px h-3 bg-white/10" />
+                   <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">AI Agents: <span className="text-white">Operational</span></span>
+                   </div>
+                   <div className="w-px h-3 bg-white/10" />
+                   <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Global Hub: <span className="text-white">Stable</span></span>
+                   </div>
                 </div>
               </FadeIn>
 
               <FadeIn delay={0.1}>
-                <h1 id="hero-title" className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[110px] font-black leading-[0.95] sm:leading-[0.9] tracking-tighter text-white">
-                  Master the <br />
-                  <span className="text-gradient-cyan">Future</span> of <br />
-                  <span className="text-white/40">Work.</span>
+                <h1 id="hero-title" className="text-5xl sm:text-7xl md:text-8xl lg:text-[130px] font-black leading-[0.85] tracking-tighter text-white">
+                  The <span className="text-gradient-cyan">AI</span> <br />
+                  <span className="text-white/40">Command</span> <br />
+                  <span className="text-white">Center.</span>
                 </h1>
               </FadeIn>
 
               <FadeIn delay={0.2}>
-                <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed font-medium">
-                  The professional skill-building platform that evolves with you. Refectl bridges the gap between your current talent and industry demands with high-tech precision.
+                <p className="text-lg sm:text-xl md:text-2xl text-slate-400 max-w-2xl leading-relaxed font-medium">
+                  Refectl is the unified ecosystem for high-performance intelligence. One platform to master skills, track global shifts, and forge the future.
                 </p>
               </FadeIn>
 
-              <FadeIn delay={0.3} className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 lg:gap-6 pt-2 sm:pt-4">
-                <SignedOut>
-                  <SignInButton mode="modal">
-                    <Button size="lg" className="ripple-effect btn-lift touch-target h-14 sm:h-16 rounded-xl sm:rounded-2xl px-8 sm:px-12 text-base sm:text-lg font-black bg-elite-accent-cyan text-black hover:bg-white transition-all shadow-lg shadow-elite-accent-cyan/20 w-full sm:w-auto">
-                      Start Growing →
-                    </Button>
-                  </SignInButton>
-                </SignedOut>
-                <SignedIn>
-                  <Link href="/dashboard" className="w-full sm:w-auto">
-                    <Button size="lg" className="ripple-effect btn-lift touch-target h-14 sm:h-16 rounded-xl sm:rounded-2xl px-8 sm:px-12 text-base sm:text-lg font-black bg-elite-accent-cyan text-black hover:bg-white transition-all shadow-lg shadow-elite-accent-cyan/20 w-full">
-                      Enter Portal
-                    </Button>
-                  </Link>
-                </SignedIn>
-                <Button variant="outline" size="lg" className="btn-lift touch-target h-14 sm:h-16 rounded-xl sm:rounded-2xl px-6 sm:px-10 text-base sm:text-lg font-black border-white/10 hover:bg-white/5 text-white w-full sm:w-auto">
-                  View Paths
-                </Button>
-              </FadeIn>
-
-              {/* Trust/Stats Mini-Strip */}
-              <FadeIn delay={0.4} className="pt-6 sm:pt-8 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-                <div className="space-y-1">
-                  <span className="text-xl sm:text-2xl font-black text-white">50,000+</span>
-                  <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-wide sm:tracking-widest text-slate-500">Learners</p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xl sm:text-2xl font-black text-white">200+</span>
-                  <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-wide sm:tracking-widest text-slate-500">Skill Paths</p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xl sm:text-2xl font-black text-white">150+</span>
-                  <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-wide sm:tracking-widest text-slate-500">Partners</p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xl sm:text-2xl font-black text-white">98%</span>
-                  <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-wide sm:tracking-widest text-slate-500">Success Rate</p>
-                </div>
+              <FadeIn delay={0.3} className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-4 pt-6">
+                <Link href="/news" className="w-full sm:w-auto">
+                  <Button size="lg" className="h-16 rounded-2xl px-10 text-lg font-black bg-white text-black hover:bg-elite-accent-cyan transition-all w-full">
+                    Read Intelligence
+                  </Button>
+                </Link>
+                <Link href="/courses" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="h-16 rounded-2xl px-10 text-lg font-black border-white/20 text-white hover:bg-white/5 w-full">
+                    Enter Academy
+                  </Button>
+                </Link>
               </FadeIn>
             </div>
 
@@ -411,21 +407,154 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
       </section>
 
-      {/* Modern Search Section */}
-      <section className="relative z-20 pt-12 pb-20 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5">
+      {/* THE FOUR PILLARS OF POWER */}
+      <section className="py-24 bg-black border-y border-white/5">
         <div className="container mx-auto px-4">
-          <div className="glass-card p-2 md:p-3 rounded-[2.5rem] shadow-2xl max-w-5xl mx-auto border-white/40 dark:border-white/5">
-            <div className="bg-white/50 dark:bg-black/20 backdrop-blur-xl rounded-[2rem] p-4 md:p-6 border border-white/20">
-              <CategorySearch
-                categories={categories}
-                subjects={subjects.map((s) => ({
-                  id: s.id,
-                  name: s.name,
-                  slug: s.slug,
-                  category: s.category || 'General',
-                }))}
-              />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: 'The Academy', desc: 'Adaptive AI-powered courses and certified learning paths.', link: '/courses', icon: <Zap className="text-elite-accent-cyan" /> },
+              { title: 'The Desk', desc: 'Real-time global intelligence and strategic market signals.', link: '/news', icon: <Globe2 className="text-blue-400" /> },
+              { title: 'The Forge', desc: 'Premium creator assets, toolkits, and world-class resources.', link: '/shop', icon: <Target className="text-elite-accent-purple" /> },
+              { title: 'The Hub', desc: '500+ AI utilities built for instant production results.', link: '/subjects', icon: <Activity className="text-emerald-400" /> },
+            ].map((pillar) => (
+              <Link key={pillar.title} href={pillar.link}>
+                <div className="glass-card-premium p-8 rounded-[2.5rem] border-white/5 hover:border-white/20 hover:scale-[1.03] transition-all group h-full">
+                  <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-white/10 transition-colors">
+                    {pillar.icon}
+                  </div>
+                  <h3 className="text-2xl font-black text-white mb-3 tracking-tight">{pillar.title}</h3>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">{pillar.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Breaking Intelligence: Live News Section */}
+      <section className="py-20 bg-slate-50 dark:bg-black/40 relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div className="space-y-2">
+              <Badge variant="outline" className="text-elite-accent-cyan border-elite-accent-cyan/30 uppercase tracking-widest text-[10px] font-black">
+                Live Feed
+              </Badge>
+              <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                Global <span className="text-gradient-cyan">Intelligence</span>
+              </h2>
+              <p className="text-slate-500 font-medium">Real-time industry shifts and high-impact reports from the Terai Times Desk.</p>
             </div>
+            <Link href="/news">
+              <Button variant="ghost" className="text-elite-accent-cyan font-black hover:bg-elite-accent-cyan/5">
+                Full Intelligence Hub →
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid lg:grid-cols-[1fr,320px] gap-12">
+            {/* Main Intelligence Grid */}
+            <div className="space-y-6">
+              {trendingNews.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {trendingNews.map((news: any) => (
+                    <Link key={news.id} href={`/news/${news.slug}`}>
+                      <div className="glass-card-premium p-5 rounded-[2rem] border-white/5 hover:border-white/10 transition-all group cursor-pointer flex gap-5 bg-white/5 h-full">
+                        <div className="w-32 h-32 shrink-0 rounded-2xl overflow-hidden relative">
+                          {news.cover_image ? (
+                            <img src={news.cover_image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-elite-accent-cyan/20 to-elite-accent-purple/20" />
+                          )}
+                        </div>
+                        <div className="flex flex-col justify-center flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-elite-accent-cyan/10 text-elite-accent-cyan border border-elite-accent-cyan/20 text-[8px] font-black uppercase tracking-widest">{news.category}</Badge>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tight">Desk: TT-{news.id.slice(-4)}</span>
+                          </div>
+                          <h3 className="text-sm font-bold text-white line-clamp-2 leading-tight group-hover:text-elite-accent-cyan transition-colors">
+                            {news.title}
+                          </h3>
+                          <div className="flex items-center gap-4 pt-2">
+                            <span className="text-[9px] text-slate-500 font-bold">{new Date(news.created_at).toLocaleDateString()}</span>
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-slate-400">
+                               <Bot size={8} className="text-elite-accent-cyan" />
+                               Neural Intelligence
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="glass-card-premium p-5 rounded-[2rem] border-white/5 opacity-50 flex gap-5">
+                      <div className="w-32 h-32 bg-white/5 rounded-2xl animate-pulse" />
+                      <div className="flex-1 space-y-3 py-2">
+                        <div className="h-2 w-1/4 bg-white/5 rounded animate-pulse" />
+                        <div className="h-4 w-full bg-white/5 rounded animate-pulse" />
+                        <div className="h-2 w-1/2 bg-white/5 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Intelligence Rail Sidebar */}
+            <aside className="space-y-8 hidden lg:block">
+               <div className="glass-card-premium p-6 rounded-[2.5rem] border-white/5 space-y-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white flex items-center gap-2">
+                    <Activity size={14} className="text-elite-accent-cyan" />
+                    Network Sentiment
+                  </h3>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'Market Flux', value: 88, color: 'text-emerald-400' },
+                      { label: 'Geopolitical Risk', value: 42, color: 'text-amber-400' },
+                      { label: 'AI Saturation', value: 95, color: 'text-elite-accent-cyan' }
+                    ].map((metric) => (
+                      <div key={metric.label} className="space-y-1.5">
+                        <div className="flex justify-between text-[10px] font-black uppercase">
+                          <span className="text-slate-500">{metric.label}</span>
+                          <span className={metric.color}>{metric.value}%</span>
+                        </div>
+                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                          <div className={`h-full bg-current ${metric.color}`} style={{ width: `${metric.value}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+
+               <div className="glass-card-premium p-6 rounded-[2.5rem] border-elite-accent-purple/20 bg-elite-accent-purple/5 space-y-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-elite-accent-purple">Institutional Briefing</h3>
+                  <p className="text-xs text-white font-bold leading-relaxed">
+                    Deploy your global capital with confidence. Access verified intelligence reports designed for decision makers.
+                  </p>
+                  <Link href="/news" className="text-[9px] font-black text-elite-accent-purple uppercase hover:underline">
+                    Access Terminal →
+                  </Link>
+               </div>
+
+               <div className="glass-card-premium p-6 rounded-[2.5rem] border-white/5 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-elite-accent-cyan animate-pulse" />
+                    <span className="text-[10px] font-black uppercase text-white">Signal Integrity: 99.8%</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold">
+                      <span>Data Latency</span>
+                      <span>14ms</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] text-slate-500 font-bold">
+                      <span>Active Relays</span>
+                      <span>412</span>
+                    </div>
+                  </div>
+               </div>
+            </aside>
           </div>
         </div>
       </section>
@@ -439,11 +568,26 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       {/* Path to Excellence: Steps Section */}
       <PathToExcellence />
 
-      {/* Course Slider - Featured */}
+      {/* Academy Spotlight: Featured Courses */}
       {latestCourses.length > 0 && (
-        <section className="bg-white py-12">
+        <section className="bg-white dark:bg-[#050810] py-24">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">Students are viewing</h2>
+            <div className="flex items-end justify-between mb-12">
+              <div className="space-y-2">
+                <Badge variant="outline" className="text-elite-accent-cyan border-elite-accent-cyan/30 uppercase tracking-widest text-[10px] font-black">
+                   Academy
+                </Badge>
+                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Elite <span className="text-gradient-cyan">Academy</span> Spotlight
+                </h2>
+                <p className="text-slate-500 font-medium">Certified paths designed for high-performance careers.</p>
+              </div>
+              <Link href="/courses" className="hidden sm:block">
+                <Button variant="ghost" className="text-blue-600 dark:text-elite-accent-cyan font-black hover:bg-blue-50 dark:hover:bg-white/5">
+                  View Full Catalog →
+                </Button>
+              </Link>
+            </div>
             <CourseSlider courses={latestCourses} />
           </div>
         </section>
@@ -471,14 +615,14 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                     <div className="flex flex-col gap-8 mb-12">
                       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="space-y-2">
-                          <Badge variant="inverse" className="bg-blue-600 text-[10px] font-black uppercase tracking-widest px-3">
+                          <Badge variant="inverse" className="bg-blue-600 dark:bg-elite-accent-cyan dark:text-black text-[10px] font-black uppercase tracking-widest px-3">
                             {categoryInfo.displayName}
                           </Badge>
-                          <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                            {categoryInfo.name.toLowerCase() === 'general' ? 'Featured Courses' : `Explore ${categoryInfo.displayName} `}
+                          <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                            {categoryInfo.name.toLowerCase() === 'general' ? 'Featured Specials' : `Master ${categoryInfo.displayName} `}
                           </h2>
-                          <p className="text-lg text-slate-500 font-medium">
-                            {categoryInfo.courses.length} {categoryInfo.courses.length === 1 ? 'Premium Course' : 'World-Class Courses'} • {categoryInfo.subjects.length} Specialized Paths
+                          <p className="text-slate-500 font-medium">
+                            {categoryInfo.courses.length} Premium Tracks • {categoryInfo.subjects.length} Specializations
                           </p>
                         </div>
                         <Link href={`/courses?category=${encodeURIComponent(categoryInfo.name)}`}>
@@ -555,15 +699,15 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                         };
 
                         return (
-                          <motion.div
+                          <FadeIn
                             key={course.id}
                             layout
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ delay: courseIdx * 0.05 }}
+                            delay={courseIdx * 0.05}
                           >
-                            <Link href={`/ courses / ${course.slug} `}>
+                            <Link href={`/courses/${course.slug}`}>
                               <Card className="group relative overflow-hidden border-none bg-white hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 cursor-pointer h-full flex flex-col rounded-3xl">
                                 {/* Shimmer Effect on Hover */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none z-10"></div>
@@ -636,7 +780,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                                 </CardContent>
                               </Card>
                             </Link>
-                          </motion.div>
+                          </FadeIn>
                         );
                       })}
                     </div>

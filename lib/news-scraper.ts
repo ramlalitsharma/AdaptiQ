@@ -136,22 +136,36 @@ export const AdvancedScraperService = {
         
         const KEYWORDS: Partial<Record<NewsCategory, string[]>> = {
             'Finance': ['market', 'stock', 'inflation', 'trade', 'bank', 'finance', 'economy', 'gdp', 'fed', 'rate', 'dollar', 'crypto', 'btc', 'budget', 'earnings', 'quarterly'],
-            'Sports': ['cricket', 'match', 'ipl', 'football', 'fifa', 'league', 'score', 'match', 'trophy', 'stadium', 'athlete', 'olympics', 'nba', 'tennis', 'tournament', 'world cup'],
+            'Sports': ['cricket', 'match', 'ipl', 'football', 'fifa', 'league', 'score', 'trophy', 'stadium', 'athlete', 'olympics', 'nba', 'tennis', 'tournament', 'world cup', 'runs', 'wicket', 'wickets', 'overs', 'innings', 'bowled', 'batting', 'toss', 'pitch', 'goal'],
             'Technology': ['ai', 'tech', 'software', 'app', 'gadget', 'silicon', 'cyber', 'meta', 'google', 'apple', 'startup', 'openai', 'llm', 'chip', 'robotics'],
-            'Politics': ['election', 'vote', 'politics', 'government', 'president', 'summit', 'policy', 'minister', 'opposition', 'diplomatic', 'nato', 'un', 'legislation'],
+            'Politics': ['election', 'vote', 'politics', 'government', 'president', 'summit', 'policy', 'minister', 'opposition', 'diplomatic', 'nato', 'un', 'legislation', 'parliament', 'senate', 'congress'],
             'Environment': ['climate', 'nature', 'sustainable', 'warming', 'forest', 'energy', 'solar', 'pollution', 'carbon', 'earth', 'ocean', 'ecology'],
             'Health': ['health', 'medical', 'virus', 'doctor', 'hospital', 'science', 'research', 'dna', 'vaccine', 'outbreak', 'cancer', 'pandemic', 'wellness'],
             'Science': ['science', 'research', 'space', 'nasa', 'universe', 'planet', 'expert', 'discovery', 'gene', 'lab', 'physics', 'astronomy'],
-            'World': ['conflict', 'international', 'diplomatic', 'border', 'global', 'summit', 'war', 'tensions'],
-            'Business': ['company', 'ceo', 'industry', 'brand', 'commercial', 'startup', 'venture'],
-            'Education': ['school', 'university', 'student', 'learning', 'research', 'academy']
+            'World': ['conflict', 'international', 'diplomatic', 'border', 'global', 'summit', 'war', 'tensions', 'treaty', 'military', 'army', 'troops'],
+            'Business': ['company', 'ceo', 'industry', 'brand', 'commercial', 'startup', 'venture', 'corporate', 'merger'],
+            'Education': ['school', 'university', 'student', 'learning', 'research', 'academy', 'college', 'exam']
         };
 
+        let bestCategory: NewsCategory = 'World';
+        let maxScore = 0;
+
         for (const [cat, keywords] of Object.entries(KEYWORDS)) {
-            if (keywords.some(k => new RegExp(`\\b${k}\\b`, 'i').test(text))) return cat as NewsCategory;
+            let score = 0;
+            for (const k of keywords) {
+                // Accumulate confidence score for each category
+                if (new RegExp(`\\b${k}\\b`, 'i').test(text)) {
+                    score += 1;
+                }
+            }
+            if (score > maxScore) {
+                maxScore = score;
+                bestCategory = cat as NewsCategory;
+            }
         }
 
-        return 'World';
+        // Require at least one strong contextual signal; otherwise default to World
+        return maxScore > 0 ? bestCategory : 'World';
     },
 
     /**
@@ -241,6 +255,10 @@ export const AdvancedScraperService = {
             .replace(/LivestreamMenu|Make Itselect|USAINTLLivestream|Search quotes, news & videos|SIGN IN|Create free account|Watchlist|Investing ClubPRO/gi, '')
             .replace(/MarketsBusinessInvestingTechPoliticsVideo/gi, '')
             .replace(/Select your region|Newsletters|Podcasts|Log In/gi, '')
+            // BBC/Generic massive concatenated nav menus
+            .replace(/HomeNewsSportBusinessTechnologyHealthCultureArtsTravelEarthAudioVideoLive[A-Za-z]*/gi, '')
+            // Social Media & Author boilerplate
+            .replace(/agoShareSaveAdd as preferred on Google.*?([A-Z][a-z]+ [A-Z][a-z]+, )?/gi, '')
             .replace(/Image Briefing.*?Link Copied!/gi, '')
             .replace(/Source:\s*CNN/gi, '')
             .replace(/\s*[A-Z0-9-]+\.jpg\?[a-z0-9=&_]+/gi, '')
@@ -278,16 +296,25 @@ export const AdvancedScraperService = {
     },
 
     extractArticleIntelligenceFromHtml(html: string, url: string): ArticleMediaIntelligence {
+        // Phase 63: Structural DOM Sanitization
+        // Eradicate entire semantic blocks that contain menus, footers, sidebars, and UI debris
+        // BEFORE we attempt to extract paragraphs.
         const normalized = html
             .replace(/<script[\s\S]*?<\/script>/gi, ' ')
             .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-            .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ');
+            .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+            .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+            .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+            .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+            .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+            .replace(/<svg[\s\S]*?<\/svg>/gi, ' '); // Strip SVGs which sometimes contain massive text paths
 
+        // Extract paragraphs and strictly filter out boilerplate
         const paragraphs = Array.from(normalized.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi))
             .map((m) => this.scrubMetadata(this.cleanHtml(m[1] || '')))
             .map((p) => p.replace(/\s+/g, ' ').trim())
-            .filter((p) => p.length >= 90)
-            .filter((p) => !/cookie|subscribe|sign up|advertis|newsletter/i.test(p))
+            .filter((p) => p.length >= 90) // Ensure it's a substantive sentence, not a UI button
+            .filter((p) => !/cookie|subscribe|sign up|advertis|newsletter|privacy policy|terms of service|all rights reserved/i.test(p))
             .slice(0, 10);
 
         const snapshot = paragraphs.join('\n\n').slice(0, 3500);

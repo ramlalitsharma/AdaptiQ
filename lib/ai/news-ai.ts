@@ -6,6 +6,7 @@ import { MultiAgentOrchestrator } from './ai-orchestrator';
 
 import { uploadImageFromUrl } from '../supabase-storage';
 import { AdvancedScraperService } from '../news-scraper';
+import { translationService } from '../translation-service';
 
 export interface NewsDraftResult {
     print_headline: string;
@@ -294,31 +295,10 @@ export const NewsAIService = {
 
     /**
      * Phase 7: Multi-Language Intelligence Swarm
-     * Translates core intelligence components into the target locale.
+     * Translates core intelligence components into the target locale using the Swarm.
      */
     translateIntelligence: async (text: string, targetLocale: string): Promise<string> => {
-        if (!openai) return text;
-        if (targetLocale === 'en') return text; // Default
-
-        const prompt = `
-        Translate the following Global Intelligence text into ${targetLocale}. 
-        Maintain the professional, Bloomberg-esque tone. 
-        Only return the translated string.
-
-        Text:
-        ${text}
-        `;
-
-        try {
-            const resp = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1,
-            });
-            return resp.choices[0]?.message?.content || text;
-        } catch (error) {
-            console.warn(`[Translation] Failed for ${targetLocale}. Using source.`);
-            return text;
-        }
+        if (targetLocale === 'en') return text;
+        return translationService.translate(text, targetLocale);
     }
 };

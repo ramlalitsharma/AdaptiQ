@@ -4,29 +4,30 @@ import { BRAND_NAME } from '@/lib/brand';
 
 const footerLinks = [
   {
-    title: 'Platform',
+    title: 'Intelligence',
     items: [
-      { label: 'Courses', href: '/courses' },
-      { label: 'Subjects', href: '/subjects' },
-      { label: 'Exams', href: '/exams' },
-      { label: 'Preparations', href: '/preparations' },
+      { label: 'Global News', href: '/news' },
+      { label: 'Markets & Finance', href: '/news?category=Finance' },
+      { label: 'Technology & AI', href: '/news?category=Technology' },
+      { label: 'Geopolitics', href: '/news?category=Geopolitics' },
     ],
   },
   {
-    title: 'Company',
+    title: 'Learning',
     items: [
-      { label: 'Blog', href: '/blog' },
-      { label: 'Contact', href: '/contact' },
-      { label: 'Editorial Policy', href: '/news/editorial-policy' },
-      { label: 'Disclosures', href: '/news/disclosures' },
+      { label: 'All Courses', href: '/courses' },
+      { label: 'Skill Paths', href: '/learning-paths' },
+      { label: 'Live Classes', href: '/live' },
+      { label: 'Forge Shop', href: '/shop' },
     ],
   },
   {
-    title: 'Support',
+    title: 'Legal & Info',
     items: [
-      { label: 'Pricing', href: '/pricing' },
+      { label: 'About Refectl', href: '/about' },
       { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms', href: '/terms' },
+      { label: 'Terms of Use', href: '/terms' },
+      { label: 'Editorial Policy', href: '/news/editorial-policy' },
     ],
   },
 ];

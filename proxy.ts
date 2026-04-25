@@ -3,9 +3,38 @@ import { NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './lib/navigation';
 
-
 const intlMiddleware = createMiddleware(routing);
 
+/**
+ * High-Performance Geo-IP Language Mapping
+ * Synchronizes the platform's linguistic layer with the user's physical region.
+ */
+const countryToLocale: Record<string, string> = {
+  IN: 'hi', // India -> Hindi
+  MY: 'ms', // Malaysia -> Malay
+  BD: 'bn', // Bangladesh -> Bengali
+  PK: 'ur', // Pakistan -> Urdu
+  SA: 'ar', // Saudi Arabia -> Arabic
+  AE: 'ar', // UAE -> Arabic
+  EG: 'ar', // Egypt -> Arabic
+  CN: 'zh', // China -> Chinese
+  HK: 'zh', // Hong Kong -> Chinese
+  JP: 'ja', // Japan -> Japanese
+  KR: 'ko', // South Korea -> Korean
+  TR: 'tr', // Turkey -> Turkish
+  VN: 'vi', // Vietnam -> Vietnamese
+  RU: 'ru', // Russia -> Russian
+  FR: 'fr', // France -> French
+  DE: 'de', // Germany -> German
+  IT: 'it', // Italy -> Italian
+  ES: 'es', // Spain -> Spanish
+  MX: 'es', // Mexico -> Spanish
+  AR: 'es', // Argentina -> Spanish
+  PT: 'pt', // Portugal -> Portuguese
+  BR: 'pt', // Brazil -> Portuguese
+  ID: 'id', // Indonesia -> Indonesian
+  NP: 'ne', // Nepal -> Nepali
+};
 
 const isProtectedRoute = createRouteMatcher([
     '/:locale/dashboard(.*)',
@@ -56,18 +85,37 @@ export default clerkMiddleware(async (auth, req) => {
     const start = Date.now();
     const { pathname } = req.nextUrl;
 
-    // Skip middleware for static files that must be served at root path (no locale prefix)
+    // Skip middleware for static files and internal APIs
     if (
         pathname === '/sitemap.xml' ||
         pathname === '/sitemap.txt' ||
         pathname === '/robots.txt' ||
         pathname === '/ads.txt' ||
         pathname === '/app-ads.txt' ||
-        pathname.startsWith('/api')
+        pathname.startsWith('/api') ||
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/_static') ||
+        pathname.startsWith('/_vercel')
     ) {
         return NextResponse.next();
     }
 
+    // Phase 44: Strategic Geo-Intelligence Redirection
+    // If the path is locale-less, we determine the best entry point via Edge headers
+    const pathnameIsMissingLocale = routing.locales.every(
+      (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+    );
+
+    if (pathnameIsMissingLocale) {
+      const country = req.headers.get('x-vercel-ip-country') || 'US';
+      const detectedLocale = countryToLocale[country];
+
+      if (detectedLocale && detectedLocale !== routing.defaultLocale) {
+        const url = new URL(req.url);
+        url.pathname = `/${detectedLocale}${pathname === '/' ? '' : pathname}`;
+        return NextResponse.redirect(url);
+      }
+    }
 
     if (isProtectedRoute(req)) {
         await auth.protect();
@@ -94,9 +142,8 @@ export const config = {
         // Set locales in path
         '/(en|es|hi|zh|ja|ko|fr|de|it|pt|ru|ar|ur|ms|id|tr|vi|bn|he)/:path*',
         // Skip Next.js internals, static files, and root-level txt files (ads.txt, robots.txt, etc.)
-        '/((?!api|_next|ads\.txt|robots\.txt|sitemap\.xml|sitemap\.txt|app-ads\.txt|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+        '/((?!api|_next|ads\\.txt|robots\\.txt|sitemap\\.xml|sitemap\\.txt|app-ads\\.txt|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
         // Always run for API routes
         '/(api|trpc)(.*)',
     ],
-
 };

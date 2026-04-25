@@ -19,27 +19,29 @@ export class TeraiTimesSeoService extends SeoModule {
 
     const title =
       category !== 'All'
-        ? `${category} News | Terai Times Global Desk`
+        ? `${category} News | Online News & Live Reports | Terai Times` 
         : country !== 'All'
-          ? `${country} News | Terai Times Global Desk`
-          : 'Terai Times News | Global Intelligence, Live Coverage, Market Pulse';
+          ? `${country} Breaking News | Online World News | Terai Times` 
+          : 'Terai Times | Online News, Live Breaking Reports & World Intelligence';
 
     const description =
       category !== 'All'
-        ? `Latest ${category} news, live updates, expert analysis, and strategic context from the Terai Times global desk.`
+        ? `Access real-time ${category} news, online reports, and strategic intelligence from the Terai Times Global Desk. Live updates 24/7.`
         : country !== 'All'
-          ? `Breaking news, premium analysis, and strategic updates from ${country} with world-class coverage from Terai Times.`
-          : 'World-class news coverage, global market intelligence, strategic analysis, and premium live updates from Terai Times.';
+          ? `Breaking ${country} news and live online reports. Get verified world intelligence and regional updates from Terai Times.`
+          : 'Terai Times is your premier source for online news, live breaking reports, and world intelligence. Stay ahead with our high-fidelity global news feed.';
 
     const keywords = [
       'Terai Times',
-      'global news',
-      'breaking news',
-      'live news updates',
-      'market intelligence',
-      'world news analysis',
-      category !== 'All' ? `${category.toLowerCase()} news` : null,
-      country !== 'All' ? `${country.toLowerCase()} news` : null,
+      'Online News',
+      'Breaking News',
+      'Live News',
+      'World News',
+      'Global Intelligence',
+      'Live Reports',
+      'News Today',
+      category !== 'All' ? `${category.toLowerCase()} online news` : null,
+      country !== 'All' ? `${country.toLowerCase()} breaking news` : null,
     ].filter(Boolean) as string[];
 
     return {
@@ -143,13 +145,16 @@ export class TeraiTimesSeoService extends SeoModule {
         author: [
           {
             '@type': 'Person',
-            name: author.name || 'Refectl Intelligence Agency',
+            name: author.name || 'Terai Times Intelligence Bot',
             url: `${BRAND_URL}/${locale}/news/author/${author.id || 'system'}`,
           },
         ],
         publisher: {
-          '@type': 'Organization',
+          '@type': 'NewsMediaOrganization',
           name: 'Terai Times',
+          legalName: 'Terai Times Global Intelligence',
+          alternateName: ['TT News', 'Terai Online News'],
+          url: `${BRAND_URL}/${locale}/news`,
           logo: {
             '@type': 'ImageObject',
             url: `${BRAND_URL}/logo-premium.png`,
@@ -172,12 +177,18 @@ export class TeraiTimesSeoService extends SeoModule {
     return {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Terai Times Global Intelligence Desk',
-      description: 'World-class news coverage and strategic market intelligence.',
+      name: 'Terai Times | Online News & Global Intelligence Desk',
+      description: 'The definitive source for real-time online news, live breaking reports, and strategic world intelligence.',
       url: `${BRAND_URL}/${locale}/news`,
       publisher: {
-        '@type': 'Organization',
+        '@type': 'NewsMediaOrganization',
         name: 'Terai Times',
+        legalName: 'Terai Times Global Intelligence',
+        url: `${BRAND_URL}/${locale}/news`,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${BRAND_URL}/logo-premium.png`,
+        },
       },
     };
   }

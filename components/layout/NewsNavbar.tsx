@@ -32,6 +32,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
+import ReactCountryFlag from "react-country-flag";
 
 type NavLabels = {
 
@@ -67,6 +68,66 @@ const REGIONS_MAP: Record<string, string[]> = {
   "Americas": ["USA", "Canada", "Brazil", "Mexico", "Argentina"],
   "Africa": ["South Africa", "Nigeria", "Egypt"],
   "Global": ["All", "Global", "Australia"]
+};
+
+const COUNTRY_CODES: Record<string, string> = {
+  "Nepal": "NP",
+  "India": "IN",
+  "China": "CN",
+  "Japan": "JP",
+  "Bangladesh": "BD",
+  "Pakistan": "PK",
+  "Sri Lanka": "LK",
+  "UAE": "AE",
+  "Serbia": "RS",
+  "UK": "GB",
+  "Germany": "DE",
+  "France": "FR",
+  "Russia": "RU",
+  "Ukraine": "UA",
+  "Norway": "NO",
+  "Switzerland": "CH",
+  "USA": "US",
+  "Canada": "CA",
+  "Brazil": "BR",
+  "Mexico": "MX",
+  "Argentina": "AR",
+  "South Africa": "ZA",
+  "Nigeria": "NG",
+  "Egypt": "EG",
+  "Australia": "AU",
+  "Global": "UN",
+};
+
+/**
+ * Native Language Mapping
+ * Pairs countries with their primary supported locale for automatic UI switching.
+ */
+const COUNTRY_TO_LOCALE: Record<string, string> = {
+  "Nepal": "ne",
+  "India": "hi",
+  "Malaysia": "ms",
+  "China": "zh",
+  "Japan": "ja",
+  "Bangladesh": "bn",
+  "Pakistan": "ur",
+  "UAE": "ar",
+  "UK": "en",
+  "USA": "en",
+  "Canada": "en",
+  "Brazil": "pt",
+  "Mexico": "es",
+  "Argentina": "es",
+  "France": "fr",
+  "Germany": "de",
+  "Russia": "ru",
+  "Norway": "en",
+  "Switzerland": "de",
+  "South Africa": "en",
+  "Nigeria": "en",
+  "Egypt": "ar",
+  "Australia": "en",
+  "Global": "en",
 };
 
 const NAV_COUNTRIES = Object.values(REGIONS_MAP).flat();
@@ -167,14 +228,17 @@ function NewsNavbarInner() {
     };
   }, []);
 
-  const coreCategories = [{ value: "Home", label: labels.home }];
+  const coreCategories = [
+    { value: "Home", label: labels.home },
+    { value: "World", label: "World" }
+  ];
 
   const moreCategories = useMemo(() => {
     const blocked = new Set(["All", "Home", "World"]);
     // Merge discovered categories with our required high-fidelity sectors
     const combined = Array.from(new Set([...NAV_CATEGORIES, ...availableCategories]));
     const base = combined.filter((category) => !blocked.has(category));
-    
+
     // Explicit Sort: Prioritize Finance and Sports top of list as requested by user
     const priority = ["Finance", "Sports"];
     const sorted = [
@@ -210,8 +274,8 @@ function NewsNavbarInner() {
             <ul className="flex items-center h-full text-[13px] font-black uppercase tracking-widest text-[#333333] dark:text-gray-400">
               {coreCategories.map((item) => {
                 const isHome = item.value === "Home";
-                const href = isHome ? buildNewsHref("All", currentCountry) : buildNewsHref(item.value, currentCountry);
-                const isActive = (item.value === "Home" && currentCategory === "All") || item.value === currentCategory;
+                const href = isHome ? buildNewsHref("World", currentCountry) : buildNewsHref(item.value, currentCountry);
+                const isActive = (item.value === "Home" && currentCategory === "World") || item.value === currentCategory;
                 return (
                   <li key={item.value} className="h-full flex items-center">
                     <Link
@@ -228,14 +292,23 @@ function NewsNavbarInner() {
               {/* Advanced Regional Megamenu */}
               <li className="relative group/world h-full flex items-center">
                 <button
-                  className={`flex items-center gap-1.5 px-5 h-full hover:text-[#06b6d4] transition-all duration-300 border-b-[3px] ${currentCountry !== "All" ? "text-[#06b6d4] border-[#06b6d4]" : "border-transparent opacity-60 hover:opacity-100"}`}
+                  className={`flex items-center gap-2 px-5 h-full hover:text-[#06b6d4] transition-all duration-300 border-b-[3px] ${currentCountry !== "All" ? "text-[#06b6d4] border-[#06b6d4]" : "border-transparent opacity-60 hover:opacity-100"}`}
                   style={{ marginBottom: "-1px" }}
                 >
-                  <Globe size={13} className={currentCountry !== "All" ? "animate-pulse" : ""} />
-                  {labels.world}
+                  {currentCountry !== "All" && COUNTRY_CODES[currentCountry] ? (
+                    <ReactCountryFlag
+                      countryCode={COUNTRY_CODES[currentCountry]}
+                      svg
+                      style={{ width: '16px', height: '12px' }}
+                      className="rounded-sm shadow-sm"
+                    />
+                  ) : (
+                    <Globe size={13} className={currentCountry !== "All" ? "animate-pulse" : ""} />
+                  )}
+                  <span className="whitespace-nowrap">{currentCountry !== "All" ? currentCountry : labels.world}</span>
                   <ChevronDown size={12} className="opacity-40" />
                 </button>
-                
+
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-[900px] bg-[#0a0c12]/98 backdrop-blur-3xl border border-white/5 shadow-[0_30px_100px_-15px_rgba(0,0,0,1)] py-10 px-10 opacity-0 invisible group-hover/world:opacity-100 group-hover/world:visible transition-all duration-500 z-[1001] rounded-b-[2.5rem] grid grid-cols-5 gap-8">
                   {Object.entries(REGIONS_MAP).map(([region, regionCountries]) => (
                     <div key={region} className="flex flex-col gap-4">
@@ -248,8 +321,17 @@ function NewsNavbarInner() {
                           <Link
                             key={country}
                             href={buildNewsHref(currentCategory, country)}
-                            className={`block text-[11px] transition-all duration-300 hover:translate-x-1 outline-none ${currentCountry === country ? "text-[#06b6d4] font-bold" : "text-gray-500 hover:text-white"}`}
+                            locale={COUNTRY_TO_LOCALE[country] || 'en'}
+                            className={`flex items-center gap-2 text-[11px] transition-all duration-300 hover:translate-x-1 outline-none ${currentCountry === country ? "text-[#06b6d4] font-bold" : "text-gray-500 hover:text-white"}`}
                           >
+                            {COUNTRY_CODES[country] && (
+                              <ReactCountryFlag
+                                countryCode={COUNTRY_CODES[country]}
+                                svg
+                                style={{ width: '14px', height: '10px' }}
+                                className="rounded-sm opacity-80 group-hover:opacity-100"
+                              />
+                            )}
                             {country === "All" ? "Global Overview" : country}
                           </Link>
                         ))}
@@ -281,9 +363,9 @@ function NewsNavbarInner() {
                   <ChevronDown size={12} className="opacity-40" />
                 </button>
                 <div className="absolute top-full left-0 mt-0 w-64 bg-[#0a0c12]/95 backdrop-blur-3xl border border-white/5 shadow-2xl py-4 opacity-0 invisible group-hover/more:opacity-100 group-hover/more:visible transition-all duration-300 z-[1001] rounded-b-2xl">
-                   <div className="px-6 py-2 mb-2 border-b border-white/5">
-                      <span className="text-[10px] font-black text-[#06b6d4] tracking-[0.2em]">Intelligence Vertical</span>
-                   </div>
+                  <div className="px-6 py-2 mb-2 border-b border-white/5">
+                    <span className="text-[10px] font-black text-[#06b6d4] tracking-[0.2em]">Intelligence Vertical</span>
+                  </div>
                   {moreCategories.map((category) => (
                     <Link
                       key={category}
@@ -308,7 +390,7 @@ function NewsNavbarInner() {
                   </button>
                   <div className="absolute top-full right-0 mt-2 w-64 bg-[#0a0c12]/98 backdrop-blur-3xl border border-white/10 shadow-2xl py-4 opacity-0 invisible group-hover/admin:opacity-100 group-hover/admin:visible transition-all duration-300 z-[1001] rounded-2xl">
                     <div className="px-5 py-2 mb-2">
-                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">System Command</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">System Command</span>
                     </div>
                     {userRole === "superadmin" && (
                       <Link href="/admin/super" className="flex items-center gap-3 px-5 py-2.5 hover:bg-white/5 hover:text-[#06b6d4] transition-colors text-[11px]">

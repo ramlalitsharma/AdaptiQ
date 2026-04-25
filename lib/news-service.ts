@@ -69,8 +69,12 @@ export const NewsService = {
             .from('news')
             .select('*')
             .in('status', ['published', 'Published', 'live', 'Live', 'Active Relay', 'active relay'])
-            .or(`expires_at.is.null,expires_at.gt.${now}`)
-            .order('created_at', { ascending: false }); // Use created_at — published_at may be null
+            .or(`expires_at.is.null,expires_at.gt.${now}`);
+
+        // Phase 62: Global Feed Restoration
+        // Reverted to created_at because impact_score does not exist in the DB schema yet,
+        // which caused the query to fail and return an empty array.
+        query = query.order('created_at', { ascending: false });
 
         if (filters?.country && filters.country !== 'All' && filters.country !== 'Global') {
             // Phase 44: Resilient Regional Filtering
@@ -96,33 +100,7 @@ export const NewsService = {
         }
 
         const primary = await query;
-        let data = primary.error ? [] : (primary.data || []);
-
-        if (!data.length && !primary.error) {
-            const fallback = await client
-                .from('news')
-                .select('*')
-                .in('status', ['published', 'Published', 'live', 'Live', 'Active Relay', 'active relay'])
-                .or(`expires_at.is.null,expires_at.gt.${now}`)
-                .order('created_at', { ascending: false })
-                .range(from, to);
-
-            if (fallback.data) {
-                data = fallback.data.filter((n: any) => {
-                    const c = (n.country || '');
-                    const cat = (n.category || '');
-                    // Status and expiry are now filtered in query
-
-                    const matchCountry = !filters?.country || filters.country === 'All' || filters.country === 'Global' || c === filters.country;
-                    const matchCategory = !filters?.category || filters.category === 'All' || cat === filters.category;
-
-                    const text = `${n.title || ''} ${n.summary || ''} ${n.content || ''}`.toLowerCase();
-                    const matchQuery = !queryText || text.includes(queryText.toLowerCase());
-
-                    return matchCountry && matchCategory && matchQuery;
-                });
-            }
-        }
+        const data = primary.error ? [] : (primary.data || []);
 
         const filtered = data.filter(item => this.isCleanArticle(item));
         const deduplicated = this.deduplicateItems(filtered);

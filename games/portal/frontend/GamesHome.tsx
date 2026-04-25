@@ -20,7 +20,7 @@ export function GamesHome({ locale }: { locale: string }) {
   const friendGames = FEATURED_GAMES.filter((game) => game.tags?.includes('Multiplayer'));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen bg-slate-950 text-white">
       <section className="relative overflow-hidden pt-28 pb-20 px-4">
         <div className="absolute inset-0 bg-[radial-gradient(1200px_520px_at_50%_-10%,rgba(34,211,238,0.25),transparent_60%),radial-gradient(900px_420px_at_85%_20%,rgba(124,58,237,0.22),transparent_65%),linear-gradient(180deg,#050713_0%,#0a1022_55%,#060812_100%)]" />
         <div className="absolute inset-0 opacity-40 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:48px_48px]" />
@@ -362,6 +362,6 @@ export function GamesHome({ locale }: { locale: string }) {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

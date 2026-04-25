@@ -11,6 +11,7 @@ import { attachTrustTags, extractTrustMetadata } from './news-trust-metadata';
 import { NewsImagerySearch } from './news-imagery-search';
 import { attachNewsImageMeta } from './news-image-metadata';
 import { buildTextGraphicDataUrl, selectLicensedLibraryImage } from './news-visuals';
+import { translationService } from './translation-service';
 
 async function insertNewsSafely(newsItem: Partial<News>) {
     if (!supabaseAdmin) return newsItem;
@@ -126,9 +127,40 @@ async function resolveImageStrategy(params: {
         };
     }
 
-    // 2. High-Impact Free Discovery (Public Scanners) - Alternative Source
+    // 2. Original Source Image (Priority Journalistic Mirror)
+    // We prioritize the ACTUAL news image over generic stock photos.
+    if (params.articleImageUrl && /^https?:\/\//.test(params.articleImageUrl)) {
+        return {
+            coverImage: params.articleImageUrl,
+            tags: attachNewsImageMeta([], {
+                origin: 'source',
+                credit: params.sourceName || 'News Source (Editorial)',
+                caption: params.imageCaption || params.title,
+                sourceUrl: params.sourceUrl || params.articleImageUrl,
+                license: params.trustedSource ? (params.imageLicense || 'partner') : 'unknown',
+            }),
+        };
+    }
+
+    // 3. RSS Metadata Image (Secondary Journalistic Mirror)
+    if (params.rssImageUrl && /^https?:\/\//.test(params.rssImageUrl)) {
+        return {
+            coverImage: params.rssImageUrl,
+            tags: attachNewsImageMeta([], {
+                origin: 'source',
+                credit: params.sourceName || 'News Source (Editorial)',
+                caption: params.imageCaption || params.title,
+                sourceUrl: params.sourceUrl || params.rssImageUrl,
+                license: 'unknown',
+            }),
+        };
+    }
+
+    // 4. High-Impact Free Discovery (Public Scanners - Commercial Free)
+    // Sanitizing the query length to prevent search engine 404s.
+    const cleanTitle = (params.title || '').split(' ').slice(0, 4).join(' ');
     const discovered = await NewsImagerySearch.findFreeStockPhoto([
-        params.title,
+        cleanTitle,
         ...(params.category ? [params.category] : []),
         ...(params.country ? [params.country] : [])
     ]);
@@ -137,7 +169,7 @@ async function resolveImageStrategy(params: {
             coverImage: discovered,
             tags: attachNewsImageMeta([], {
                 origin: 'library',
-                credit: 'Unsplash (Public Search)',
+                credit: 'Open Media Search',
                 caption: params.imageCaption,
                 sourceUrl: discovered,
                 license: 'creative_commons',
@@ -145,7 +177,7 @@ async function resolveImageStrategy(params: {
         };
     }
 
-    // 3. Curated Intelligence Library (Hardcoded High-Quality)
+    // 5. Curated Intelligence Library (Hardcoded High-Quality)
     const licensedLibrary = selectLicensedLibraryImage({
         title: params.title,
         summary: params.summary,
@@ -165,36 +197,8 @@ async function resolveImageStrategy(params: {
         };
     }
 
-    // 4. Original Source Image Fallback (Priority Scraped Mirror)
-    if (params.articleImageUrl && /^https?:\/\//.test(params.articleImageUrl)) {
-        return {
-            coverImage: params.articleImageUrl,
-            tags: attachNewsImageMeta([], {
-                origin: 'source',
-                credit: params.sourceName || 'News Source',
-                caption: params.imageCaption || params.title,
-                sourceUrl: params.sourceUrl || params.articleImageUrl,
-                license: params.trustedSource ? (params.imageLicense || 'unknown') : 'unknown',
-            }),
-        };
-    }
-
-    // 5. RSS Metadata Image (Secondary Scraped Mirror)
-    if (params.rssImageUrl && /^https?:\/\//.test(params.rssImageUrl)) {
-        return {
-            coverImage: params.rssImageUrl,
-            tags: attachNewsImageMeta([], {
-                origin: 'source',
-                credit: params.sourceName || 'News Source',
-                caption: params.imageCaption || params.title,
-                sourceUrl: params.sourceUrl || params.rssImageUrl,
-                license: 'unknown',
-            }),
-        };
-    }
-
-    // 6. Neural Graphic Generator (Absolute Last Resort - Branded Fallback)
-    // This replaces the broken image with a beautiful, themed SVG instead of "SOURCE OFFLINE"
+    // 6. Generative Programmatic Art Engine (Absolute Last Resort)
+    // Generates a dynamic SVG artwork based on the category.
     return {
         coverImage: buildTextGraphicDataUrl({
             title: params.title,
@@ -451,7 +455,19 @@ export const NewsAutomationService = {
                 newsItem.tags = [...(newsItem.tags || []), 'multi_source_verified'];
             }
 
-            return newsItem;
+            const saved = await insertNewsSafely(newsItem);
+            
+            // Phase 57: Background Cache Warming for priority languages
+            if (saved && saved.title) {
+                translationService.warmCache({
+                    title: saved.title,
+                    summary: saved.summary || '',
+                    category: saved.category || '',
+                    locales: ['hi', 'ms']
+                }).catch(e => console.warn('[Automation] Cache warming failed:', e));
+            }
+
+            return saved;
         } catch (error: any) {
             console.error('[Automation] Generation failed:', error);
             if (error?.status === 429) {
@@ -586,7 +602,22 @@ export const NewsAutomationService = {
                     }
                 }
 
-                // 2. Scrape Facts from the real linked article first
+                // 2. Duplicate protection by title similarity (First 50 chars)
+                if (supabaseAdmin && trend.title) {
+                    const partialTitle = trend.title.substring(0, 50).trim();
+                    const { data: existingByTitle } = await supabaseAdmin
+                        .from('news')
+                        .select('id')
+                        .ilike('title', `${partialTitle}%`)
+                        .limit(1)
+                        .maybeSingle();
+                    if (existingByTitle?.id) {
+                        console.log(`[Automation - Roaming Engine] Vector ${i + 1} title similarity match found. Skipping.`);
+                        continue;
+                    }
+                }
+
+                // 3. Scrape Facts from the real linked article first
                 const articleIntel = trend.source_url
                     ? await AdvancedScraperService.extractArticleIntelligence(trend.source_url)
                     : { snapshot: '' };
@@ -597,6 +628,21 @@ export const NewsAutomationService = {
                 if (sourceMaterial.includes('No direct news events found')) {
                     console.log(`[Automation - Roaming Engine] Vector ${i + 1} yielded no viable intelligence. Skipping.`);
                     continue; // Skip if no news found for this specific combo
+                }
+
+                // 4. Category-based Visual Intelligence (Fallback if no imageUrl)
+                let finalImageUrl = trend.imageUrl || articleIntel.imageUrl;
+                if (!finalImageUrl) {
+                    const fallbacks: Record<string, string> = {
+                        'Technology': 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=1200',
+                        'Finance': 'https://images.unsplash.com/photo-1611974714024-4607755ae08d?auto=format&fit=crop&q=80&w=1200',
+                        'Sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=1200',
+                        'Politics': 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&q=80&w=1200',
+                        'Health': 'https://images.unsplash.com/photo-1505751172107-573002a0f62d?auto=format&fit=crop&q=80&w=1200',
+                        'Science': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=1200',
+                        'World': 'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&q=80&w=1200'
+                    };
+                    finalImageUrl = fallbacks[trend.category] || 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&q=80&w=1200';
                 }
 
                 // 3. Draft & Strategize using Hybrid Switchboard
@@ -755,8 +801,17 @@ export const NewsAutomationService = {
 
                 if (supabaseAdmin) {
                     try {
-                        const saved = await insertNewsSafely(newsItem);
-                        if (saved) published.push(saved);
+                    const saved = await insertNewsSafely(newsItem);
+                    if (saved) {
+                        published.push(saved);
+                        // Phase 56: Background Cache Warming for priority languages
+                        translationService.warmCache({
+                            title: saved.title || '',
+                            summary: saved.summary || '',
+                            category: saved.category || '',
+                            locales: ['hi', 'ms']
+                        }).catch(e => console.warn('[Automation] Cache warming failed:', e));
+                    }
                     } catch (error) {
                         console.error(`[Automation - Roaming Engine] DB Insert Failed:`, error);
                     }

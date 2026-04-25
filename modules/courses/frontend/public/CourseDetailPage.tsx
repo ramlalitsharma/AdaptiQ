@@ -249,11 +249,19 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       '@type': 'Organization',
       name: 'Refectl Editorial'
     },
-    aggregateRating: reviews?.stats?.average ? {
+    offers: {
+      '@type': 'Offer',
+      price: typeof courseData.price === 'number' ? courseData.price : (courseData.price?.amount || 0),
+      priceCurrency: courseData.currency || courseData.price?.currency || 'USD',
+      availability: 'https://schema.org/InStock',
+      category: 'Online Course'
+    },
+    aggregateRating: reviews?.stats?.average && reviews?.stats?.total > 0 ? {
       '@type': 'AggregateRating',
       ratingValue: reviews.stats.average,
       reviewCount: reviews.stats.total,
     } : undefined,
+    image: courseData.thumbnail || `${baseUrl}/og-image.png`
   };
 
   const initialEnrollmentStatus = (enrollmentStatus && ['pending', 'approved', 'waitlisted', 'rejected'].includes(enrollmentStatus)

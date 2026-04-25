@@ -48,11 +48,12 @@ export function GamePageShell({
 }: GamePageShellProps) {
   return (
     <GameModeProvider defaultMode={defaultMode}>
-      <div
+      <main
         className="min-h-screen bg-slate-950 text-white"
         style={{ ['--game-accent' as string]: accent }}
       >
         <section className="relative overflow-hidden border-b border-white/5">
+          {/* ... Hero Content ... */}
           <div className="absolute inset-0 bg-[radial-gradient(900px_420px_at_20%_-10%,rgba(34,211,238,0.2),transparent_60%),radial-gradient(900px_420px_at_85%_0%,rgba(124,58,237,0.2),transparent_60%),linear-gradient(180deg,#050713_0%,#0a1022_50%,#04050c_100%)]" />
           <div className="absolute inset-0 opacity-40 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:52px_52px]" />
           <div
@@ -122,35 +123,19 @@ export function GamePageShell({
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-16">
-          {asideLayout === 'below' ? (
-            <div className="space-y-8">
-              <div id="game-board" className="rounded-[2.5rem] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-                <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-[inset_0_0_50px_rgba(8,10,20,0.8)]">
-                  <div className="relative w-full min-h-[380px] sm:min-h-[460px] lg:min-h-[620px]">
-                    <canvas className="absolute inset-0 h-full w-full opacity-0 pointer-events-none" aria-hidden="true" />
-                    <div className="relative h-full w-full">{children}</div>
-                  </div>
+          <div className={`grid gap-8 ${asideLayout === 'side' ? 'lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start' : 'space-y-8'}`}>
+            <article id="game-board" className="rounded-[2.5rem] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+              <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-[inset_0_0_50px_rgba(8,10,20,0.8)]">
+                <div className="relative w-full min-h-[380px] sm:min-h-[460px] lg:min-h-[620px]">
+                  <canvas className="absolute inset-0 h-full w-full opacity-0 pointer-events-none" aria-hidden="true" />
+                  <div className="relative h-full w-full">{children}</div>
                 </div>
               </div>
-              <div id="game-modes">
-                {aside ?? <GameModePanel />}
-              </div>
+            </article>
+            <div id="game-modes" className={asideLayout === 'side' ? 'lg:sticky lg:top-24' : ''}>
+              {aside ?? <GameModePanel />}
             </div>
-          ) : (
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-              <div id="game-board" className="rounded-[2.5rem] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-                <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-4 shadow-[inset_0_0_50px_rgba(8,10,20,0.8)]">
-                  <div className="relative w-full min-h-[380px] sm:min-h-[460px] lg:min-h-[620px]">
-                    <canvas className="absolute inset-0 h-full w-full opacity-0 pointer-events-none" aria-hidden="true" />
-                    <div className="relative h-full w-full">{children}</div>
-                  </div>
-                </div>
-              </div>
-              <div id="game-modes" className="lg:sticky lg:top-24">
-                {aside ?? <GameModePanel />}
-              </div>
-            </div>
-          )}
+          </div>
         </section>
 
         {guide && (
@@ -211,7 +196,7 @@ export function GamePageShell({
             </div>
           </section>
         )}
-      </div>
+      </main>
     </GameModeProvider>
   );
 }

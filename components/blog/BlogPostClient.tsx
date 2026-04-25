@@ -157,13 +157,13 @@ export function BlogPostClient({ post, slug, content }: { post: any, slug: strin
                         transition={{ duration: 0.8, delay: 0.8 }}
                         className="max-w-4xl w-full"
                     >
-                        <div className="prose prose-invert prose-indigo prose-lg md:prose-xl max-w-none remark-markdown bg-transparent">
+                        <article className="prose prose-invert prose-indigo prose-lg md:prose-xl max-w-none remark-markdown bg-transparent">
                             <MarkdownPreview
                                 source={content}
                                 wrapperElement={{ "data-color-mode": "dark" }}
                                 style={{ backgroundColor: 'transparent', fontSize: 'inherit', color: 'inherit' }}
                             />
-                        </div>
+                        </article>
 
                         <div className="mt-20 pt-12 border-t border-slate-800 flex flex-col md:flex-row items-center gap-8 bg-slate-900/40 p-10 rounded-[2.5rem] border border-slate-800">
                             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">

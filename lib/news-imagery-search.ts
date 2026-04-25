@@ -10,12 +10,22 @@ export const NewsImagerySearch = {
      * Returns the high-res URL or null if not found.
      */
     async findFreeStockPhoto(keywords: string[]): Promise<string | null> {
-        const query = keywords.slice(0, 3).join(' ');
-        console.log(`[Imagery Search] Scanning for: "${query}"`);
+        // Sanitize the query: Remove extremely long strings and focus on the core entities.
+        // If the keywords array has [Title, Category, Country], we extract the most powerful terms.
+        const rawQuery = keywords.filter(Boolean).join(' ');
+        
+        // Remove common stop words and punctuation that break image searches
+        const sanitizedTokens = rawQuery
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter(word => word.length > 3 && !['this', 'that', 'with', 'from', 'what', 'have'].includes(word.toLowerCase()))
+            .slice(0, 4); // Only use the top 4 keywords for maximum broad discovery
+
+        const query = sanitizedTokens.length > 0 ? sanitizedTokens.join(' ') : keywords[0]?.slice(0, 20) || 'World News';
+        console.log(`[Imagery Search] Scanning Multiple Sources for: "${query}"`);
 
         try {
-            // Strategy: Use Unsplash public search with a high-agent string to avoid simple blocks.
-            // We target the 'images.unsplash.com' CDN pattern.
+            // Source 1: Unsplash Commercial-Free Search
             const searchUrl = `https://unsplash.com/s/photos/${encodeURIComponent(query)}`;
             const response = await axios.get(searchUrl, {
                 headers: {
@@ -30,38 +40,35 @@ export const NewsImagerySearch = {
             });
 
             const html = response.data;
-            // Robust regex to find full-resolution photo URLs (e.g., https://images.unsplash.com/photo-...)
             const photoMatch = html.match(/https:\/\/images\.unsplash\.com\/photo-[^?"]+/);
             
             if (photoMatch) {
                 const photoUrl = photoMatch[0];
-                console.log(`[Imagery Search] Success: ${photoUrl}`);
-                // Return with professional formatting params
+                console.log(`[Imagery Search] Source 1 (Unsplash) Success: ${photoUrl}`);
                 return `${photoUrl}?auto=format&fit=crop&w=1600&q=80`;
             }
         } catch (error: any) {
-            console.warn(`[Imagery Search] Public discovery (Unsplash) failed (Status: ${error?.response?.status || 'Network'}). Attempting Geopolitical fallback...`);
-            // Immediate fallback to Wikimedia for geopolitical/factual topics
-            const wikiFallback = await this.scanWikimedia(query);
-            if (wikiFallback) return wikiFallback;
+            console.warn(`[Imagery Search] Source 1 (Unsplash) Failed or Blocked. Attempting Source 2...`);
+        }
+
+        // Source 2: Wikimedia Commons Public Domain Search
+        try {
+            console.log(`[Imagery Search] Attempting Source 2 (Wikimedia) for: "${query}"`);
+            const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=pageimages&titles=${encodeURIComponent(query)}&pithumbsize=1024&origin=*`;
+            const response = await axios.get(api, { timeout: 8000 });
+            const pages = response.data?.query?.pages;
+            if (pages) {
+                const firstPageId = Object.keys(pages)[0];
+                const thumb = pages[firstPageId]?.thumbnail?.source;
+                if (thumb) {
+                    console.log(`[Imagery Search] Source 2 (Wikimedia) Success!`);
+                    return thumb;
+                }
+            }
+        } catch (error) {
+            console.warn(`[Imagery Search] Source 2 (Wikimedia) Failed.`);
         }
 
         return null;
-    },
-
-    /**
-     * Strategy B: Wikimedia Commons (Geopolitical/Public Domain)
-     */
-    async scanWikimedia(topic: string): Promise<string | null> {
-        try {
-            const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=pageimages&titles=${encodeURIComponent(topic)}&pithumbsize=1024&origin=*`;
-            const response = await axios.get(api);
-            const pages = response.data.query.pages;
-            const firstPageId = Object.keys(pages)[0];
-            const thumb = pages[firstPageId]?.thumbnail?.source;
-            return thumb || null;
-        } catch {
-            return null;
-        }
     }
 };

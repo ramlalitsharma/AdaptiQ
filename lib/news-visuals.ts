@@ -58,16 +58,32 @@ const LICENSED_IMAGE_LIBRARY: LicensedImageEntry[] = [
   },
   // Culture & Social
   {
-    tags: ['culture', 'social', 'protest', 'crowd', 'festival', 'people'],
+    tags: ['culture', 'social', 'protest', 'crowd', 'festival'],
     url: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=80',
     credit: 'Unsplash (Social)', license: 'partner',
   },
+  // Sports & Athletics
+  {
+    tags: ['sports', 'cricket', 'football', 'stadium', 'match', 'athlete', 'tournament', 'championship', 'fifa', 'ipl'],
+    url: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=1600&q=80',
+    credit: 'Unsplash (Sports)', license: 'partner',
+  },
 ];
 
-function scoreEntry(query: string, entry: LicensedImageEntry): number {
+function scoreEntry(textPayload: string, category: string, entry: LicensedImageEntry): number {
   let score = 0;
+  const loweredPayload = textPayload.toLowerCase();
+  const loweredCategory = category.toLowerCase();
+  
   for (const tag of entry.tags) {
-    if (query.includes(tag)) score += 1;
+    // 1. Massive multiplier if the primary assigned Category matches an image tag
+    if (loweredCategory.includes(tag)) {
+        score += 50; 
+    }
+    // 2. Small bump if the tag is found anywhere in the text as a standalone word
+    if (new RegExp(`\\b${tag}\\b`, 'i').test(loweredPayload)) {
+        score += 1;
+    }
   }
   return score;
 }
@@ -78,11 +94,14 @@ export function selectLicensedLibraryImage(params: {
   category?: string;
   country?: string;
 }) {
-  const query = `${params.title || ''} ${params.summary || ''} ${params.category || ''} ${params.country || ''}`.toLowerCase();
+  const textPayload = `${params.title || ''} ${params.summary || ''} ${params.country || ''}`;
+  const categoryPayload = params.category || 'World';
+  
   const best = LICENSED_IMAGE_LIBRARY
-    .map((entry) => ({ entry, score: scoreEntry(query, entry) }))
+    .map((entry) => ({ entry, score: scoreEntry(textPayload, categoryPayload, entry) }))
     .sort((a, b) => b.score - a.score)[0];
 
+  // Require a much higher confidence score to prevent random accidental assignments
   if (!best || best.score <= 0) return null;
   return best.entry;
 }
@@ -127,6 +146,10 @@ export function buildTextGraphicDataUrl(params: {
           <stop offset="60%" stop-color="#0f172a"/>
           <stop offset="100%" stop-color="#1e1b4b"/>
         </linearGradient>
+        <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${accent}"/>
+          <stop offset="100%" stop-color="#ffffff"/>
+        </linearGradient>
         <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
           <path d="M 100 0 L 0 0 0 100" fill="none" stroke="white" stroke-width="0.5" opacity="0.04"/>
         </pattern>
@@ -141,30 +164,41 @@ export function buildTextGraphicDataUrl(params: {
       <rect width="1600" height="900" fill="url(#bg)"/>
       <rect width="1600" height="900" fill="url(#grid)"/>
       
-      {/* Dynamic Graphic Elements */}
-      <circle cx="1400" cy="150" r="300" fill="${accent}" opacity="0.07" filter="url(#glow)"/>
-      <circle cx="200" cy="750" r="250" fill="${accent}" opacity="0.05" filter="url(#glow)"/>
+      {/* Generative Abstract Art Elements */}
+      <path d="M -200 450 C 200 100, 600 800, 1800 300" fill="none" stroke="url(#glowGradient)" stroke-width="8" opacity="0.4" filter="url(#glow)"/>
+      <path d="M -100 600 C 400 900, 800 200, 1700 700" fill="none" stroke="${accent}" stroke-width="4" opacity="0.3" filter="url(#glow)"/>
+      <path d="M 0 200 Q 800 1000 1600 100" fill="none" stroke="white" stroke-width="1.5" opacity="0.1"/>
       
-      {/* Decorative tech lines */}
-      <line x1="100" y1="100" x2="300" y2="100" stroke="${accent}" stroke-width="4" opacity="0.4"/>
-      <line x1="100" y1="100" x2="100" y2="200" stroke="${accent}" stroke-width="4" opacity="0.4"/>
+      <circle cx="1300" cy="200" r="450" fill="url(#glowGradient)" opacity="0.15" filter="url(#glow)"/>
+      <polygon points="1200,800 1500,400 1800,900" fill="${accent}" opacity="0.03" />
+      <polygon points="100,900 400,600 700,950" fill="white" opacity="0.02" />
       
-      {/* Branding */}
-      <text x="140" y="145" fill="${accent}" font-family="Arial, sans-serif" font-size="20" font-weight="900" letter-spacing="8">TERAI TIMES INTELLIGENCE</text>
-      <text x="140" y="210" fill="white" font-family="Georgia, serif" font-size="32" font-weight="700" letter-spacing="2" opacity="0.9">${escapeXml(category)} / ${escapeXml(country)}</text>
+      {/* Decorative tech/data lines */}
+      <g opacity="0.5">
+        <line x1="140" y1="100" x2="200" y2="100" stroke="${accent}" stroke-width="4" />
+        <line x1="220" y1="100" x2="240" y2="100" stroke="white" stroke-width="4" opacity="0.8"/>
+        <line x1="260" y1="100" x2="360" y2="100" stroke="${accent}" stroke-width="4" opacity="0.3"/>
+        <line x1="140" y1="100" x2="140" y2="160" stroke="${accent}" stroke-width="4" />
+      </g>
       
-      <rect x="140" y="240" width="80" height="4" fill="${accent}"/>
+      {/* Editorial Branding & Typography */}
+      <text x="140" y="165" fill="${accent}" font-family="Arial, sans-serif" font-size="20" font-weight="900" letter-spacing="8">TERAI TIMES INTELLIGENCE</text>
+      <text x="140" y="225" fill="white" font-family="Georgia, serif" font-size="32" font-weight="700" letter-spacing="2" opacity="0.9">${escapeXml(category)} / ${escapeXml(country)}</text>
       
-      <foreignObject x="140" y="320" width="1320" height="400">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Georgia, serif; font-size: 82px; line-height: 1.1; color: white; font-weight: 700; text-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <rect x="140" y="260" width="120" height="6" fill="url(#glowGradient)" filter="url(#glow)"/>
+      
+      {/* Headline Wrapper */}
+      <foreignObject x="140" y="320" width="1200" height="400">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Georgia, serif; font-size: 78px; line-height: 1.15; color: white; font-weight: 700; text-shadow: 0 15px 40px rgba(0,0,0,0.8);">
           ${escapeXml(title)}
         </div>
       </foreignObject>
       
-      <text x="140" y="800" fill="#64748b" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="4">AUTONOMOUS SIGNAL • STRATEGIC DEPTH • VERIFIED DESK</text>
+      {/* Footer Branding */}
+      <text x="140" y="800" fill="#94a3b8" font-family="Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="5">AUTONOMOUS SIGNAL • STRATEGIC DEPTH • VERIFIED DESK</text>
       
-      {/* Scanning line effect */}
-      <rect x="0" y="880" width="1600" height="20" fill="${accent}" opacity="0.1"/>
+      {/* Scanning bar effect */}
+      <rect x="0" y="880" width="1600" height="20" fill="url(#glowGradient)" opacity="0.2"/>
     </svg>
   `.trim();
 

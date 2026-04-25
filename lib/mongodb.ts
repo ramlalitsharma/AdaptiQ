@@ -14,12 +14,10 @@ function createOptions(u: string) {
 
   // Removed problematic custom TLS configuration that was incompatible with Atlas
   // The MongoDB driver will use appropriate TLS defaults for SRV connections
-  if (isSrv && process.env.NODE_ENV === 'development') {
-    try {
-      // Only set DNS order preference, no custom TLS settings
-      (dns as any).setDefaultResultOrder?.('ipv4first');
-    } catch { }
-  }
+  // Force IPv4 resolution to prevent ECONNREFUSED issues with Node.js 18+ and Atlas
+  try {
+    (dns as any).setDefaultResultOrder?.('ipv4first');
+  } catch { }
 
   const base: any = {
     connectTimeoutMS: 10000,

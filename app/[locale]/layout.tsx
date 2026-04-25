@@ -57,13 +57,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     description: `Transform your learning with AI-orchestrated adaptive quizzes that evolve in real-time. Get personalized learning paths, predict knowledge gaps with 95% accuracy, and master any subject faster with ${BRAND_NAME}.`,
     keywords: [
+      "Terai Times",
+      "online news",
+      "breaking news",
+      "global intelligence",
       "adaptive learning",
       "AI quizzes",
-      "online education",
       "learning platform",
-      "adaptive testing",
-      "personalized learning",
-      "quiz generator",
       "education technology",
     ],
     authors: [{ name: BRAND_NAME }],
@@ -155,29 +155,12 @@ export default async function RootLayout({
   // Fetching messages for client components
   const messages = await getMessages({ locale });
 
-
   const enableProdAnalytics = process.env.NODE_ENV === "production" && isAnalyticsConfigured();
 
   return (
     <ClerkProvider>
       <html lang={locale} suppressHydrationWarning>
         <head>
-          <AdSenseScript />
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function () {
-                  try {
-                    var stored = localStorage.getItem('theme');
-                    var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    var isDark = stored === 'dark' || (!stored && systemDark);
-                    document.documentElement.classList.toggle('dark', isDark);
-                    document.documentElement.classList.toggle('light', !isDark);
-                  } catch (e) {}
-                })();
-              `,
-            }}
-          />
           <meta
             name="google-adsense-account"
             content="ca-pub-8149507764464883"
@@ -256,10 +239,26 @@ export default async function RootLayout({
               </Script>
             </>
           )}
+          <AdSenseScript />
         </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased bg-background text-foreground transition-colors duration-300 selection:bg-elite-accent-cyan/30 custom-scrollbar ${process.env.NODE_ENV !== "production" ? "dev-no-ads" : ""}`}
         >
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function () {
+                  try {
+                    var stored = localStorage.getItem('theme');
+                    var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    var isDark = stored === 'dark' || (!stored && systemDark);
+                    document.documentElement.classList.toggle('dark', isDark);
+                    document.documentElement.classList.toggle('light', !isDark);
+                  } catch (e) {}
+                })();
+              `,
+            }}
+          />
           <NextIntlClientProvider messages={messages} locale={locale}>
             <ErrorBoundary>
               <ThemeProvider>

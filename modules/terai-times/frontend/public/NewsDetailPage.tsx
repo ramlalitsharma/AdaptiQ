@@ -113,7 +113,7 @@ export async function NewsDetailPage({ params }: { params: Promise<{ slug: strin
   let articleSchema: any = null;
 
   try {
-    const payload = await service.getDetailPayload(slug);
+    const payload = await service.getDetailPayload(slug, locale);
     news = payload.news;
     related = payload.related;
     author = payload.author || author;

@@ -1,6 +1,7 @@
 import { FeatureModule } from '@/modules/core/shared';
 import { NewsService } from '@/lib/news-service';
 import { getNewsAuthorById } from '@/lib/news-authors';
+import { translationService } from '@/lib/translation-service';
 
 export class TeraiTimesArticleService extends FeatureModule {
   constructor() {
@@ -22,12 +23,25 @@ export class TeraiTimesArticleService extends FeatureModule {
     return getNewsAuthorById(authorId);
   }
 
-  async getDetailPayload(slug: string) {
-    const news = await this.getArticleBySlug(slug);
-    if (!news) return { news: null, author: null, related: [], engagement: null };
+  async getDetailPayload(slug: string, locale: string = 'en') {
+    const rawNews = await this.getArticleBySlug(slug);
+    if (!rawNews) return { news: null, author: null, related: [], engagement: null };
 
     // Async increment view count for analytics
     NewsService.incrementViewCount(slug).catch(err => console.error('Tracker error:', err));
+
+    // Phase 62: Deep Linguistic Translation Interception
+    // Forcefully translate the article core before it hits the UI
+    let news = { ...rawNews };
+    try {
+        news.title = await translationService.translate(rawNews.title, locale);
+        news.summary = await translationService.translate(rawNews.summary, locale);
+        if (rawNews.content) {
+            news.content = await translationService.translate(rawNews.content, locale);
+        }
+    } catch (e) {
+        console.error('[ArticleService] Deep translation failed:', e);
+    }
 
     // Modular parallel fetching for the Engagement Hub
     const [trendingNews, recentNews, popularCategories, popularCountries, author, networkAnalytics] = await Promise.all([
