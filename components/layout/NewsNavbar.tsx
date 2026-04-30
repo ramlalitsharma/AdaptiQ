@@ -646,19 +646,75 @@ function NewsNavbarInner() {
         </div>
       </div>
 
-      <div className="md:hidden w-full overflow-x-auto no-scrollbar border-t border-gray-200 dark:border-gray-800 mt-2">
-        <ul className="flex items-center text-[13px] font-bold text-[#333333] dark:text-gray-300 px-2 py-2 w-max">
-          <li>
-            <Link href={buildNewsHref("All", currentCountry)} className={`px-3 py-1 block ${currentCategory === "All" ? "text-[#f08821]" : ""}`}>
-              {labels.home}
-            </Link>
-          </li>
-          <li>
-            <Link href={buildNewsHref(currentCategory, "All")} className={`px-3 py-1 block ${currentCountry === "All" ? "" : "text-[#f08821]"}`}>
-              {labels.world}
-            </Link>
-          </li>
-        </ul>
+      <div className="md:hidden w-full border-t border-white/5 bg-[#0a0c12]/98 backdrop-blur-md mt-2">
+        {/* Categories Scroller */}
+        <div className="w-full overflow-x-auto no-scrollbar">
+          <ul className="flex items-center text-[12px] font-black uppercase tracking-widest text-gray-400 px-4 py-3 gap-2 w-max">
+            {coreCategories.map((item) => {
+              const isHome = item.value === "Home";
+              const href = isHome ? "/news" : buildNewsHref(item.value, currentCountry);
+              const isActive = isHome ? (currentCategory === "All" || currentCategory === "World") && currentCountry === "All" : item.value === currentCategory;
+              const linkProps = isHome ? { locale: "en" } : {};
+              
+              return (
+                <li key={item.value}>
+                  <Link
+                    href={href}
+                    {...linkProps}
+                    className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${isActive ? "bg-[#06b6d4]/10 text-[#06b6d4] border border-[#06b6d4]/30 shadow-[0_0_15px_rgba(6,182,212,0.2)]" : "bg-white/5 border border-white/5 hover:bg-white/10"}`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+            {moreCategories.map((category) => {
+              const isActive = currentCategory === category;
+              return (
+                <li key={category}>
+                  <Link
+                    href={buildNewsHref(category, currentCountry)}
+                    className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${isActive ? "bg-[#06b6d4]/10 text-[#06b6d4] border border-[#06b6d4]/30 shadow-[0_0_15px_rgba(6,182,212,0.2)]" : "bg-white/5 border border-white/5 hover:bg-white/10"}`}
+                  >
+                    {category}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* Regional Desk Scroller */}
+        <div className="w-full overflow-x-auto no-scrollbar border-t border-white/5 bg-[#050608]">
+          <ul className="flex items-center text-[11px] font-bold tracking-wider text-gray-500 px-4 py-2 gap-2 w-max">
+            <li>
+              <span className="px-2 text-[#06b6d4] uppercase tracking-widest text-[9px] font-black opacity-80">Desk:</span>
+            </li>
+            <li>
+              <Link
+                href={buildNewsHref(currentCategory, "All")}
+                locale="en"
+                className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all ${currentCountry === "All" ? "text-white bg-white/10 font-black" : "hover:text-white"}`}
+              >
+                Global Overview
+              </Link>
+            </li>
+            {countries.filter(c => c !== "All" && c !== "Global").map(country => (
+              <li key={country}>
+                <Link
+                  href={buildNewsHref(currentCategory, country)}
+                  locale={COUNTRY_TO_LOCALE[country] || 'en'}
+                  className={`px-3 py-1.5 rounded-full whitespace-nowrap flex items-center gap-1.5 transition-all ${currentCountry === country ? "text-white bg-white/10 font-black" : "hover:text-white"}`}
+                >
+                  {COUNTRY_CODES[country] && (
+                    <ReactCountryFlag countryCode={COUNTRY_CODES[country]} svg style={{ width: '12px', height: '9px' }} />
+                  )}
+                  {country}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </header>
   );
