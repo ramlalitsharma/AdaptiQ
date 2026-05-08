@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 
 import ReactCountryFlag from 'react-country-flag';
-
+import { InstitutionalAdUnit } from '@/components/revenue/InstitutionalAdUnit';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StrategicSignalSidebar } from '@/components/news/StrategicSignalSidebar';
 
@@ -712,48 +712,53 @@ export default function NewsFeedClient({
                     ? secondary.slice(4, 44) 
                     : items.slice(0, 40);
                   
-                  return displayItems.map((item, idx) => (
-                    <motion.div
-                      variants={itemVariants}
-                      key={item.id}
-                      className={`group cursor-pointer flex flex-col gap-3 relative p-2 rounded-2xl hover:bg-white/[0.02] transition-all duration-300 ${idx === 0 && secondary.length > 4 ? 'md:col-span-2' : ''}`}
-                      onClick={() => handleCardClick(item)}
-                    >
-                      <div className={`relative overflow-hidden rounded-2xl bg-slate-900 border border-white/5 ${idx === 0 && secondary.length > 4 ? 'aspect-[21/9]' : 'aspect-video'}`}>
-                        <img
-                          src={item.cover_image || item.image_url || getFallbackImage(item.category, item.id)}
-                          alt={item.title}
-                          className="h-full w-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:opacity-60"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-0 transition-opacity duration-500" />
-                        
-                        <div className="absolute top-2 left-2 flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[7px] font-black uppercase tracking-widest rounded-md">
-                            {item.category || 'INTELLIGENCE'}
-                          </span>
-                          {secondary.length <= 4 && (
-                            <span className="px-2 py-0.5 bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[7px] font-black uppercase tracking-widest rounded-md">
-                              GLOBAL FALLBACK
+                    <div key={item.id} className="contents">
+                      <motion.div
+                        variants={itemVariants}
+                        className={`group cursor-pointer flex flex-col gap-3 relative p-2 rounded-2xl hover:bg-white/[0.02] transition-all duration-300 ${idx === 0 && secondary.length > 4 ? 'md:col-span-2' : ''}`}
+                        onClick={() => handleCardClick(item)}
+                      >
+                        <div className={`relative overflow-hidden rounded-2xl bg-slate-900 border border-white/5 ${idx === 0 && secondary.length > 4 ? 'aspect-[21/9]' : 'aspect-video'}`}>
+                          <img
+                            src={item.cover_image || item.image_url || getFallbackImage(item.category, item.id)}
+                            alt={item.title}
+                            className="h-full w-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:opacity-60"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-0 transition-opacity duration-500" />
+                          
+                          <div className="absolute top-2 left-2 flex items-center gap-2">
+                            <span className="px-2 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[7px] font-black uppercase tracking-widest rounded-md">
+                              {item.category || 'INTELLIGENCE'}
                             </span>
-                          )}
+                            {secondary.length <= 4 && (
+                              <span className="px-2 py-0.5 bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[7px] font-black uppercase tracking-widest rounded-md">
+                                GLOBAL FALLBACK
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="space-y-1">
-                        <h4 className="text-[13px] font-bold text-white leading-tight group-hover:text-[#06b6d4] transition-colors line-clamp-2 uppercase tracking-tight">
-                          {item.title}
-                        </h4>
-                        <div className="flex items-center justify-between pt-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
-                            {item.source_name || 'TT RELAY'}
-                          </span>
-                          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
-                            {item.published_at ? format(new Date(item.published_at), 'MMM dd') : 'NOW'}
-                          </span>
+                        <div className="space-y-1">
+                          <h4 className="text-[13px] font-bold text-white leading-tight group-hover:text-[#06b6d4] transition-colors line-clamp-2 uppercase tracking-tight">
+                            {item.title}
+                          </h4>
+                          <div className="flex items-center justify-between pt-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                              {item.source_name || 'TT RELAY'}
+                            </span>
+                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                              {item.published_at ? format(new Date(item.published_at), 'MMM dd') : 'NOW'}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
+                      </motion.div>
+                      {(idx + 1) % 8 === 0 && (
+                        <div className="md:col-span-2 xl:col-span-1 2xl:col-span-1">
+                          <InstitutionalAdUnit />
+                        </div>
+                      )}
+                    </div>
                   ));
                 })()}
               </div>

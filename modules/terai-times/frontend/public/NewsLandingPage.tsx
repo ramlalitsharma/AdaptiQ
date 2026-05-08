@@ -67,7 +67,6 @@ export async function NewsLandingPage({
     <div className="news-page-shell news-paper-theme min-h-screen">
       <NewsNavbar />
       <main className="w-full max-w-none news-main-surface no-auto-ads-on-news pb-0 pt-0" data-news-surface="true">
-        <NewsAutoAdGuard />
         <NewsFeedClient
           category={payload.category}
           country={payload.country}

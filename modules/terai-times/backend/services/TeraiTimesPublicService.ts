@@ -74,19 +74,19 @@ export class TeraiTimesPublicService extends FeatureModule {
     let finalTotalCount = Number(rawTotalCount) || 0;
     const initialEvents = Array.isArray(events) ? events : [];
 
-    // Always trigger background ingestion for specific countries with few results
-    if (automationStatus.autoPublishEnabled && this.shouldBackfill(initialItems, automationStatus)) {
-      const backfillCountry = (country !== 'All' && country !== 'Global') ? country : undefined;
-      NewsAutomationService.ingestRoamingGlobalNews(Math.max(1, automationStatus.targetPerHour), backfillCountry)
-        .catch(err => console.error('[PublicService] Background ingestion failed:', err));
-    }
-
+    // Phase 43: Content Optimization
+    // Ingestion is now handled EXCLUSIVELY by GitHub Actions to save Vercel CPU.
+    // The public site is a "Reader", not a "Scraper".
 
     // Phase 43: Real-Time AI Translation Relay
-    // We unconditionally pass through the translation service to allow the Intelligent English Guard 
+    // We pass through the translation service to allow the Intelligent English Guard 
     // to catch and translate any leaked foreign content on the English home page.
     try {
       const translateItem = async (item: any) => {
+        // Only translate if we are not in the default English locale or if the item title seems foreign
+        const needsTranslation = locale !== 'en';
+        if (!needsTranslation) return item;
+
         const [title, summary, category] = await Promise.all([
           translationService.translate(item.title, locale),
           translationService.translate(item.summary || item.content?.slice(0, 150), locale),
@@ -95,19 +95,13 @@ export class TeraiTimesPublicService extends FeatureModule {
         return { ...item, title, summary, category };
       };
 
-      const [translatedItems, translatedTrending, translatedEvents] = await Promise.all([
+      const [translatedItems, translatedTrending] = await Promise.all([
         Promise.all(initialItems.map(translateItem)),
         Promise.all(initialTrending.map(translateItem)),
-        Promise.all(initialEvents.map(async (event: any) => ({
-          ...event,
-          title: await translationService.translate(event.title, locale),
-          description: await translationService.translate(event.description, locale),
-        }))),
       ]);
 
       initialItems = translatedItems;
       initialTrending = translatedTrending;
-      // initialEvents = translatedEvents; // We can keep events translated too if needed
     } catch (err) {
       console.error('[PublicService] Content translation failed:', err);
     }
@@ -186,22 +180,5 @@ export class TeraiTimesPublicService extends FeatureModule {
     }
   }
 
-  private shouldBackfill(
-    initialItems: any[],
-    automationStatus: TeraiTimesLandingPayload['automationStatus']
-  ): boolean {
-    if (!automationStatus.autoPublishEnabled) return false;
-    if (!Array.isArray(initialItems) || initialItems.length === 0) return true;
-
-    const latestPublishedAt = initialItems
-      .map((item) => new Date(item.published_at || item.created_at || 0).getTime())
-      .filter((value) => Number.isFinite(value))
-      .sort((a, b) => b - a)[0];
-
-    if (!latestPublishedAt) return true;
-    const hoursSinceLatest = (Date.now() - latestPublishedAt) / (1000 * 60 * 60);
-
-    // Goal: At least one news every hour
-    return hoursSinceLatest >= 1;
-  }
 }
+

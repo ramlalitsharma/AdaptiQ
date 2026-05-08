@@ -44,3 +44,10 @@ jobs:
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
         run: npx tsx scripts/gh-news-cron.ts
+
+      - name: Run CEO Strategy Engine
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        run: npx tsx scripts/gh-strategy-cron.ts
