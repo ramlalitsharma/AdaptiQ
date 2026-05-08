@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+import path from 'path';
+config({ path: path.join(process.cwd(), '.env.local') });
 import { BlogAutomationService } from '../lib/blog-automation';
 
 async function main() {

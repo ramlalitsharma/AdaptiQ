@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+import path from 'path';
+config({ path: path.join(process.cwd(), '.env.local') });
 import { NewsAutomationService } from '../lib/news-automation';
 
 async function main() {

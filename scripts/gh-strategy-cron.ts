@@ -1,9 +1,8 @@
 import { config } from 'dotenv';
+import path from 'path';
+config({ path: path.join(process.cwd(), '.env.local') });
 import { supabaseAdmin } from '../lib/supabase';
 import fs from 'fs';
-
-// Load environment variables
-config({ path: '.env.local' });
 
 const BRAIN_STATE_PATH = 'ceo_brain_state.json';
 
