@@ -10,50 +10,60 @@ export class OmniRouter {
       "X-Title": "Terai Times Autonomous Cofounder",
     };
 
-    // 1. Premium NVIDIA NIM (Llama 3 70B)
+    // 1. Premium NVIDIA NIM (Llama 3.1 / 3.3 70B)
     if (process.env.NVIDIA_API_KEY) {
+      // Primary: Llama 3.1 70B (State of the art)
       this.fallbacks.push(new ChatOpenAI({
         apiKey: process.env.NVIDIA_API_KEY,
         configuration: { baseURL: 'https://integrate.api.nvidia.com/v1' },
-        modelName: 'meta/llama3-70b-instruct',
+        modelName: 'meta/llama-3.1-70b-instruct',
+        temperature: 0.7,
+        maxRetries: 1,
+      }));
+      
+      // Secondary: Llama 3.3 70B (Most Recent)
+      this.fallbacks.push(new ChatOpenAI({
+        apiKey: process.env.NVIDIA_API_KEY,
+        configuration: { baseURL: 'https://integrate.api.nvidia.com/v1' },
+        modelName: 'meta/llama-3.3-70b-instruct',
         temperature: 0.7,
         maxRetries: 1,
       }));
     }
 
     if (process.env.OPENROUTER_API_KEY) {
-      // 2. OpenRouter Premium (Llama 3 70B)
+      // 2. OpenRouter Premium (Llama 3.1 70B)
       this.fallbacks.push(new ChatOpenAI({
         apiKey: process.env.OPENROUTER_API_KEY,
         configuration: { baseURL: 'https://openrouter.ai/api/v1', defaultHeaders },
-        modelName: 'meta-llama/llama-3-70b-instruct',
+        modelName: 'meta-llama/llama-3.1-70b-instruct',
         temperature: 0.7,
         maxRetries: 1,
       }));
 
-      // 3. OpenRouter FREE TIER A: Llama 3 8B Free
+      // 3. OpenRouter FREE TIER A: Llama 3.1 8B Free
       this.fallbacks.push(new ChatOpenAI({
         apiKey: process.env.OPENROUTER_API_KEY,
         configuration: { baseURL: 'https://openrouter.ai/api/v1', defaultHeaders },
-        modelName: 'meta-llama/llama-3-8b-instruct:free',
+        modelName: 'meta-llama/llama-3.1-8b-instruct:free',
         temperature: 0.7,
         maxRetries: 1,
       }));
 
-      // 4. OpenRouter FREE TIER B: Mistral 7B Free
+      // 4. OpenRouter FREE TIER B: Google Gemini Flash 1.5 Free
+      this.fallbacks.push(new ChatOpenAI({
+        apiKey: process.env.OPENROUTER_API_KEY,
+        configuration: { baseURL: 'https://openrouter.ai/api/v1', defaultHeaders },
+        modelName: 'google/gemini-flash-1.5-exp',
+        temperature: 0.7,
+        maxRetries: 1,
+      }));
+
+      // 5. OpenRouter FREE TIER C: Mistral 7B Free
       this.fallbacks.push(new ChatOpenAI({
         apiKey: process.env.OPENROUTER_API_KEY,
         configuration: { baseURL: 'https://openrouter.ai/api/v1', defaultHeaders },
         modelName: 'mistralai/mistral-7b-instruct:free',
-        temperature: 0.7,
-        maxRetries: 1,
-      }));
-
-      // 5. OpenRouter FREE TIER C: Google Gemma Free
-      this.fallbacks.push(new ChatOpenAI({
-        apiKey: process.env.OPENROUTER_API_KEY,
-        configuration: { baseURL: 'https://openrouter.ai/api/v1', defaultHeaders },
-        modelName: 'google/gemma-7b-it:free',
         temperature: 0.7,
         maxRetries: 1,
       }));

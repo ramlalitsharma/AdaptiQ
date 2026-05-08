@@ -1,9 +1,7 @@
 import { getDatabase } from './mongodb';
 import { AdvancedScraperService } from './news-scraper';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BRAND_NAME, BRAND_URL } from './brand';
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || '');
+import { getOmniBrain } from './ai/omni-router';
 
 export interface BlogDraft {
   title: string;
@@ -19,6 +17,7 @@ export interface BlogDraft {
 /**
  * PHASE 70: THE BLOG ARCHITECT (Agentic Content Production)
  * An autonomous agentic system that researches, plans, and writes long-form authoritative blogs.
+ * UPGRADED: Now powered by the Omni-Neural Matrix (NVIDIA Llama 3 70B).
  */
 export const BlogAutomationService = {
   
@@ -116,7 +115,7 @@ export const BlogAutomationService = {
   },
 
   async createMasterBlueprint(topic: string, context: string) {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const brain = getOmniBrain();
     const prompt = `
       As the Lead Content Strategist for ${BRAND_NAME}, create a Master Blueprint for a deep-dive technical blog post.
       TOPIC: ${topic}
@@ -138,14 +137,18 @@ export const BlogAutomationService = {
       }
     `;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    return JSON.parse(text.replace(/```json|```/g, ''));
+    const text = await brain.invoke(prompt);
+    try {
+      return JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch (e) {
+      console.error('[Blog Architect] Failed to parse blueprint. Raw output:', text);
+      throw new Error('Strategy Generation Failed: Invalid JSON response.');
+    }
   },
 
   async produceLongFormContent(topic: string, blueprint: any, context: string) {
     let fullContent = '';
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const brain = getOmniBrain();
 
     for (const section of blueprint.sections) {
       console.log(`[Blog Architect] Writing Section: ${section.title}...`);
@@ -170,22 +173,22 @@ export const BlogAutomationService = {
         Write only the section content. No headers needed.
       `;
 
-      const result = await model.generateContent(prompt);
-      fullContent += `\n\n## ${section.title}\n\n` + result.response.text();
+      const text = await brain.invoke(prompt);
+      fullContent += `\n\n## ${section.title}\n\n` + text;
     }
 
     return fullContent;
   },
 
   async packageBlog(topic: string, content: string, blueprint: any): Promise<BlogDraft> {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const brain = getOmniBrain();
     
     const prompt = `
       Create SEO metadata for this blog post.
       TITLE: ${blueprint.title}
       CONTENT_PREVIEW: ${content.slice(0, 1000)}
 
-      RETURN JSON:
+      RETURN ONLY A JSON OBJECT:
       {
         "summary": "150 character meta description",
         "tags": ["tag1", "tag2"],
@@ -193,8 +196,8 @@ export const BlogAutomationService = {
       }
     `;
 
-    const result = await model.generateContent(prompt);
-    const meta = JSON.parse(result.response.text().replace(/```json|```/g, ''));
+    const text = await brain.invoke(prompt);
+    const meta = JSON.parse(text.replace(/```json|```/g, '').trim());
 
     return {
       title: blueprint.title,
